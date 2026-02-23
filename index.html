@@ -7,7 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STICKS">
 <meta name="theme-color" content="#09090b">
-<meta name="description" content="STICKS — Golf stats tracker with GPS shot mapping">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>STICKS</title>
@@ -25,234 +24,305 @@ select option{background:#111114;color:#e4e4e7;}
 </head>
 <body>
 <div id="root"></div>
-
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
 <script type="text/babel">
 const{useState,useEffect,useCallback,useMemo,useRef}=React;
-
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
-
+const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 const COURSES=[
-  {
-    id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,
-    greens:[{lat:33.19815,lng:-117.35845},{lat:33.19870,lng:-117.35755},{lat:33.19785,lng:-117.35640},{lat:33.19685,lng:-117.35555},{lat:33.19610,lng:-117.35625},{lat:33.19560,lng:-117.35720},{lat:33.19520,lng:-117.35810},{lat:33.19435,lng:-117.35895},{lat:33.19505,lng:-117.35960},{lat:33.19580,lng:-117.36050},{lat:33.19650,lng:-117.36130},{lat:33.19730,lng:-117.36050},{lat:33.19810,lng:-117.36130},{lat:33.19870,lng:-117.36020},{lat:33.19780,lng:-117.35870},{lat:33.19680,lng:-117.35770},{lat:33.19610,lng:-117.35855},{lat:33.19700,lng:-117.35930}],
-    tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},
-    pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],
-    tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green — aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight — keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."],
-  },
-  {
-    id:"encinitas_ranch",name:"Encinitas Ranch",loc:"Encinitas, CA",par:72,holes:18,
-    greens:[{lat:33.0678,lng:-117.1575},{lat:33.0672,lng:-117.1562},{lat:33.0660,lng:-117.1548},{lat:33.0650,lng:-117.1565},{lat:33.0642,lng:-117.1582},{lat:33.0652,lng:-117.1598},{lat:33.0665,lng:-117.1610},{lat:33.0680,lng:-117.1618},{lat:33.0692,lng:-117.1602},{lat:33.0700,lng:-117.1585},{lat:33.0712,lng:-117.1568},{lat:33.0705,lng:-117.1552},{lat:33.0695,lng:-117.1538},{lat:33.0682,lng:-117.1525},{lat:33.0670,lng:-117.1540},{lat:33.0660,lng:-117.1558},{lat:33.0672,lng:-117.1572},{lat:33.0685,lng:-117.1588}],
-    tees:{blue:{r:71.0,s:126,y:[347,192,527,342,354,160,365,407,497,442,540,169,398,433,373,361,185,495]},green:{r:69.3,s:122,y:[347,168,527,342,300,160,336,330,497,407,540,169,370,375,373,324,160,495]},white:{r:67.5,s:117,y:[297,168,522,285,300,139,336,330,470,407,487,130,370,375,320,324,160,470]},gold:{r:64.5,s:110,y:[275,122,495,245,250,120,315,290,430,357,440,110,333,347,255,282,130,439]}},
-    pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],
-    tips:["Forgiving opener. Wide fairway, avoid the right bunker. Mid-iron approach.","All carry over a canyon. Club up if wind is in your face.","Reachable in two for long hitters. Layup to 100 leaves a wedge in.","Dogleg left. Aim right-center off the tee. Green slopes back to front.","Elevated tee with ocean views. Favor the left side of the fairway.","Short par 3 but don't be short — bunkers guard the front.","Tight driving hole. Keep it in play, the green is well-bunkered.","Longest par 4 on the front. Two solid shots to reach this elevated green.","Risk-reward par 5. Lay up short of the cross bunkers or go for it.","Tough opener to the back nine. Dogleg right, big hitters can cut the corner.","Longest hole on the course. Three good shots to get home.","Downhill par 3. Take less club than you think, green runs away from you.","Narrow fairway with canyon left. Play to the right side off the tee.","Long par 4 with elevation change. Driver to the flat spot, then mid-iron in.","Scenic hole along the bluffs. Stay left off the tee, green is wide but shallow.","Back-to-front slope on the green. Below the hole is key here.","Over a canyon to a well-guarded green. Check the pin position before choosing club.","Great finishing par 5. Reachable in two but water guards the green. Solid layup works."],
-  },
-  {
-    id:"sandpiper",name:"Sandpiper Golf Club",loc:"Santa Barbara, CA",par:72,holes:18,
-    greens:[{lat:34.4415,lng:-119.8825},{lat:34.4428,lng:-119.8810},{lat:34.4440,lng:-119.8795},{lat:34.4450,lng:-119.8812},{lat:34.4438,lng:-119.8830},{lat:34.4425,lng:-119.8845},{lat:34.4412,lng:-119.8858},{lat:34.4400,lng:-119.8842},{lat:34.4390,lng:-119.8825},{lat:34.4378,lng:-119.8808},{lat:34.4370,lng:-119.8792},{lat:34.4382,lng:-119.8778},{lat:34.4395,lng:-119.8762},{lat:34.4408,lng:-119.8748},{lat:34.4420,lng:-119.8735},{lat:34.4432,lng:-119.8752},{lat:34.4445,lng:-119.8768},{lat:34.4435,lng:-119.8785}],
-    tees:{black:{r:75.0,s:135,y:[530,471,430,258,513,195,394,399,420,390,228,347,532,445,602,395,429,181]},gold:{r:72.6,s:130,y:[511,447,407,226,495,173,368,370,401,345,202,325,455,425,582,373,374,167]},silver:{r:70.3,s:126,y:[495,402,387,196,483,155,357,362,393,321,172,306,405,385,540,348,353,136]},copper:{r:67.6,s:120,y:[454,376,353,165,430,125,333,350,368,315,148,252,392,330,471,337,304,99]}},
-    pars:[5,4,4,3,5,3,4,4,4,4,3,4,5,4,5,4,4,3],
-    tips:["Opens with a reachable par 5. Two good shots set up an easy wedge. Don't miss left.","Hardest hole on the course. Long uphill par 4 — two of your best to reach this green.","Slight dogleg right. Mid-iron approach to a well-bunkered green. Miss right is dead.","Downhill par 3 with ocean views behind you. Take one less club, wind usually helps.","Par 5 with a narrow landing area. Lay up short of the fairway bunkers for a clean look.","Short par 3 but all carry. Front bunkers grab anything short. Favor the center.","Tight fairway with trouble left. Keep your tee shot right-center for the best angle in.","Elevation change makes this play shorter than the card. Trust the yardage from the tee.","Strong finisher to the front nine. Accurate drive is more important than distance here.","Welcome to the ocean holes. Clifftop par 4 — stunning and demanding. Favor the left side.","Iconic par 3 on the ocean bluffs. Wind is a factor. Check conditions before committing.","Dogleg right with the ocean on your right. Don't get distracted by the views.","Long par 5 along the cliffs. Three smart shots beat two heroic ones here.","Tough par 4 with elevation. Number 2 handicap hole — two solid shots to get home.","Longest hole on the course at 600+. Three full shots, uphill finish. Par is a great score.","Back inland now. Straightforward par 4 with a receptive green. Birdie opportunity.","Long par 4 playing into the prevailing wind. Club up and keep it below the hole.","Finishing par 3 — shorter than it looks. Pin position matters. End your round strong."],
-  },
+{id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,greens:[{lat:33.19815,lng:-117.35845},{lat:33.19870,lng:-117.35755},{lat:33.19785,lng:-117.35640},{lat:33.19685,lng:-117.35555},{lat:33.19610,lng:-117.35625},{lat:33.19560,lng:-117.35720},{lat:33.19520,lng:-117.35810},{lat:33.19435,lng:-117.35895},{lat:33.19505,lng:-117.35960},{lat:33.19580,lng:-117.36050},{lat:33.19650,lng:-117.36130},{lat:33.19730,lng:-117.36050},{lat:33.19810,lng:-117.36130},{lat:33.19870,lng:-117.36020},{lat:33.19780,lng:-117.35870},{lat:33.19680,lng:-117.35770},{lat:33.19610,lng:-117.35855},{lat:33.19700,lng:-117.35930}],tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green \u2014 aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight \u2014 keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."]},
+{id:"encinitas_ranch",name:"Encinitas Ranch",loc:"Encinitas, CA",par:72,holes:18,greens:[{lat:33.0678,lng:-117.1575},{lat:33.0672,lng:-117.1562},{lat:33.0660,lng:-117.1548},{lat:33.0650,lng:-117.1565},{lat:33.0642,lng:-117.1582},{lat:33.0652,lng:-117.1598},{lat:33.0665,lng:-117.1610},{lat:33.0680,lng:-117.1618},{lat:33.0692,lng:-117.1602},{lat:33.0700,lng:-117.1585},{lat:33.0712,lng:-117.1568},{lat:33.0705,lng:-117.1552},{lat:33.0695,lng:-117.1538},{lat:33.0682,lng:-117.1525},{lat:33.0670,lng:-117.1540},{lat:33.0660,lng:-117.1558},{lat:33.0672,lng:-117.1572},{lat:33.0685,lng:-117.1588}],tees:{blue:{r:71.0,s:126,y:[347,192,527,342,354,160,365,407,497,442,540,169,398,433,373,361,185,495]},green:{r:69.3,s:122,y:[347,168,527,342,300,160,336,330,497,407,540,169,370,375,373,324,160,495]},white:{r:67.5,s:117,y:[297,168,522,285,300,139,336,330,470,407,487,130,370,375,320,324,160,470]},gold:{r:64.5,s:110,y:[275,122,495,245,250,120,315,290,430,357,440,110,333,347,255,282,130,439]}},pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],tips:["Forgiving opener. Wide fairway, avoid the right bunker. Mid-iron approach.","All carry over a canyon. Club up if wind is in your face.","Reachable in two for long hitters. Layup to 100 leaves a wedge in.","Dogleg left. Aim right-center off the tee. Green slopes back to front.","Elevated tee with ocean views. Favor the left side of the fairway.","Short par 3 but don't be short \u2014 bunkers guard the front.","Tight driving hole. Keep it in play, the green is well-bunkered.","Longest par 4 on the front. Two solid shots to reach this elevated green.","Risk-reward par 5. Lay up short of the cross bunkers or go for it.","Tough opener to the back nine. Dogleg right, big hitters can cut the corner.","Longest hole on the course. Three good shots to get home.","Downhill par 3. Take less club than you think, green runs away from you.","Narrow fairway with canyon left. Play to the right side off the tee.","Long par 4 with elevation change. Driver to the flat spot, then mid-iron in.","Scenic hole along the bluffs. Stay left off the tee, green is wide but shallow.","Back-to-front slope on the green. Below the hole is key here.","Over a canyon to a well-guarded green. Check the pin position before choosing club.","Great finishing par 5. Reachable in two but water guards the green. Solid layup works."]},
+{id:"sandpiper",name:"Sandpiper Golf Club",loc:"Santa Barbara, CA",par:72,holes:18,greens:[{lat:34.4415,lng:-119.8825},{lat:34.4428,lng:-119.8810},{lat:34.4440,lng:-119.8795},{lat:34.4450,lng:-119.8812},{lat:34.4438,lng:-119.8830},{lat:34.4425,lng:-119.8845},{lat:34.4412,lng:-119.8858},{lat:34.4400,lng:-119.8842},{lat:34.4390,lng:-119.8825},{lat:34.4378,lng:-119.8808},{lat:34.4370,lng:-119.8792},{lat:34.4382,lng:-119.8778},{lat:34.4395,lng:-119.8762},{lat:34.4408,lng:-119.8748},{lat:34.4420,lng:-119.8735},{lat:34.4432,lng:-119.8752},{lat:34.4445,lng:-119.8768},{lat:34.4435,lng:-119.8785}],tees:{black:{r:75.0,s:135,y:[530,471,430,258,513,195,394,399,420,390,228,347,532,445,602,395,429,181]},gold:{r:72.6,s:130,y:[511,447,407,226,495,173,368,370,401,345,202,325,455,425,582,373,374,167]},silver:{r:70.3,s:126,y:[495,402,387,196,483,155,357,362,393,321,172,306,405,385,540,348,353,136]},copper:{r:67.6,s:120,y:[454,376,353,165,430,125,333,350,368,315,148,252,392,330,471,337,304,99]}},pars:[5,4,4,3,5,3,4,4,4,4,3,4,5,4,5,4,4,3],tips:["Opens with a reachable par 5. Two good shots set up an easy wedge. Don't miss left.","Hardest hole on the course. Long uphill par 4 \u2014 two of your best to reach this green.","Slight dogleg right. Mid-iron approach to a well-bunkered green. Miss right is dead.","Downhill par 3 with ocean views behind you. Take one less club, wind usually helps.","Par 5 with a narrow landing area. Lay up short of the fairway bunkers for a clean look.","Short par 3 but all carry. Front bunkers grab anything short. Favor the center.","Tight fairway with trouble left. Keep your tee shot right-center for the best angle in.","Elevation change makes this play shorter than the card. Trust the yardage from the tee.","Strong finisher to the front nine. Accurate drive is more important than distance here.","Welcome to the ocean holes. Clifftop par 4 \u2014 stunning and demanding. Favor the left side.","Iconic par 3 on the ocean bluffs. Wind is a factor. Check conditions before committing.","Dogleg right with the ocean on your right. Don't get distracted by the views.","Long par 5 along the cliffs. Three smart shots beat two heroic ones here.","Tough par 4 with elevation. Number 2 handicap hole \u2014 two solid shots to get home.","Longest hole on the course at 600+. Three full shots, uphill finish. Par is a great score.","Back inland now. Straightforward par 4 with a receptive green. Birdie opportunity.","Long par 4 playing into the prevailing wind. Club up and keep it below the hole.","Finishing par 3 \u2014 shorter than it looks. Pin position matters. End your round strong."]}
 ];
-
 const getCourse=(id)=>COURSES.find(c=>c.id===id)||COURSES[0];
 const genId=()=>Math.random().toString(36).substr(2,9);
-const ld=(k,d)=>{try{const r=localStorage.getItem(`stx_${k}`);return r?JSON.parse(r):d;}catch{return d;}};
-const sv=(k,v)=>{try{localStorage.setItem(`stx_${k}`,JSON.stringify(v));}catch{}};
+const ld=(k,d)=>{try{const r=localStorage.getItem("stx_"+k);return r?JSON.parse(r):d;}catch(e){return d;}};
+const sv=(k,v)=>{try{localStorage.setItem("stx_"+k,JSON.stringify(v));}catch(e){}};
 const gpsDist=(a,b,c,d)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(c-a),dn=tr(d-b),s=Math.sin(dl/2)**2+Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dn/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))*1.09361);};
 const calcHcp=(rounds)=>{const v=rounds.filter(r=>r.holes.length===18&&r.cr&&r.sr);if(v.length<5)return null;const d=v.map(r=>((r.holes.reduce((s,h)=>s+(h.sc||0),0)-r.cr)*113)/r.sr).sort((a,b)=>a-b);const n=Math.max(1,Math.floor(d.length*0.4));return Math.round(d.slice(0,n).reduce((s,x)=>s+x,0)/n*10)/10;};
-
 const useGPS=()=>{
-  const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);
-  const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);ref.current=navigator.geolocation.watchPosition(p=>setPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:10000});},[]);
-  const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}setOn(false);},[]);
-  const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:10000});}),[]);
-  return{pos,err,on,start,stop,once};
+const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);
+const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);ref.current=navigator.geolocation.watchPosition(p=>setPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:10000});},[]);
+const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}setOn(false);},[]);
+const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:10000});}),[]);
+return{pos,err,on,start,stop,once};
 };
-
 const F="'Outfit',sans-serif",M="'JetBrains Mono',monospace";
 const dark={bg:"#09090b",card:"#111114",bdr:"rgba(255,255,255,0.05)",g:"#34d399",gd:"rgba(52,211,153,0.07)",gb:"rgba(52,211,153,0.12)",tx:"#e4e4e7",tm:"#71717a",td:"#3f3f46",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
 const light={bg:"#f4f4f5",card:"#ffffff",bdr:"rgba(0,0,0,0.06)",g:"#059669",gd:"rgba(5,150,105,0.06)",gb:"rgba(5,150,105,0.12)",tx:"#18181b",tm:"#71717a",td:"#a1a1aa",r:"#dc2626",o:"#ea580c",b:"#2563eb",y:"#d97706",rd:"rgba(220,38,38,0.06)",od:"rgba(234,88,12,0.06)",bd:"rgba(37,99,235,0.06)",mapBg:"#e8f5e9",mapGreen:"#2e7d32",mapShot:"#e65100",mapLine:"rgba(230,81,0,0.4)"};
-
+const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
 function ShotMap({shots,holeIdx,courseId,theme:T}){
-  if(!shots||shots.length===0)return null;
-  const course=getCourse(courseId),green=course.greens[holeIdx];
-  const allPts=[...shots.map(s=>({lat:s.lat,lng:s.lng})),{lat:green.lat,lng:green.lng}];
-  const minLat=Math.min(...allPts.map(p=>p.lat)),maxLat=Math.max(...allPts.map(p=>p.lat));
-  const minLng=Math.min(...allPts.map(p=>p.lng)),maxLng=Math.max(...allPts.map(p=>p.lng));
-  const padLat=(maxLat-minLat)*0.25||0.0003,padLng=(maxLng-minLng)*0.25||0.0003;
-  const bMinLat=minLat-padLat,bMaxLat=maxLat+padLat,bMinLng=minLng-padLng,bMaxLng=maxLng+padLng;
-  const W=320,H=200;
-  const toX=lng=>((lng-bMinLng)/(bMaxLng-bMinLng))*W;
-  const toY=lat=>H-((lat-bMinLat)/(bMaxLat-bMinLat))*H;
-  const gx=toX(green.lng),gy=toY(green.lat);
-  return(<div style={{marginBottom:10}}><div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>Shot Map</div>
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{borderRadius:10,background:T.mapBg,border:`1px solid ${T.bdr}`}}>
-      <circle cx={gx} cy={gy} r={12} fill={T.mapGreen} opacity={0.3}/><circle cx={gx} cy={gy} r={5} fill={T.mapGreen} opacity={0.7}/>
-      <line x1={gx} y1={gy-5} x2={gx} y2={gy-18} stroke={T.tx} strokeWidth={1.5}/><polygon points={`${gx},${gy-18} ${gx+8},${gy-14} ${gx},${gy-10}`} fill={T.r} opacity={0.9}/>
-      {shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat),nx=i<shots.length-1?toX(shots[i+1].lng):gx,ny=i<shots.length-1?toY(shots[i+1].lat):gy;return <line key={i} x1={sx} y1={sy} x2={nx} y2={ny} stroke={T.mapLine} strokeWidth={1.5} strokeDasharray={i===shots.length-1?"4 3":"none"}/>;})}
-      {shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat);return <g key={`d${i}`}><circle cx={sx} cy={sy} r={8} fill={T.mapShot} opacity={0.2}/><circle cx={sx} cy={sy} r={4} fill={T.mapShot}/><text x={sx} y={sy+3.5} textAnchor="middle" fill={T.bg} fontSize={6} fontWeight={700} fontFamily={M}>{i+1}</text>{s.dist&&<text x={sx+(i%2===0?12:-12)} y={sy-8} textAnchor="middle" fill={T.tm} fontSize={7} fontFamily={M}>{s.dist}yd</text>}</g>;})}
-    </svg></div>);
+if(!shots||shots.length===0)return null;
+const course=getCourse(courseId),green=course.greens[holeIdx];
+const allPts=[...shots.map(s=>({lat:s.lat,lng:s.lng})),{lat:green.lat,lng:green.lng}];
+const minLat=Math.min(...allPts.map(p=>p.lat)),maxLat=Math.max(...allPts.map(p=>p.lat));
+const minLng=Math.min(...allPts.map(p=>p.lng)),maxLng=Math.max(...allPts.map(p=>p.lng));
+const padLat=(maxLat-minLat)*0.25||0.0003,padLng=(maxLng-minLng)*0.25||0.0003;
+const bMinLat=minLat-padLat,bMaxLat=maxLat+padLat,bMinLng=minLng-padLng,bMaxLng=maxLng+padLng;
+const W=320,H=200,toX=lng=>((lng-bMinLng)/(bMaxLng-bMinLng))*W,toY=lat=>H-((lat-bMinLat)/(bMaxLat-bMinLat))*H;
+const gx=toX(green.lng),gy=toY(green.lat);
+return(<div style={{marginBottom:10}}><div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>Shot Map</div>
+<svg width="100%" viewBox={"0 0 "+W+" "+H} style={{borderRadius:10,background:T.mapBg,border:"1px solid "+T.bdr}}>
+<circle cx={gx} cy={gy} r={12} fill={T.mapGreen} opacity={0.3}/><circle cx={gx} cy={gy} r={5} fill={T.mapGreen} opacity={0.7}/>
+<line x1={gx} y1={gy-5} x2={gx} y2={gy-18} stroke={T.tx} strokeWidth={1.5}/><polygon points={gx+","+(gy-18)+" "+(gx+8)+","+(gy-14)+" "+gx+","+(gy-10)} fill={T.r} opacity={0.9}/>
+{shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat),nx=i<shots.length-1?toX(shots[i+1].lng):gx,ny=i<shots.length-1?toY(shots[i+1].lat):gy;return <line key={i} x1={sx} y1={sy} x2={nx} y2={ny} stroke={T.mapLine} strokeWidth={1.5} strokeDasharray={i===shots.length-1?"4 3":"none"}/>;})}
+{shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat);return <g key={"d"+i}><circle cx={sx} cy={sy} r={8} fill={T.mapShot} opacity={0.2}/><circle cx={sx} cy={sy} r={4} fill={T.mapShot}/><text x={sx} y={sy+3.5} textAnchor="middle" fill={T.bg} fontSize={6} fontWeight={700} fontFamily={M}>{i+1}</text>{s.dist&&<text x={sx+(i%2===0?12:-12)} y={sy-8} textAnchor="middle" fill={T.tm} fontSize={7} fontFamily={M}>{s.dist}yd</text>}</g>;})}
+</svg></div>);
 }
-
 function Scorecard({holes,onTap,T}){
-  const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);
-  const sum=(arr,k)=>arr.reduce((s,h)=>s+(h[k]||0),0);
-  const thS={color:T.td,padding:"3px 5px",textAlign:"center",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em"};
-  const row=(x,i)=>{const d=x.sc-x.par,cl=d<0?T.g:d===0?T.b:T.o;return <tr key={i} onClick={()=>onTap(i)} style={{cursor:"pointer"}}><td style={{color:T.td,padding:"5px",textAlign:"center",fontFamily:M}}>{i+1}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.par}</td><td style={{color:cl,padding:"5px",textAlign:"center",fontWeight:700,fontFamily:M}}>{x.sc}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.pt}</td><td style={{color:T.td,padding:"5px",textAlign:"center",fontSize:10}}>{x.cl||"\u2014"}</td></tr>;};
-  const sub=(label,arr)=><tr style={{background:T.gd,fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>{label}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:11}}>{sum(arr,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"pt")}</td><td style={{padding:"5px"}}></td></tr>;
-  return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>
-    {f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}
-    {b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}
-    {holes.length===18&&<tr style={{background:`${T.g}11`,fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}
-  </tbody></table></div>;
+const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);
+const sum=(arr,k)=>arr.reduce((s,h)=>s+(h[k]||0),0);
+const thS={color:T.td,padding:"3px 5px",textAlign:"center",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em"};
+const row=(x,i)=>{const d=x.sc-x.par,cl=d<0?T.g:d===0?T.b:T.o;return <tr key={i} onClick={()=>onTap(i)} style={{cursor:"pointer"}}><td style={{color:T.td,padding:"5px",textAlign:"center",fontFamily:M}}>{i+1}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.par}</td><td style={{color:cl,padding:"5px",textAlign:"center",fontWeight:700,fontFamily:M}}>{x.sc}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.pt}</td><td style={{color:T.td,padding:"5px",textAlign:"center",fontSize:10}}>{x.cl||"\u2014"}</td></tr>;};
+const sub=(label,arr)=><tr style={{background:T.gd,fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>{label}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:11}}>{sum(arr,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"pt")}</td><td style={{padding:"5px"}}></td></tr>;
+return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>
+{f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}
+{b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}
+{holes.length===18&&<tr style={{background:T.g+"11",fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}
+</tbody></table></div>;
 }
-
-const TabBar=({active:a,onChange:o,T})=>(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:`${T.bg}ee`,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:`1px solid ${T.bdr}`,display:"flex",justifyContent:"space-around",padding:"10px 0 env(safe-area-inset-bottom, 14px)"}}>{["Stats","Play","Rounds","Bag"].map((t,i)=>{const id=["dashboard","play","rounds","bag"][i];return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 18px",color:a===id?T.g:T.td,fontFamily:F,fontSize:11,fontWeight:a===id?700:500,letterSpacing:"0.06em",textTransform:"uppercase",transition:"color 0.15s"}}>{t}</button>;})}</div>);
-const Hdr=({title,sub,right,T,onToggleTheme})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:`1px solid ${T.gb}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"Light":"Dark"}</button>}{right}</div></div>);
-const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.card,border:`1px solid ${T.bdr}`,borderRadius:12,padding:14,cursor:o?"pointer":"default",...s}}>{children}</div>;
+const TabBar=({active:a,onChange:o,T})=>(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:T.bg+"ee",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:"1px solid "+T.bdr,display:"flex",justifyContent:"space-around",padding:"10px 0 env(safe-area-inset-bottom, 14px)"}}>{["Stats","Play","Rounds","Bag","Me"].map((t,i)=>{const id=["dashboard","play","rounds","bag","profile"][i];return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 12px",color:a===id?T.g:T.td,fontFamily:F,fontSize:10,fontWeight:a===id?700:500,letterSpacing:"0.06em",textTransform:"uppercase",transition:"color 0.15s"}}>{t}</button>;})}</div>);
+const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={30}/>}<div><h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"Light":"Dark"}</button>}{right}</div></div>);
+const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:12,padding:14,cursor:o?"pointer":"default",...s}}>{children}</div>;
 const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{children}</div>;
-const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:T.bg,fontWeight:700,border:"none"},secondary:{background:T.gd,color:T.g,border:`1px solid ${T.gb}`},ghost:{background:"transparent",color:T.tm,border:"none"},danger:{background:T.rd,color:T.r,border:`1px solid ${T.r}18`}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:10,padding:"12px 18px",fontSize:13,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.15s",...s}}>{children}</button>;};
-const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} style={{padding:"10px 0",borderRadius:8,flex:1,cursor:"pointer",background:a?(bg||T.gd):"rgba(128,128,128,0.04)",color:a?(cl||T.g):T.td,border:a?`1px solid ${(cl||T.g)}18`:`1px solid ${T.bdr}`,fontSize:14,fontWeight:600,fontFamily:F,transition:"all 0.12s"}}>{children}</button>;
+const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:T.bg,fontWeight:700,border:"none"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb},ghost:{background:"transparent",color:T.tm,border:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:10,padding:"12px 18px",fontSize:13,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.15s",...s}}>{children}</button>;};
+const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} style={{padding:"10px 0",borderRadius:8,flex:1,cursor:"pointer",background:a?(bg||T.gd):"rgba(128,128,128,0.04)",color:a?(cl||T.g):T.td,border:a?"1px solid "+(cl||T.g)+"18":"1px solid "+T.bdr,fontSize:14,fontWeight:600,fontFamily:F,transition:"all 0.12s"}}>{children}</button>;
 const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:"center"}}><div style={{fontSize:sm?18:26,fontWeight:700,color:cl||T.g,fontFamily:M,lineHeight:1}}>{v}{u&&<span style={{fontSize:sm?10:12,fontWeight:400,color:T.td,marginLeft:2}}>{u}</span>}</div><div style={{fontSize:9,color:T.td,marginTop:4,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{l}</div></div>;
-const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?`+${d}`:d===0?"E":`${d}`}</span>;
-const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":`+${d}`;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
-
-function Dashboard({rounds,T,onToggle}){
-  const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes.length===18);const rec=done.slice(-10);
-  const avg=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.sc||0),0),0)/rec.length*10)/10:null;
-  const avgP=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.pt||0),0),0)/rec.length*10)/10:null;
-  const ah=done.flatMap(r=>r.holes);
-  const girP=ah.length?Math.round(ah.filter(h=>h.gir).length/ah.length*100):null;
-  const fwT=ah.filter(h=>h.par>3).length;const fwP=fwT?Math.round(ah.filter(h=>h.fw==="hit").length/fwT*100):null;
-  const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0),0))):null;
-  const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
-  const totH=Object.values(dist).reduce((s,v)=>s+v,0);
-  if(!done.length)return <div><Hdr title="STICKS" sub="Your golf stats" T={T} onToggleTheme={onToggle}/><div style={{padding:"80px 20px",textAlign:"center"}}><div style={{width:56,height:56,borderRadius:14,background:T.gd,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg></div><h2 style={{color:T.tx,fontSize:17,fontWeight:600,margin:"0 0 6px",fontFamily:F}}>No rounds yet</h2><p style={{color:T.tm,fontSize:13,fontFamily:F}}>Start tracking from the Play tab</p></div></div>;
-  return <div><Hdr title="STICKS" sub={`${done.length} round${done.length!==1?"s":""}`} T={T} onToggleTheme={onToggle}/>
-    <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-      <Crd T={T} style={{marginBottom:8,background:`linear-gradient(135deg,${T.gd},${T.card})`,border:`1px solid ${T.gb}`}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:F,fontWeight:700,marginBottom:4}}>Handicap</div><div style={{fontSize:40,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{hcp??"\u2014"}</div>{hcp===null&&<div style={{fontSize:11,color:T.td,marginTop:6,fontFamily:F}}>Need 5+ full rounds</div>}</div></Crd>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg??"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP??"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best??"\u2014"} color={T.y} small T={T}/></Crd></div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP??"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP??"\u2014"} unit="%" small T={T}/></Crd></div>
-      {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:`${Math.max(3,p)}%`,background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
-      {rec.length>0&&<Crd T={T}><Lbl T={T}>Recent</Lbl>{rec.slice().reverse().slice(0,5).map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${T.bdr}`}}><div><div style={{color:T.tx,fontSize:13,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div>;})}</Crd>}
-    </div></div>;
+const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
+const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
+function ProfileSetup({onSave,existing,T}){
+const[name,setName]=useState(existing?existing.name:"");
+const[color,setColor]=useState(existing?existing.color:AVATARS[Math.floor(Math.random()*AVATARS.length)]);
+const[homeCourse,setHomeCourse]=useState(existing?existing.homeCourse:"goat_hill");
+const[goal,setGoal]=useState(existing?(existing.goal||""):"");
+return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
+<div style={{textAlign:"center",marginBottom:32}}>
+<div style={{display:"flex",justifyContent:"center"}}><Avatar name={name||"?"} color={color} size={72}/></div>
+<h1 style={{fontSize:24,fontWeight:700,color:T.tx,margin:"16px 0 4px",fontFamily:F}}>{existing?"Edit Profile":"Welcome to STICKS"}</h1>
+<p style={{color:T.tm,fontSize:13,fontFamily:F}}>{existing?"Update your info":"Set up your player profile"}</p>
+</div>
+<Crd T={T} style={{marginBottom:16}}>
+<Lbl T={T}>Name</Lbl>
+<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:12}}/>
+<Lbl T={T}>Color</Lbl>
+<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>{AVATARS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:16,background:c,border:color===c?"3px solid "+T.tx:"3px solid transparent",cursor:"pointer"}}/>)}</div>
+<Lbl T={T}>Home Course</Lbl>
+<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>{COURSES.map(c=>{const a=homeCourse===c.id;return <button key={c.id} onClick={()=>setHomeCourse(c.id)} style={{padding:"10px 14px",borderRadius:8,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,textAlign:"left",fontSize:13,fontWeight:a?600:400}}>{c.name}<span style={{opacity:0.5,marginLeft:8,fontSize:11}}>{c.loc}</span></button>;})}</div>
+<Lbl T={T}>Handicap Goal</Lbl>
+<input type="number" inputMode="numeric" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. 18" style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/>
+</Crd>
+<Btn T={T} disabled={!name.trim()} onClick={()=>onSave({id:existing?existing.id:genId(),name:name.trim(),color:color,homeCourse:homeCourse,goal:goal?parseFloat(goal):"",created:existing?existing.created:new Date().toISOString()})}>
+{existing?"Save Changes":"Let's Go"}</Btn>
+</div>;
 }
-
-function Play({onStart,active,onUpdate,onFinish,T,onToggle}){
-  const[courseId,setCourseId]=useState("goat_hill");
-  const[tee,setTee]=useState(null);
-  const[cur,setCur]=useState(0);
-  const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});
-  const[shots,setShots]=useState([]);
-  const[marking,setMarking]=useState(false);
-  const[history,setHistory]=useState([]);
-  const gps=useGPS();
-  const course=active?getCourse(active.courseId):getCourse(courseId);
-  const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];
-  const selTee=tee||defaultTee;
-  useEffect(()=>{setTee(null);},[courseId]);
-  useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[active?.id]);
-  useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?.id]);
-  useEffect(()=>{if(active?.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?.id]);
-  useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?.id]);
-  const pushUndo=()=>setHistory(p=>[...p,{...h}]);
-  const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
-  if(!active){
-    const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
-    const teeColors={black:T.tx,blue:"#60a5fa",white:T.tm,green:T.g,gold:T.y,silver:"#a8a29e",copper:"#b87333"};
-    return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle}/>
-      <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-        <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Course</Lbl>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {COURSES.map(c=>{const a=courseId===c.id;return <button key={c.id} onClick={()=>setCourseId(c.id)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?`1px solid ${T.gb}`:`1px solid ${T.bdr}`,color:a?T.g:T.td,fontFamily:F,transition:"all 0.12s",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontSize:14,fontWeight:700}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{c.loc}</div></div>
-              <div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
-            </button>;})}
-          </div>
-        </Crd>
-        <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?`1px solid ${tc}33`:`1px solid ${T.bdr}`,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}
-          </div>
-          <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:`1px solid ${T.bdr}`}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div>
-        </Crd>
-        <Btn T={T} onClick={()=>onStart({id:genId(),courseName:course.name,courseId:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
-      </div></div>;
-  }
-  const ed=cur<active.holes.length,hn=cur+1;
-  const ts=active.holes.reduce((s,x)=>s+(x.sc||0),0),tp=active.holes.reduce((s,x)=>s+(x.par||0),0);
-  const ty=course.tees[active.tee||Object.keys(course.tees)[0]].y,hy=ty[cur],hp=course.pars[cur],ht=course.tips[cur];
-  const svHole=()=>{const d={hole:hn,par:h.par||hp,sc:h.sc||(h.par||hp),pt:h.pt,cl:h.cl,yd:h.yd?parseInt(h.yd):hy,fw:h.fw,gir:h.gir,shots};const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
-  return <div>
-    <Hdr title={`Hole ${hn}`} sub={`${course.name} · Thru ${active.holes.length} · ${ts-tp>0?"+":""}${ts-tp===0?"E":ts-tp} (${ts})`} T={T} onToggleTheme={onToggle} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
-    <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-      <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
-      <div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:`1px solid ${T.bdr}`}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&<St label="To Green" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}</div>
-      <Crd T={T} style={{marginBottom:10,border:`1px solid ${T.gb}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>±{Math.round(gps.pos.acc)}m</div>}</div>
-        {!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
-        {gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>Enable location services</div>}
-        <button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:T.gd,border:`1px solid ${T.gb}`,color:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":`Mark Shot ${shots.length+1}`}</button>
-        {shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?`1px solid ${T.bdr}`:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>Shot {i+1}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist} yd</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen} yd to green</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>×</button></div>)}</div>}
-      </Crd>
-      <ShotMap shots={shots} holeIdx={cur} courseId={active.courseId} theme={T}/>
-      {ht&&<div style={{background:"rgba(128,128,128,0.03)",borderRadius:8,padding:"10px 12px",marginBottom:10,borderLeft:`2px solid ${T.gb}`}}><div style={{fontSize:11,color:T.tm,fontFamily:F,lineHeight:1.6}}>{ht}</div></div>}
-      <Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:`1px solid ${T.gb}`,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:`1px solid ${T.bdr}`,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><div style={{fontSize:42,fontWeight:700,color:T.tx,fontFamily:M,minWidth:52,textAlign:"center"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:`1px solid ${T.bdr}`,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
-      <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Putts</Lbl><div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(p=><Pill key={p} active={h.pt===p} T={T} onClick={()=>{pushUndo();setH(s=>({...s,pt:p}));}}>{p}</Pill>)}</div></Crd>
-      <Crd T={T} style={{marginBottom:10}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><Lbl T={T}>Club</Lbl><select value={h.cl} onChange={e=>{pushUndo();setH(s=>({...s,cl:e.target.value}));}} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:`1px solid ${T.bdr}`,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none"}}><option value="">Select</option>{CLUBS.map(c=><option key={c} value={c}>{c}</option>)}</select></div><div><Lbl T={T}>Yardage</Lbl><input type="number" inputMode="numeric" value={h.yd} onChange={e=>{pushUndo();setH(s=>({...s,yd:e.target.value}));}} placeholder={`${hy}`} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:`1px solid ${T.bdr}`,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/></div></div></Crd>
-      {(h.par||hp)>3&&<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Fairway</Lbl><div style={{display:"flex",gap:6}}>{[{v:"hit",l:"Hit"},{v:"left",l:"Left"},{v:"right",l:"Right"}].map(f=><Pill key={f.v} active={h.fw===f.v} color={f.v==="hit"?T.g:T.o} bg={f.v==="hit"?T.gd:T.od} T={T} onClick={()=>{pushUndo();setH(s=>({...s,fw:s.fw===f.v?"":f.v}));}}>{f.l}</Pill>)}</div></Crd>}
-      <Crd T={T} style={{marginBottom:10}}><button onClick={()=>{pushUndo();setH(s=>({...s,gir:!s.gir}));}} style={{width:"100%",padding:"10px",borderRadius:8,background:h.gir?T.gd:"transparent",border:`1px solid ${h.gir?T.gb:T.bdr}`,color:h.gir?T.g:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>{h.gir?"GIR — Yes":"Green in Regulation"}</button></Crd>
-      <Btn T={T} onClick={svHole}>{ed?"Update Hole":hn===18?"Save Final Hole":`Save Hole ${hn}`}</Btn>
-      {active.holes.length>0&&<Crd T={T} style={{marginTop:10}}><Lbl T={T}>Scorecard</Lbl><Scorecard holes={active.holes} onTap={setCur} T={T}/></Crd>}
-    </div></div>;
+function ProfilePicker({profiles,onSelect,onAdd,T}){
+return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
+<div style={{textAlign:"center",marginBottom:32}}>
+<h1 style={{fontSize:28,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.02em"}}>STICKS</h1>
+<p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:4}}>Who's playing?</p>
+</div>
+<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+{profiles.map(p=><Crd key={p.id} T={T} onClick={()=>onSelect(p.id)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:14,padding:"16px 18px"}}>
+<Avatar name={p.name} color={p.color} size={44}/>
+<div style={{flex:1}}>
+<div style={{color:T.tx,fontSize:16,fontWeight:600,fontFamily:F}}>{p.name}</div>
+<div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{getCourse(p.homeCourse).name}{p.goal?" \u00b7 Goal: "+p.goal:""}</div>
+</div>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.td} strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+</Crd>)}
+</div>
+<Btn v="secondary" T={T} onClick={onAdd}>Add Player</Btn>
+</div>;
 }
-
-function Rounds({rounds,onDel,T,onToggle}){
-  if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle}/><div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>No rounds yet</p></div></div>;
-  return <div><Hdr title="Rounds" sub={`${rounds.length} recorded`} T={T} onToggleTheme={onToggle}/><div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()} · {r.holes.length}h</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:`1px solid ${T.bdr}`}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt} putts</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>CR {r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>SR {r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
+function ProfileScreen({profile,rounds,onEdit,onSwitch,T,onToggle}){
+const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes.length===18);
+const home=getCourse(profile.homeCourse);
+return <div>
+<Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
+<Crd T={T} style={{marginBottom:10,textAlign:"center",paddingTop:20,paddingBottom:20}}>
+<div style={{display:"flex",justifyContent:"center"}}><Avatar name={profile.name} color={profile.color} size={64}/></div>
+<div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:F,marginTop:10}}>{profile.name}</div>
+<div style={{fontSize:12,color:T.tm,fontFamily:F,marginTop:4}}>{home.name}</div>
+<div style={{display:"flex",justifyContent:"center",gap:24,marginTop:14,paddingTop:14,borderTop:"1px solid "+T.bdr}}>
+<St label="Rounds" value={done.length} small T={T}/>
+<St label="Handicap" value={hcp!=null?hcp:"\u2014"} small T={T}/>
+<St label="Goal" value={profile.goal||"\u2014"} small T={T}/>
+</div>
+{hcp!=null&&profile.goal&&<div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:hcp<=profile.goal?T.gd:T.od,border:"1px solid "+(hcp<=profile.goal?T.gb:T.o+"22")}}>
+<div style={{fontSize:12,fontWeight:600,color:hcp<=profile.goal?T.g:T.o,fontFamily:F}}>
+{hcp<=profile.goal?"\u2705 Goal reached! Handicap "+hcp+" vs goal "+profile.goal:"\u{1F3AF} "+Math.round((hcp-profile.goal)*10)/10+" strokes to go"}
+</div></div>}
+</Crd>
+<Crd T={T} style={{marginBottom:8}}>
+<div style={{display:"flex",flexDirection:"column",gap:8}}>
+<Btn v="secondary" T={T} onClick={onEdit}>Edit Profile</Btn>
+<Btn v="ghost" T={T} onClick={onSwitch}>Switch Player</Btn>
+</div>
+</Crd>
+<div style={{textAlign:"center",padding:"20px 0"}}><div style={{fontSize:10,color:T.td,fontFamily:F}}>Member since {new Date(profile.created).toLocaleDateString()}</div></div>
+</div></div>;
 }
-
-function Bag({rounds,T,onToggle}){
-  const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
-  return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle}/><div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>Track yardage to see club averages</p></div>:stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n} shot{s.n!==1?"s":""}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min}–{s.max}</div></div></div><div style={{marginTop:8,height:3,background:"rgba(128,128,128,0.06)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${T.g}66,${T.g})`,width:`${Math.min(100,s.avg/300*100)}%`,transition:"width 0.4s"}}/></div></Crd>)}</div></div>;
+function Dashboard({rounds,T,onToggle,profile}){
+const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes.length===18);const rec=done.slice(-10);
+const avg=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.sc||0),0),0)/rec.length*10)/10:null;
+const avgP=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.pt||0),0),0)/rec.length*10)/10:null;
+const ah=done.flatMap(r=>r.holes);
+const girP=ah.length?Math.round(ah.filter(h=>h.gir).length/ah.length*100):null;
+const fwT=ah.filter(h=>h.par>3).length;const fwP=fwT?Math.round(ah.filter(h=>h.fw==="hit").length/fwT*100):null;
+const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0),0))):null;
+const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
+const totH=Object.values(dist).reduce((s,v)=>s+v,0);
+if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"80px 20px",textAlign:"center"}}><div style={{width:56,height:56,borderRadius:14,background:T.gd,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg></div><h2 style={{color:T.tx,fontSize:17,fontWeight:600,margin:"0 0 6px",fontFamily:F}}>No rounds yet</h2><p style={{color:T.tm,fontSize:13,fontFamily:F}}>Start tracking from the Play tab</p></div></div>;
+return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
+<Crd T={T} style={{marginBottom:8,background:"linear-gradient(135deg,"+T.gd+","+T.card+")",border:"1px solid "+T.gb}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:F,fontWeight:700,marginBottom:4}}>Handicap</div><div style={{fontSize:40,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{hcp!=null?hcp:"\u2014"}</div>{hcp==null&&<div style={{fontSize:11,color:T.td,marginTop:6,fontFamily:F}}>Need 5+ full rounds</div>}</div></Crd>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
+{totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
+{rec.length>0&&<Crd T={T}><Lbl T={T}>Recent</Lbl>{rec.slice().reverse().slice(0,5).map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid "+T.bdr}}><div><div style={{color:T.tx,fontSize:13,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div>;})}</Crd>}
+</div></div>;
 }
-
+function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile}){
+const[courseId,setCourseId]=useState("goat_hill");
+const[tee,setTee]=useState(null);
+const[cur,setCur]=useState(0);
+const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});
+const[shots,setShots]=useState([]);
+const[marking,setMarking]=useState(false);
+const[history,setHistory]=useState([]);
+const gps=useGPS();
+const course=active?getCourse(active.courseId):getCourse(courseId);
+const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];
+const selTee=tee||defaultTee;
+useEffect(()=>{setTee(null);},[courseId]);
+useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[active?active.id:null]);
+useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?active.id:null]);
+useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
+useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
+const pushUndo=()=>setHistory(p=>[...p,{...h}]);
+const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
+const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#34d399",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
+if(!active){
+const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
+return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Course</Lbl>
+<div style={{display:"flex",flexDirection:"column",gap:6}}>
+{COURSES.map(c=>{const a=courseId===c.id;return <button key={c.id} onClick={()=>setCourseId(c.id)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,transition:"all 0.12s",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div><div style={{fontSize:14,fontWeight:700}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{c.loc}</div></div>
+<div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
+</button>;})}
+</div></Crd>
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl>
+<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}
+</div>
+<div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:"1px solid "+T.bdr}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div>
+</Crd>
+<Btn T={T} onClick={()=>onStart({id:genId(),courseName:course.name,courseId:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
+</div></div>;
+}
+const ed=cur<active.holes.length,hn=cur+1;
+const ts=active.holes.reduce((s,x)=>s+(x.sc||0),0),tp=active.holes.reduce((s,x)=>s+(x.par||0),0);
+const teeKey=active.tee||Object.keys(course.tees)[0];
+const ty=course.tees[teeKey].y,hy=ty[cur],hp=course.pars[cur],ht=course.tips[cur];
+const svHole=()=>{const d={hole:hn,par:h.par||hp,sc:h.sc||(h.par||hp),pt:h.pt,cl:h.cl,yd:h.yd?parseInt(h.yd):hy,fw:h.fw,gir:h.gir,shots:shots};const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
+const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
+return <div>
+<Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
+<div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
+<div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:"1px solid "+T.bdr}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&<St label="To Green" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}</div>
+<Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
+{!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
+{gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>Enable location services</div>}
+<button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":"Mark Shot "+(shots.length+1)}</button>
+{shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen+" yd to green"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
+</Crd>
+<ShotMap shots={shots} holeIdx={cur} courseId={active.courseId} theme={T}/>
+{ht&&<div style={{background:"rgba(128,128,128,0.03)",borderRadius:8,padding:"10px 12px",marginBottom:10,borderLeft:"2px solid "+T.gb}}><div style={{fontSize:11,color:T.tm,fontFamily:F,lineHeight:1.6}}>{ht}</div></div>}
+<Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2212"}</button><div style={{fontSize:42,fontWeight:700,color:T.tx,fontFamily:M,minWidth:52,textAlign:"center"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Putts</Lbl><div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(p=><Pill key={p} active={h.pt===p} T={T} onClick={()=>{pushUndo();setH(s=>({...s,pt:p}));}}>{p}</Pill>)}</div></Crd>
+<Crd T={T} style={{marginBottom:10}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><Lbl T={T}>Club</Lbl><select value={h.cl} onChange={e=>{pushUndo();setH(s=>({...s,cl:e.target.value}));}} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none"}}><option value="">Select</option>{CLUBS.map(c=><option key={c} value={c}>{c}</option>)}</select></div><div><Lbl T={T}>Yardage</Lbl><input type="number" inputMode="numeric" value={h.yd} onChange={e=>{pushUndo();setH(s=>({...s,yd:e.target.value}));}} placeholder={""+hy} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/></div></div></Crd>
+{(h.par||hp)>3&&<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Fairway</Lbl><div style={{display:"flex",gap:6}}>{[{v:"hit",l:"Hit"},{v:"left",l:"Left"},{v:"right",l:"Right"}].map(f=><Pill key={f.v} active={h.fw===f.v} color={f.v==="hit"?T.g:T.o} bg={f.v==="hit"?T.gd:T.od} T={T} onClick={()=>{pushUndo();setH(s=>({...s,fw:s.fw===f.v?"":f.v}));}}>{f.l}</Pill>)}</div></Crd>}
+<Crd T={T} style={{marginBottom:10}}><button onClick={()=>{pushUndo();setH(s=>({...s,gir:!s.gir}));}} style={{width:"100%",padding:"10px",borderRadius:8,background:h.gir?T.gd:"transparent",border:"1px solid "+(h.gir?T.gb:T.bdr),color:h.gir?T.g:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>{h.gir?"GIR \u2014 Yes":"Green in Regulation"}</button></Crd>
+<Btn T={T} onClick={svHole}>{ed?"Update Hole":hn===18?"Save Final Hole":"Save Hole "+hn}</Btn>
+{active.holes.length>0&&<Crd T={T} style={{marginTop:10}}><Lbl T={T}>Scorecard</Lbl><Scorecard holes={active.holes} onTap={setCur} T={T}/></Crd>}
+</div></div>;
+}
+function Rounds({rounds,onDel,T,onToggle,profile}){
+if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>No rounds yet</p></div></div>;
+return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
+}
+function Bag({rounds,T,onToggle,profile}){
+const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
+return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>Track yardage to see club averages</p></div>
+:stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n+" shot"+(s.n!==1?"s":"")}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min+"\u2013"+s.max}</div></div></div><div style={{marginTop:8,height:3,background:"rgba(128,128,128,0.06)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:"linear-gradient(90deg,"+T.g+"66,"+T.g+")",width:Math.min(100,s.avg/300*100)+"%",transition:"width 0.4s"}}/></div></Crd>)}</div></div>;
+}
 function App(){
-  const[tab,setTab]=useState("dashboard");
-  const[rounds,setRounds]=useState([]);
-  const[active,setActive]=useState(null);
-  const[ok,setOk]=useState(false);
-  const[isDark,setIsDark]=useState(true);
-  const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
-  useEffect(()=>{setRounds(ld("r",[]));setActive(ld("a",null));const t=ld("theme","dark");setIsDark(t==="dark");setOk(true);},[]);
-  useEffect(()=>{if(ok){sv("r",rounds);sv("a",active);sv("theme",isDark?"dark":"light");}},[rounds,active,ok,isDark]);
-  const start=useCallback(r=>{setActive(r);setTab("play");},[]);
-  const update=useCallback(r=>setActive(r),[]);
-  const finish=useCallback(()=>{if(active?.holes.length>0)setRounds(p=>[...p,active]);setActive(null);setTab("dashboard");},[active]);
-  const del=useCallback(id=>setRounds(p=>p.filter(r=>r.id!==id)),[]);
-  if(!ok)return null;
-  return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
-    {tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle}/>}
-    {tab==="play"&&<Play active={active} onStart={start} onUpdate={update} onFinish={finish} T={T} onToggle={toggle}/>}
-    {tab==="rounds"&&<Rounds rounds={rounds} onDel={del} T={T} onToggle={toggle}/>}
-    {tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle}/>}
-    <TabBar active={tab} onChange={setTab} T={T}/>
-  </div>;
+const[view,setView]=useState("loading");
+const[tab,setTab]=useState("dashboard");
+const[profiles,setProfiles]=useState([]);
+const[activeId,setActiveId]=useState(null);
+const[rounds,setRounds]=useState([]);
+const[active,setActive]=useState(null);
+const[isDark,setIsDark]=useState(true);
+const[editingProfile,setEditingProfile]=useState(null);
+const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
+const profile=profiles.find(p=>p.id===activeId)||null;
+useEffect(()=>{
+const ps=ld("profiles",[]);
+const aid=ld("activePlayer",null);
+const t=ld("theme","dark");
+setIsDark(t==="dark");
+setProfiles(ps);
+if(ps.length===0){setView("setup");}
+else if(ps.length===1){setActiveId(ps[0].id);setView("app");}
+else if(aid&&ps.find(p=>p.id===aid)){setActiveId(aid);setView("app");}
+else{setView("picker");}
+},[]);
+useEffect(()=>{
+if(!activeId)return;
+setRounds(ld("r_"+activeId,[]));
+setActive(ld("a_"+activeId,null));
+},[activeId]);
+useEffect(()=>{if(profiles.length>0)sv("profiles",profiles);},[profiles]);
+useEffect(()=>{if(activeId){sv("activePlayer",activeId);sv("r_"+activeId,rounds);sv("a_"+activeId,active);}sv("theme",isDark?"dark":"light");},[rounds,active,activeId,isDark]);
+const saveProfile=(p)=>{
+const idx=profiles.findIndex(x=>x.id===p.id);
+let np;
+if(idx>=0){np=[...profiles];np[idx]=p;}else{np=[...profiles,p];}
+setProfiles(np);setActiveId(p.id);sv("profiles",np);sv("activePlayer",p.id);
+if(!ld("r_"+p.id,null)){sv("r_"+p.id,[]);sv("a_"+p.id,null);}
+setRounds(ld("r_"+p.id,[]));setActive(ld("a_"+p.id,null));
+setEditingProfile(null);setView("app");
+};
+const switchPlayer=()=>{if(profiles.length>1)setView("picker");else setView("setup");};
+const start=useCallback(r=>{setActive(r);setTab("play");},[]);
+const update=useCallback(r=>setActive(r),[]);
+const finish=useCallback(()=>{if(active&&active.holes.length>0)setRounds(p=>[...p,active]);setActive(null);setTab("dashboard");},[active]);
+const del=useCallback(id=>setRounds(p=>p.filter(r=>r.id!==id)),[]);
+if(view==="loading")return null;
+if(view==="setup"||editingProfile)return <ProfileSetup T={T} existing={editingProfile} onSave={saveProfile}/>;
+if(view==="picker")return <ProfilePicker T={T} profiles={profiles} onSelect={id=>{setActiveId(id);setView("app");}} onAdd={()=>setView("setup")}/>;
+if(!profile)return null;
+return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
+{tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="play"&&<Play active={active} onStart={start} onUpdate={update} onFinish={finish} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="rounds"&&<Rounds rounds={rounds} onDel={del} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="profile"&&<ProfileScreen profile={profile} profiles={profiles} rounds={rounds} T={T} onToggle={toggle} onEdit={()=>setEditingProfile(profile)} onSwitch={switchPlayer}/>}
+<TabBar active={tab} onChange={setTab} T={T}/>
+</div>;
 }
-
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-
-<script>
-// Register service worker for PWA
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-}
-</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}</script>
 </body>
 </html>
