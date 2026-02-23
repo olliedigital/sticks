@@ -11,6 +11,8 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>STICKS</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body,#root{height:100%;width:100%;overflow:hidden;}
@@ -20,6 +22,8 @@ input,select,button{font-family:'Outfit',sans-serif;-webkit-appearance:none;}
 input::placeholder{color:#3f3f46;}
 select{color:#e4e4e7;}
 select option{background:#111114;color:#e4e4e7;}
+.mapboxgl-map{border-radius:10px !important;}
+.mapboxgl-ctrl-attrib,.mapboxgl-ctrl-logo{display:none !important;}
 </style>
 </head>
 <body>
@@ -31,6 +35,7 @@ select option{background:#111114;color:#e4e4e7;}
 const{useState,useEffect,useCallback,useMemo,useRef}=React;
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
 const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
+const MAPBOX_TOKEN="pk.eyJ1IjoibWF4aW1hbiIsImEiOiJjbWx6cnUzNmQwYWtwM2dvaTE5cmsyZG1sIn0.77fZyu9P9Jtdm0dIMaq8KA";
 const COURSES=[
 {id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,greens:[{lat:33.19815,lng:-117.35845},{lat:33.19870,lng:-117.35755},{lat:33.19785,lng:-117.35640},{lat:33.19685,lng:-117.35555},{lat:33.19610,lng:-117.35625},{lat:33.19560,lng:-117.35720},{lat:33.19520,lng:-117.35810},{lat:33.19435,lng:-117.35895},{lat:33.19505,lng:-117.35960},{lat:33.19580,lng:-117.36050},{lat:33.19650,lng:-117.36130},{lat:33.19730,lng:-117.36050},{lat:33.19810,lng:-117.36130},{lat:33.19870,lng:-117.36020},{lat:33.19780,lng:-117.35870},{lat:33.19680,lng:-117.35770},{lat:33.19610,lng:-117.35855},{lat:33.19700,lng:-117.35930}],tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green \u2014 aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight \u2014 keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."]},
 {id:"encinitas_ranch",name:"Encinitas Ranch",loc:"Encinitas, CA",par:72,holes:18,greens:[{lat:33.0678,lng:-117.1575},{lat:33.0672,lng:-117.1562},{lat:33.0660,lng:-117.1548},{lat:33.0650,lng:-117.1565},{lat:33.0642,lng:-117.1582},{lat:33.0652,lng:-117.1598},{lat:33.0665,lng:-117.1610},{lat:33.0680,lng:-117.1618},{lat:33.0692,lng:-117.1602},{lat:33.0700,lng:-117.1585},{lat:33.0712,lng:-117.1568},{lat:33.0705,lng:-117.1552},{lat:33.0695,lng:-117.1538},{lat:33.0682,lng:-117.1525},{lat:33.0670,lng:-117.1540},{lat:33.0660,lng:-117.1558},{lat:33.0672,lng:-117.1572},{lat:33.0685,lng:-117.1588}],tees:{blue:{r:71.0,s:126,y:[347,192,527,342,354,160,365,407,497,442,540,169,398,433,373,361,185,495]},green:{r:69.3,s:122,y:[347,168,527,342,300,160,336,330,497,407,540,169,370,375,373,324,160,495]},white:{r:67.5,s:117,y:[297,168,522,285,300,139,336,330,470,407,487,130,370,375,320,324,160,470]},gold:{r:64.5,s:110,y:[275,122,495,245,250,120,315,290,430,357,440,110,333,347,255,282,130,439]}},pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],tips:["Forgiving opener. Wide fairway, avoid the right bunker. Mid-iron approach.","All carry over a canyon. Club up if wind is in your face.","Reachable in two for long hitters. Layup to 100 leaves a wedge in.","Dogleg left. Aim right-center off the tee. Green slopes back to front.","Elevated tee with ocean views. Favor the left side of the fairway.","Short par 3 but don't be short \u2014 bunkers guard the front.","Tight driving hole. Keep it in play, the green is well-bunkered.","Longest par 4 on the front. Two solid shots to reach this elevated green.","Risk-reward par 5. Lay up short of the cross bunkers or go for it.","Tough opener to the back nine. Dogleg right, big hitters can cut the corner.","Longest hole on the course. Three good shots to get home.","Downhill par 3. Take less club than you think, green runs away from you.","Narrow fairway with canyon left. Play to the right side off the tee.","Long par 4 with elevation change. Driver to the flat spot, then mid-iron in.","Scenic hole along the bluffs. Stay left off the tee, green is wide but shallow.","Back-to-front slope on the green. Below the hole is key here.","Over a canyon to a well-guarded green. Check the pin position before choosing club.","Great finishing par 5. Reachable in two but water guards the green. Solid layup works."]},
@@ -53,23 +58,91 @@ const F="'Outfit',sans-serif",M="'JetBrains Mono',monospace";
 const dark={bg:"#09090b",card:"#111114",bdr:"rgba(255,255,255,0.05)",g:"#34d399",gd:"rgba(52,211,153,0.07)",gb:"rgba(52,211,153,0.12)",tx:"#e4e4e7",tm:"#71717a",td:"#3f3f46",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
 const light={bg:"#f4f4f5",card:"#ffffff",bdr:"rgba(0,0,0,0.06)",g:"#059669",gd:"rgba(5,150,105,0.06)",gb:"rgba(5,150,105,0.12)",tx:"#18181b",tm:"#71717a",td:"#a1a1aa",r:"#dc2626",o:"#ea580c",b:"#2563eb",y:"#d97706",rd:"rgba(220,38,38,0.06)",od:"rgba(234,88,12,0.06)",bd:"rgba(37,99,235,0.06)",mapBg:"#e8f5e9",mapGreen:"#2e7d32",mapShot:"#e65100",mapLine:"rgba(230,81,0,0.4)"};
 const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
-function ShotMap({shots,holeIdx,courseId,theme:T}){
-if(!shots||shots.length===0)return null;
+function ShotMap({shots,holeIdx,courseId,theme:T,livePos}){
+const mapRef=useRef(null);
+const mapInst=useRef(null);
+const markersRef=useRef([]);
+const liveMarkerRef=useRef(null);
 const course=getCourse(courseId),green=course.greens[holeIdx];
-const allPts=[...shots.map(s=>({lat:s.lat,lng:s.lng})),{lat:green.lat,lng:green.lng}];
-const minLat=Math.min(...allPts.map(p=>p.lat)),maxLat=Math.max(...allPts.map(p=>p.lat));
-const minLng=Math.min(...allPts.map(p=>p.lng)),maxLng=Math.max(...allPts.map(p=>p.lng));
-const padLat=(maxLat-minLat)*0.25||0.0003,padLng=(maxLng-minLng)*0.25||0.0003;
-const bMinLat=minLat-padLat,bMaxLat=maxLat+padLat,bMinLng=minLng-padLng,bMaxLng=maxLng+padLng;
-const W=320,H=200,toX=lng=>((lng-bMinLng)/(bMaxLng-bMinLng))*W,toY=lat=>H-((lat-bMinLat)/(bMaxLat-bMinLat))*H;
-const gx=toX(green.lng),gy=toY(green.lat);
-return(<div style={{marginBottom:10}}><div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>Shot Map</div>
-<svg width="100%" viewBox={"0 0 "+W+" "+H} style={{borderRadius:10,background:T.mapBg,border:"1px solid "+T.bdr}}>
-<circle cx={gx} cy={gy} r={12} fill={T.mapGreen} opacity={0.3}/><circle cx={gx} cy={gy} r={5} fill={T.mapGreen} opacity={0.7}/>
-<line x1={gx} y1={gy-5} x2={gx} y2={gy-18} stroke={T.tx} strokeWidth={1.5}/><polygon points={gx+","+(gy-18)+" "+(gx+8)+","+(gy-14)+" "+gx+","+(gy-10)} fill={T.r} opacity={0.9}/>
-{shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat),nx=i<shots.length-1?toX(shots[i+1].lng):gx,ny=i<shots.length-1?toY(shots[i+1].lat):gy;return <line key={i} x1={sx} y1={sy} x2={nx} y2={ny} stroke={T.mapLine} strokeWidth={1.5} strokeDasharray={i===shots.length-1?"4 3":"none"}/>;})}
-{shots.map((s,i)=>{const sx=toX(s.lng),sy=toY(s.lat);return <g key={"d"+i}><circle cx={sx} cy={sy} r={8} fill={T.mapShot} opacity={0.2}/><circle cx={sx} cy={sy} r={4} fill={T.mapShot}/><text x={sx} y={sy+3.5} textAnchor="middle" fill={T.bg} fontSize={6} fontWeight={700} fontFamily={M}>{i+1}</text>{s.dist&&<text x={sx+(i%2===0?12:-12)} y={sy-8} textAnchor="middle" fill={T.tm} fontSize={7} fontFamily={M}>{s.dist}yd</text>}</g>;})}
-</svg></div>);
+const hasShots=shots&&shots.length>0;
+
+// Initialize map on hole/course change
+useEffect(()=>{
+if(!mapRef.current)return;
+if(mapInst.current){mapInst.current.remove();mapInst.current=null;}
+markersRef.current=[];liveMarkerRef.current=null;
+mapboxgl.accessToken=MAPBOX_TOKEN;
+const map=new mapboxgl.Map({
+container:mapRef.current,
+style:"mapbox://styles/mapbox/satellite-v9",
+center:[green.lng,green.lat],
+zoom:17,
+interactive:true,
+attributionControl:false,
+});
+mapInst.current=map;
+map.on("load",()=>{
+const gEl=document.createElement("div");
+gEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;box-shadow:0 0 8px rgba(34,197,94,0.6)"></div><div style="width:2px;height:14px;background:#fff;margin-top:-2px"></div><div style="font-size:8px;font-weight:700;color:#22c55e;text-shadow:0 0 4px rgba(0,0,0,0.8);font-family:sans-serif;margin-top:1px">\u26f3</div></div>';
+new mapboxgl.Marker({element:gEl,anchor:"bottom"}).setLngLat([green.lng,green.lat]).addTo(map);
+});
+return()=>{if(mapInst.current){mapInst.current.remove();mapInst.current=null;}};
+},[holeIdx,courseId]);
+
+// Update shots overlay
+useEffect(()=>{
+const map=mapInst.current;
+if(!map||!map.loaded())return;
+markersRef.current.forEach(m=>m.remove());markersRef.current=[];
+if(map.getLayer("shotline-bg"))map.removeLayer("shotline-bg");
+if(map.getLayer("shotline"))map.removeLayer("shotline");
+if(map.getLayer("lastline"))map.removeLayer("lastline");
+if(map.getSource("shotline"))map.removeSource("shotline");
+if(map.getSource("lastline"))map.removeSource("lastline");
+if(!hasShots)return;
+const coords=shots.map(s=>[s.lng,s.lat]);
+coords.push([green.lng,green.lat]);
+map.addSource("shotline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:coords}}});
+map.addLayer({id:"shotline-bg",type:"line",source:"shotline",paint:{"line-color":"#000","line-width":4,"line-opacity":0.3}});
+map.addLayer({id:"shotline",type:"line",source:"shotline",paint:{"line-color":"#f59e0b","line-width":2.5,"line-opacity":0.9}});
+if(coords.length>=2){
+const lastSeg=[coords[coords.length-2],coords[coords.length-1]];
+map.addSource("lastline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:lastSeg}}});
+map.addLayer({id:"lastline",type:"line",source:"lastline",paint:{"line-color":"#f59e0b","line-width":2,"line-opacity":0.7,"line-dasharray":[3,2]}});
+}
+shots.forEach((s,i)=>{
+const el=document.createElement("div");
+const dist=s.dist?s.dist+"yd":"";
+el.innerHTML='<div style="position:relative;display:flex;flex-direction:column;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:#f59e0b;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;font-family:monospace;box-shadow:0 1px 4px rgba(0,0,0,0.5)">'+(i+1)+'</div>'+(dist?'<div style="background:rgba(0,0,0,0.75);color:#f59e0b;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-top:2px;font-family:monospace;white-space:nowrap">'+dist+'</div>':'')+'</div>';
+const m=new mapboxgl.Marker({element:el,anchor:"center"}).setLngLat([s.lng,s.lat]).addTo(map);
+markersRef.current.push(m);
+});
+const bounds=new mapboxgl.LngLatBounds();
+shots.forEach(s=>bounds.extend([s.lng,s.lat]));
+bounds.extend([green.lng,green.lat]);
+map.fitBounds(bounds,{padding:50,maxZoom:18});
+},[shots?shots.length:0,holeIdx]);
+
+// Update live position marker
+useEffect(()=>{
+const map=mapInst.current;
+if(!map||!livePos)return;
+if(liveMarkerRef.current){liveMarkerRef.current.setLngLat([livePos.lng,livePos.lat]);return;}
+const lEl=document.createElement("div");
+lEl.innerHTML='<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 12px rgba(59,130,246,0.6),0 0 24px rgba(59,130,246,0.3)"></div>';
+liveMarkerRef.current=new mapboxgl.Marker({element:lEl,anchor:"center"}).setLngLat([livePos.lng,livePos.lat]).addTo(map);
+if(!hasShots){
+const bounds=new mapboxgl.LngLatBounds();
+bounds.extend([green.lng,green.lat]);
+bounds.extend([livePos.lng,livePos.lat]);
+map.fitBounds(bounds,{padding:50,maxZoom:18});
+}
+},[livePos?livePos.lat:0,livePos?livePos.lng:0]);
+
+return(<div style={{marginBottom:10}}>
+<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>{hasShots?"Shot Map":"Course Map"}</div>
+<div ref={mapRef} style={{width:"100%",height:220,borderRadius:10,border:"1px solid "+T.bdr,overflow:"hidden"}}/>
+</div>);
 }
 function Scorecard({holes,onTap,T}){
 const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);
@@ -236,6 +309,7 @@ return <div>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
 <div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:"1px solid "+T.bdr}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&<St label="To Green" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}</div>
+<ShotMap shots={shots} holeIdx={cur} courseId={active.courseId} theme={T} livePos={gps.pos}/>
 <Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
 {!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
@@ -243,7 +317,6 @@ return <div>
 <button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":"Mark Shot "+(shots.length+1)}</button>
 {shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen+" yd to green"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
 </Crd>
-<ShotMap shots={shots} holeIdx={cur} courseId={active.courseId} theme={T}/>
 {ht&&<div style={{background:"rgba(128,128,128,0.03)",borderRadius:8,padding:"10px 12px",marginBottom:10,borderLeft:"2px solid "+T.gb}}><div style={{fontSize:11,color:T.tm,fontFamily:F,lineHeight:1.6}}>{ht}</div></div>}
 <Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2212"}</button><div style={{fontSize:42,fontWeight:700,color:T.tx,fontFamily:M,minWidth:52,textAlign:"center"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
 <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Putts</Lbl><div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(p=><Pill key={p} active={h.pt===p} T={T} onClick={()=>{pushUndo();setH(s=>({...s,pt:p}));}}>{p}</Pill>)}</div></Crd>
