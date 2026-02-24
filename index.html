@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body,#root{height:100%;width:100%;overflow:hidden;}
@@ -24,6 +25,7 @@ select{color:#e4e4e7;}
 select option{background:#111114;color:#e4e4e7;}
 .mapboxgl-map{border-radius:10px !important;}
 .mapboxgl-ctrl-attrib,.mapboxgl-ctrl-logo{display:none !important;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -33,6 +35,12 @@ select option{background:#111114;color:#e4e4e7;}
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel">
 const{useState,useEffect,useCallback,useMemo,useRef}=React;
+
+// Supabase client
+const SUPABASE_URL="https://adcybagoehsbsljxbtgu.supabase.co";
+const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkY3liYWdvZWhzYnNsanhidGd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4ODUyNzQsImV4cCI6MjA4NzQ2MTI3NH0.m2NaL-ZXhA4c3jkZrTlZJ2BgyVr7OWsYw6M3lUVxqOc";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
 const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 const MAPBOX_TOKEN="pk.eyJ1IjoibWF4aW1hbiIsImEiOiJjbWx6cnUzNmQwYWtwM2dvaTE5cmsyZG1sIn0.77fZyu9P9Jtdm0dIMaq8KA";
@@ -43,10 +51,8 @@ const COURSES=[
 ];
 const getCourse=(id)=>COURSES.find(c=>c.id===id)||COURSES[0];
 const genId=()=>Math.random().toString(36).substr(2,9);
-const ld=(k,d)=>{try{const r=localStorage.getItem("stx_"+k);return r?JSON.parse(r):d;}catch(e){return d;}};
-const sv=(k,v)=>{try{localStorage.setItem("stx_"+k,JSON.stringify(v));}catch(e){}};
 const gpsDist=(a,b,c,d)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(c-a),dn=tr(d-b),s=Math.sin(dl/2)**2+Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dn/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))*1.09361);};
-const calcHcp=(rounds)=>{const v=rounds.filter(r=>r.holes.length===18&&r.cr&&r.sr);if(v.length<5)return null;const d=v.map(r=>((r.holes.reduce((s,h)=>s+(h.sc||0),0)-r.cr)*113)/r.sr).sort((a,b)=>a-b);const n=Math.max(1,Math.floor(d.length*0.4));return Math.round(d.slice(0,n).reduce((s,x)=>s+x,0)/n*10)/10;};
+const calcHcp=(rounds)=>{const v=rounds.filter(r=>r.holes&&r.holes.length===18&&r.cr&&r.sr);if(v.length<5)return null;const d=v.map(r=>((r.holes.reduce((s,h)=>s+(h.sc||0),0)-r.cr)*113)/r.sr).sort((a,b)=>a-b);const n=Math.max(1,Math.floor(d.length*0.4));return Math.round(d.slice(0,n).reduce((s,x)=>s+x,0)/n*10)/10;};
 const useGPS=()=>{
 const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);
 const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);ref.current=navigator.geolocation.watchPosition(p=>setPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:10000});},[]);
@@ -57,104 +63,96 @@ return{pos,err,on,start,stop,once};
 const F="'Outfit',sans-serif",M="'JetBrains Mono',monospace";
 const dark={bg:"#09090b",card:"#111114",bdr:"rgba(255,255,255,0.05)",g:"#34d399",gd:"rgba(52,211,153,0.07)",gb:"rgba(52,211,153,0.12)",tx:"#e4e4e7",tm:"#71717a",td:"#3f3f46",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
 const light={bg:"#f4f4f5",card:"#ffffff",bdr:"rgba(0,0,0,0.06)",g:"#059669",gd:"rgba(5,150,105,0.06)",gb:"rgba(5,150,105,0.12)",tx:"#18181b",tm:"#71717a",td:"#a1a1aa",r:"#dc2626",o:"#ea580c",b:"#2563eb",y:"#d97706",rd:"rgba(220,38,38,0.06)",od:"rgba(234,88,12,0.06)",bd:"rgba(37,99,235,0.06)",mapBg:"#e8f5e9",mapGreen:"#2e7d32",mapShot:"#e65100",mapLine:"rgba(230,81,0,0.4)"};
+// ==================== AUTH SCREENS ====================
+const Spinner=({T,size=20})=><div style={{width:size,height:size,border:"2px solid "+T.bdr,borderTop:"2px solid "+T.g,borderRadius:"50%",animation:"spin 0.6s linear infinite",margin:"0 auto"}}/>;
+
+function AuthScreen({onAuth,T}){
+const[mode,setMode]=useState("login"); // login, signup, reset
+const[email,setEmail]=useState("");
+const[password,setPassword]=useState("");
+const[name,setName]=useState("");
+const[loading,setLoading]=useState(false);
+const[error,setError]=useState("");
+const[msg,setMsg]=useState("");
+
+const handleLogin=async()=>{
+setLoading(true);setError("");
+const{data,error:e}=await sb.auth.signInWithPassword({email,password});
+if(e){setError(e.message);setLoading(false);return;}
+onAuth(data.user);
+};
+const handleSignup=async()=>{
+if(!name.trim()){setError("Name is required");return;}
+if(password.length<6){setError("Password must be at least 6 characters");return;}
+setLoading(true);setError("");
+const{data,error:e}=await sb.auth.signUp({email,password,options:{data:{name:name.trim()}}});
+if(e){setError(e.message);setLoading(false);return;}
+if(data.user&&!data.user.confirmed_at&&!data.session){
+setMsg("Check your email for a confirmation link!");setLoading(false);setMode("login");return;
+}
+onAuth(data.user);
+};
+const handleReset=async()=>{
+setLoading(true);setError("");
+const{error:e}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+if(e){setError(e.message);setLoading(false);return;}
+setMsg("Password reset link sent to your email");setLoading(false);setMode("login");
+};
+const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset;
+const inputS={width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:10,padding:"13px 16px",color:T.tx,fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10};
+return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
+<div style={{textAlign:"center",marginBottom:36}}>
+<div style={{fontSize:42,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.04em"}}>STICKS</div>
+<p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:6}}>Track your game. Know your numbers.</p>
+</div>
+<div style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:14,padding:"24px 20px",maxWidth:380,margin:"0 auto",width:"100%"}}>
+<div style={{display:"flex",gap:4,marginBottom:20,background:"rgba(128,128,128,0.04)",borderRadius:8,padding:3}}>
+{[{id:"login",l:"Log In"},{id:"signup",l:"Sign Up"}].map(t=><button key={t.id} onClick={()=>{setMode(t.id);setError("");setMsg("");}} style={{flex:1,padding:"9px 0",borderRadius:6,border:"none",cursor:"pointer",background:mode===t.id?T.gd:"transparent",color:mode===t.id?T.g:T.td,fontSize:13,fontWeight:600,fontFamily:F,transition:"all 0.15s"}}>{t.l}</button>)}
+</div>
+{mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
+<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" style={inputS} autoComplete="email"/>
+{mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
+{error&&<div style={{color:T.r,fontSize:12,fontFamily:F,marginBottom:8,padding:"8px 10px",background:T.rd,borderRadius:6}}>{error}</div>}
+{msg&&<div style={{color:T.g,fontSize:12,fontFamily:F,marginBottom:8,padding:"8px 10px",background:T.gd,borderRadius:6}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"13px",borderRadius:10,background:T.g,color:T.bg,fontSize:14,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.6:1,marginTop:4}}>
+{loading?<Spinner T={{...T,g:T.bg,bdr:T.bg+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Account":"Send Reset Link"}
+</button>
+{mode==="login"&&<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:T.tm,fontSize:12,fontFamily:F,cursor:"pointer",marginTop:12,width:"100%",textAlign:"center"}}>Forgot password?</button>}
+{mode==="reset"&&<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:T.tm,fontSize:12,fontFamily:F,cursor:"pointer",marginTop:12,width:"100%",textAlign:"center"}}>Back to login</button>}
+</div>
+</div>;
+}
+// ==================== UI COMPONENTS ====================
 const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos}){
-const mapRef=useRef(null);
-const mapInst=useRef(null);
-const markersRef=useRef([]);
-const liveMarkerRef=useRef(null);
-const course=getCourse(courseId),green=course.greens[holeIdx];
-const hasShots=shots&&shots.length>0;
-
-// Initialize map on hole/course change
+const mapRef=useRef(null);const mapInst=useRef(null);const markersRef=useRef([]);const liveMarkerRef=useRef(null);
+const course=getCourse(courseId),green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
 useEffect(()=>{
-if(!mapRef.current)return;
-if(mapInst.current){mapInst.current.remove();mapInst.current=null;}
-markersRef.current=[];liveMarkerRef.current=null;
+if(!mapRef.current)return;if(mapInst.current){mapInst.current.remove();mapInst.current=null;}markersRef.current=[];liveMarkerRef.current=null;
 mapboxgl.accessToken=MAPBOX_TOKEN;
-const map=new mapboxgl.Map({
-container:mapRef.current,
-style:"mapbox://styles/mapbox/satellite-v9",
-center:[green.lng,green.lat],
-zoom:17,
-interactive:true,
-attributionControl:false,
-});
+const map=new mapboxgl.Map({container:mapRef.current,style:"mapbox://styles/mapbox/satellite-v9",center:[green.lng,green.lat],zoom:17,interactive:true,attributionControl:false});
 mapInst.current=map;
-map.on("load",()=>{
-const gEl=document.createElement("div");
-gEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;box-shadow:0 0 8px rgba(34,197,94,0.6)"></div><div style="width:2px;height:14px;background:#fff;margin-top:-2px"></div><div style="font-size:8px;font-weight:700;color:#22c55e;text-shadow:0 0 4px rgba(0,0,0,0.8);font-family:sans-serif;margin-top:1px">\u26f3</div></div>';
-new mapboxgl.Marker({element:gEl,anchor:"bottom"}).setLngLat([green.lng,green.lat]).addTo(map);
-});
+map.on("load",()=>{const gEl=document.createElement("div");gEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;box-shadow:0 0 8px rgba(34,197,94,0.6)"></div><div style="width:2px;height:14px;background:#fff;margin-top:-2px"></div><div style="font-size:8px;font-weight:700;color:#22c55e;text-shadow:0 0 4px rgba(0,0,0,0.8);font-family:sans-serif;margin-top:1px">\u26f3</div></div>';new mapboxgl.Marker({element:gEl,anchor:"bottom"}).setLngLat([green.lng,green.lat]).addTo(map);});
 return()=>{if(mapInst.current){mapInst.current.remove();mapInst.current=null;}};
 },[holeIdx,courseId]);
-
-// Update shots overlay
-useEffect(()=>{
-const map=mapInst.current;
-if(!map||!map.loaded())return;
-markersRef.current.forEach(m=>m.remove());markersRef.current=[];
-if(map.getLayer("shotline-bg"))map.removeLayer("shotline-bg");
-if(map.getLayer("shotline"))map.removeLayer("shotline");
-if(map.getLayer("lastline"))map.removeLayer("lastline");
-if(map.getSource("shotline"))map.removeSource("shotline");
-if(map.getSource("lastline"))map.removeSource("lastline");
-if(!hasShots)return;
-const coords=shots.map(s=>[s.lng,s.lat]);
-coords.push([green.lng,green.lat]);
-map.addSource("shotline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:coords}}});
-map.addLayer({id:"shotline-bg",type:"line",source:"shotline",paint:{"line-color":"#000","line-width":4,"line-opacity":0.3}});
-map.addLayer({id:"shotline",type:"line",source:"shotline",paint:{"line-color":"#f59e0b","line-width":2.5,"line-opacity":0.9}});
-if(coords.length>=2){
-const lastSeg=[coords[coords.length-2],coords[coords.length-1]];
-map.addSource("lastline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:lastSeg}}});
-map.addLayer({id:"lastline",type:"line",source:"lastline",paint:{"line-color":"#f59e0b","line-width":2,"line-opacity":0.7,"line-dasharray":[3,2]}});
-}
-shots.forEach((s,i)=>{
-const el=document.createElement("div");
-const dist=s.dist?s.dist+"yd":"";
-el.innerHTML='<div style="position:relative;display:flex;flex-direction:column;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:#f59e0b;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;font-family:monospace;box-shadow:0 1px 4px rgba(0,0,0,0.5)">'+(i+1)+'</div>'+(dist?'<div style="background:rgba(0,0,0,0.75);color:#f59e0b;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-top:2px;font-family:monospace;white-space:nowrap">'+dist+'</div>':'')+'</div>';
-const m=new mapboxgl.Marker({element:el,anchor:"center"}).setLngLat([s.lng,s.lat]).addTo(map);
-markersRef.current.push(m);
-});
-const bounds=new mapboxgl.LngLatBounds();
-shots.forEach(s=>bounds.extend([s.lng,s.lat]));
-bounds.extend([green.lng,green.lat]);
-map.fitBounds(bounds,{padding:50,maxZoom:18});
+useEffect(()=>{const map=mapInst.current;if(!map||!map.loaded())return;markersRef.current.forEach(m=>m.remove());markersRef.current=[];
+if(map.getLayer("shotline-bg"))map.removeLayer("shotline-bg");if(map.getLayer("shotline"))map.removeLayer("shotline");if(map.getLayer("lastline"))map.removeLayer("lastline");if(map.getSource("shotline"))map.removeSource("shotline");if(map.getSource("lastline"))map.removeSource("lastline");
+if(!hasShots)return;const coords=shots.map(s=>[s.lng,s.lat]);coords.push([green.lng,green.lat]);
+map.addSource("shotline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:coords}}});map.addLayer({id:"shotline-bg",type:"line",source:"shotline",paint:{"line-color":"#000","line-width":4,"line-opacity":0.3}});map.addLayer({id:"shotline",type:"line",source:"shotline",paint:{"line-color":"#f59e0b","line-width":2.5,"line-opacity":0.9}});
+if(coords.length>=2){const ls=[coords[coords.length-2],coords[coords.length-1]];map.addSource("lastline",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:ls}}});map.addLayer({id:"lastline",type:"line",source:"lastline",paint:{"line-color":"#f59e0b","line-width":2,"line-opacity":0.7,"line-dasharray":[3,2]}});}
+shots.forEach((s,i)=>{const el=document.createElement("div");const dist=s.dist?s.dist+"yd":"";el.innerHTML='<div style="position:relative;display:flex;flex-direction:column;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:#f59e0b;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;font-family:monospace;box-shadow:0 1px 4px rgba(0,0,0,0.5)">'+(i+1)+'</div>'+(dist?'<div style="background:rgba(0,0,0,0.75);color:#f59e0b;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-top:2px;font-family:monospace;white-space:nowrap">'+dist+'</div>':'')+'</div>';const m=new mapboxgl.Marker({element:el,anchor:"center"}).setLngLat([s.lng,s.lat]).addTo(map);markersRef.current.push(m);});
+const bounds=new mapboxgl.LngLatBounds();shots.forEach(s=>bounds.extend([s.lng,s.lat]));bounds.extend([green.lng,green.lat]);map.fitBounds(bounds,{padding:50,maxZoom:18});
 },[shots?shots.length:0,holeIdx]);
-
-// Update live position marker
-useEffect(()=>{
-const map=mapInst.current;
-if(!map||!livePos)return;
-if(liveMarkerRef.current){liveMarkerRef.current.setLngLat([livePos.lng,livePos.lat]);return;}
-const lEl=document.createElement("div");
-lEl.innerHTML='<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 12px rgba(59,130,246,0.6),0 0 24px rgba(59,130,246,0.3)"></div>';
-liveMarkerRef.current=new mapboxgl.Marker({element:lEl,anchor:"center"}).setLngLat([livePos.lng,livePos.lat]).addTo(map);
-if(!hasShots){
-const bounds=new mapboxgl.LngLatBounds();
-bounds.extend([green.lng,green.lat]);
-bounds.extend([livePos.lng,livePos.lat]);
-map.fitBounds(bounds,{padding:50,maxZoom:18});
-}
+useEffect(()=>{const map=mapInst.current;if(!map||!livePos)return;if(liveMarkerRef.current){liveMarkerRef.current.setLngLat([livePos.lng,livePos.lat]);return;}const lEl=document.createElement("div");lEl.innerHTML='<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 12px rgba(59,130,246,0.6),0 0 24px rgba(59,130,246,0.3)"></div>';liveMarkerRef.current=new mapboxgl.Marker({element:lEl,anchor:"center"}).setLngLat([livePos.lng,livePos.lat]).addTo(map);if(!hasShots){const bounds=new mapboxgl.LngLatBounds();bounds.extend([green.lng,green.lat]);bounds.extend([livePos.lng,livePos.lat]);map.fitBounds(bounds,{padding:50,maxZoom:18});}
 },[livePos?livePos.lat:0,livePos?livePos.lng:0]);
-
-return(<div style={{marginBottom:10}}>
-<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>{hasShots?"Shot Map":"Course Map"}</div>
-<div ref={mapRef} style={{width:"100%",height:220,borderRadius:10,border:"1px solid "+T.bdr,overflow:"hidden"}}/>
-</div>);
+return(<div style={{marginBottom:10}}><div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600,marginBottom:6}}>{hasShots?"Shot Map":"Course Map"}</div><div ref={mapRef} style={{width:"100%",height:220,borderRadius:10,border:"1px solid "+T.bdr,overflow:"hidden"}}/></div>);
 }
 function Scorecard({holes,onTap,T}){
-const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);
-const sum=(arr,k)=>arr.reduce((s,h)=>s+(h[k]||0),0);
+const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);const sum=(arr,k)=>arr.reduce((s,h)=>s+(h[k]||0),0);
 const thS={color:T.td,padding:"3px 5px",textAlign:"center",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em"};
 const row=(x,i)=>{const d=x.sc-x.par,cl=d<0?T.g:d===0?T.b:T.o;return <tr key={i} onClick={()=>onTap(i)} style={{cursor:"pointer"}}><td style={{color:T.td,padding:"5px",textAlign:"center",fontFamily:M}}>{i+1}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.par}</td><td style={{color:cl,padding:"5px",textAlign:"center",fontWeight:700,fontFamily:M}}>{x.sc}</td><td style={{color:T.td,padding:"5px",textAlign:"center"}}>{x.pt}</td><td style={{color:T.td,padding:"5px",textAlign:"center",fontSize:10}}>{x.cl||"\u2014"}</td></tr>;};
 const sub=(label,arr)=><tr style={{background:T.gd,fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>{label}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:11}}>{sum(arr,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"pt")}</td><td style={{padding:"5px"}}></td></tr>;
-return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>
-{f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}
-{b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}
-{holes.length===18&&<tr style={{background:T.g+"11",fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}
-</tbody></table></div>;
+return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>{f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}{b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}{holes.length===18&&<tr style={{background:T.g+"11",fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}</tbody></table></div>;
 }
 const TabBar=({active:a,onChange:o,T})=>(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:T.bg+"ee",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:"1px solid "+T.bdr,display:"flex",justifyContent:"space-around",padding:"10px 0 env(safe-area-inset-bottom, 14px)"}}>{["Stats","Play","Rounds","Bag","Me"].map((t,i)=>{const id=["dashboard","play","rounds","bag","profile"][i];return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 12px",color:a===id?T.g:T.td,fontFamily:F,fontSize:10,fontWeight:a===id?700:500,letterSpacing:"0.06em",textTransform:"uppercase",transition:"color 0.15s"}}>{t}</button>;})}</div>);
 const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={30}/>}<div><h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"Light":"Dark"}</button>}{right}</div></div>);
@@ -165,81 +163,52 @@ const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} st
 const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:"center"}}><div style={{fontSize:sm?18:26,fontWeight:700,color:cl||T.g,fontFamily:M,lineHeight:1}}>{v}{u&&<span style={{fontSize:sm?10:12,fontWeight:400,color:T.td,marginLeft:2}}>{u}</span>}</div><div style={{fontSize:9,color:T.td,marginTop:4,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{l}</div></div>;
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
-function ProfileSetup({onSave,existing,T}){
-const[name,setName]=useState(existing?existing.name:"");
-const[color,setColor]=useState(existing?existing.color:AVATARS[Math.floor(Math.random()*AVATARS.length)]);
-const[homeCourse,setHomeCourse]=useState(existing?existing.homeCourse:"goat_hill");
-const[goal,setGoal]=useState(existing?(existing.goal||""):"");
-return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
-<div style={{textAlign:"center",marginBottom:32}}>
-<div style={{display:"flex",justifyContent:"center"}}><Avatar name={name||"?"} color={color} size={72}/></div>
-<h1 style={{fontSize:24,fontWeight:700,color:T.tx,margin:"16px 0 4px",fontFamily:F}}>{existing?"Edit Profile":"Welcome to STICKS"}</h1>
-<p style={{color:T.tm,fontSize:13,fontFamily:F}}>{existing?"Update your info":"Set up your player profile"}</p>
-</div>
-<Crd T={T} style={{marginBottom:16}}>
-<Lbl T={T}>Name</Lbl>
-<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:12}}/>
-<Lbl T={T}>Color</Lbl>
-<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>{AVATARS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:16,background:c,border:color===c?"3px solid "+T.tx:"3px solid transparent",cursor:"pointer"}}/>)}</div>
-<Lbl T={T}>Home Course</Lbl>
-<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>{COURSES.map(c=>{const a=homeCourse===c.id;return <button key={c.id} onClick={()=>setHomeCourse(c.id)} style={{padding:"10px 14px",borderRadius:8,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,textAlign:"left",fontSize:13,fontWeight:a?600:400}}>{c.name}<span style={{opacity:0.5,marginLeft:8,fontSize:11}}>{c.loc}</span></button>;})}</div>
-<Lbl T={T}>Handicap Goal</Lbl>
-<input type="number" inputMode="numeric" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. 18" style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/>
+// ==================== PROFILE SCREEN ====================
+function ProfileScreen({profile,rounds,onUpdateProfile,onLogout,T,onToggle}){
+const[editing,setEditing]=useState(false);
+const[name,setName]=useState(profile.name);
+const[color,setColor]=useState(profile.color);
+const[homeCourse,setHomeCourse]=useState(profile.home_course||"goat_hill");
+const[goal,setGoal]=useState(profile.goal||"");
+const[saving,setSaving]=useState(false);
+const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes&&r.holes.length===18);
+const home=getCourse(homeCourse);
+const save=async()=>{setSaving(true);const up={name:name.trim(),color,home_course:homeCourse,goal:goal?parseFloat(goal):null};
+const{error}=await sb.from("profiles").update(up).eq("id",profile.id);
+if(!error){onUpdateProfile({...profile,...up});setEditing(false);}setSaving(false);};
+if(editing)return <div><Hdr title="Edit Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
+<Crd T={T} style={{marginBottom:10}}>
+<Lbl T={T}>Name</Lbl><input type="text" value={name} onChange={e=>setName(e.target.value)} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:12}}/>
+<Lbl T={T}>Color</Lbl><div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>{AVATARS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:16,background:c,border:color===c?"3px solid "+T.tx:"3px solid transparent",cursor:"pointer"}}/>)}</div>
+<Lbl T={T}>Home Course</Lbl><div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>{COURSES.map(c=>{const a=homeCourse===c.id;return <button key={c.id} onClick={()=>setHomeCourse(c.id)} style={{padding:"10px 14px",borderRadius:8,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,textAlign:"left",fontSize:13,fontWeight:a?600:400}}>{c.name}<span style={{opacity:0.5,marginLeft:8,fontSize:11}}>{c.loc}</span></button>;})}</div>
+<Lbl T={T}>Handicap Goal</Lbl><input type="number" inputMode="numeric" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. 18" style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/>
 </Crd>
-<Btn T={T} disabled={!name.trim()} onClick={()=>onSave({id:existing?existing.id:genId(),name:name.trim(),color:color,homeCourse:homeCourse,goal:goal?parseFloat(goal):"",created:existing?existing.created:new Date().toISOString()})}>
-{existing?"Save Changes":"Let's Go"}</Btn>
-</div>;
-}
-function ProfilePicker({profiles,onSelect,onAdd,T}){
-return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
-<div style={{textAlign:"center",marginBottom:32}}>
-<h1 style={{fontSize:28,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.02em"}}>STICKS</h1>
-<p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:4}}>Who's playing?</p>
-</div>
-<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
-{profiles.map(p=><Crd key={p.id} T={T} onClick={()=>onSelect(p.id)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:14,padding:"16px 18px"}}>
-<Avatar name={p.name} color={p.color} size={44}/>
-<div style={{flex:1}}>
-<div style={{color:T.tx,fontSize:16,fontWeight:600,fontFamily:F}}>{p.name}</div>
-<div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{getCourse(p.homeCourse).name}{p.goal?" \u00b7 Goal: "+p.goal:""}</div>
-</div>
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.td} strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-</Crd>)}
-</div>
-<Btn v="secondary" T={T} onClick={onAdd}>Add Player</Btn>
-</div>;
-}
-function ProfileScreen({profile,rounds,onEdit,onSwitch,T,onToggle}){
-const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes.length===18);
-const home=getCourse(profile.homeCourse);
-return <div>
-<Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
+<Btn T={T} disabled={!name.trim()||saving} onClick={save}>{saving?"Saving...":"Save Changes"}</Btn>
+<div style={{marginTop:8}}><Btn v="ghost" T={T} onClick={()=>setEditing(false)}>Cancel</Btn></div>
+</div></div>;
+return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <Crd T={T} style={{marginBottom:10,textAlign:"center",paddingTop:20,paddingBottom:20}}>
 <div style={{display:"flex",justifyContent:"center"}}><Avatar name={profile.name} color={profile.color} size={64}/></div>
 <div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:F,marginTop:10}}>{profile.name}</div>
 <div style={{fontSize:12,color:T.tm,fontFamily:F,marginTop:4}}>{home.name}</div>
 <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:14,paddingTop:14,borderTop:"1px solid "+T.bdr}}>
-<St label="Rounds" value={done.length} small T={T}/>
-<St label="Handicap" value={hcp!=null?hcp:"\u2014"} small T={T}/>
-<St label="Goal" value={profile.goal||"\u2014"} small T={T}/>
+<St label="Rounds" value={done.length} small T={T}/><St label="Handicap" value={hcp!=null?hcp:"\u2014"} small T={T}/><St label="Goal" value={profile.goal||"\u2014"} small T={T}/>
 </div>
 {hcp!=null&&profile.goal&&<div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:hcp<=profile.goal?T.gd:T.od,border:"1px solid "+(hcp<=profile.goal?T.gb:T.o+"22")}}>
-<div style={{fontSize:12,fontWeight:600,color:hcp<=profile.goal?T.g:T.o,fontFamily:F}}>
-{hcp<=profile.goal?"\u2705 Goal reached! Handicap "+hcp+" vs goal "+profile.goal:"\u{1F3AF} "+Math.round((hcp-profile.goal)*10)/10+" strokes to go"}
-</div></div>}
+<div style={{fontSize:12,fontWeight:600,color:hcp<=profile.goal?T.g:T.o,fontFamily:F}}>{hcp<=profile.goal?"\u2705 Goal reached! Handicap "+hcp+" vs goal "+profile.goal:"\u{1F3AF} "+Math.round((hcp-profile.goal)*10)/10+" strokes to go"}</div></div>}
 </Crd>
-<Crd T={T} style={{marginBottom:8}}>
-<div style={{display:"flex",flexDirection:"column",gap:8}}>
-<Btn v="secondary" T={T} onClick={onEdit}>Edit Profile</Btn>
-<Btn v="ghost" T={T} onClick={onSwitch}>Switch Player</Btn>
-</div>
-</Crd>
-<div style={{textAlign:"center",padding:"20px 0"}}><div style={{fontSize:10,color:T.td,fontFamily:F}}>Member since {new Date(profile.created).toLocaleDateString()}</div></div>
+<Crd T={T} style={{marginBottom:8}}><div style={{display:"flex",flexDirection:"column",gap:8}}>
+<Btn v="secondary" T={T} onClick={()=>setEditing(true)}>Edit Profile</Btn>
+<Btn v="danger" T={T} onClick={onLogout}>Log Out</Btn>
+</div></Crd>
+<div style={{textAlign:"center",padding:"20px 0"}}><div style={{fontSize:10,color:T.td,fontFamily:F}}>Member since {new Date(profile.created_at).toLocaleDateString()}</div></div>
 </div></div>;
 }
+// ==================== DASHBOARD ====================
 function Dashboard({rounds,T,onToggle,profile}){
-const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes.length===18);const rec=done.slice(-10);
+const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes&&r.holes.length===18);const rec=done.slice(-10);
 const avg=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.sc||0),0),0)/rec.length*10)/10:null;
 const avgP=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.pt||0),0),0)/rec.length*10)/10:null;
 const ah=done.flatMap(r=>r.holes);
@@ -255,53 +224,33 @@ return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
-{rec.length>0&&<Crd T={T}><Lbl T={T}>Recent</Lbl>{rec.slice().reverse().slice(0,5).map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid "+T.bdr}}><div><div style={{color:T.tx,fontSize:13,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div>;})}</Crd>}
+{rec.length>0&&<Crd T={T}><Lbl T={T}>Recent</Lbl>{rec.slice().reverse().slice(0,5).map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid "+T.bdr}}><div><div style={{color:T.tx,fontSize:13,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div>;})}</Crd>}
 </div></div>;
 }
+// ==================== PLAY ====================
 function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile}){
-const[courseId,setCourseId]=useState("goat_hill");
-const[tee,setTee]=useState(null);
-const[cur,setCur]=useState(0);
-const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});
-const[shots,setShots]=useState([]);
-const[marking,setMarking]=useState(false);
-const[history,setHistory]=useState([]);
-const gps=useGPS();
-const course=active?getCourse(active.courseId):getCourse(courseId);
-const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];
-const selTee=tee||defaultTee;
+const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
+const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
+const gps=useGPS();const course=active?getCourse(active.course_id||active.courseId):getCourse(courseId);
+const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];const selTee=tee||defaultTee;
 useEffect(()=>{setTee(null);},[courseId]);
 useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?active.id:null]);
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
-const pushUndo=()=>setHistory(p=>[...p,{...h}]);
-const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
+const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#34d399",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
-if(!active){
-const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
+if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Course</Lbl>
-<div style={{display:"flex",flexDirection:"column",gap:6}}>
-{COURSES.map(c=>{const a=courseId===c.id;return <button key={c.id} onClick={()=>setCourseId(c.id)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,transition:"all 0.12s",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-<div><div style={{fontSize:14,fontWeight:700}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{c.loc}</div></div>
-<div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
-</button>;})}
-</div></Crd>
-<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl>
-<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}
-</div>
-<div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:"1px solid "+T.bdr}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div>
-</Crd>
-<Btn T={T} onClick={()=>onStart({id:genId(),courseName:course.name,courseId:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
-</div></div>;
-}
-const ed=cur<active.holes.length,hn=cur+1;
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Course</Lbl><div style={{display:"flex",flexDirection:"column",gap:6}}>{COURSES.map(c=>{const a=courseId===c.id;return <button key={c.id} onClick={()=>setCourseId(c.id)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,transition:"all 0.12s",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{c.loc}</div></div><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div></button>;})}</div></Crd>
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}</div>
+<div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:"1px solid "+T.bdr}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div></Crd>
+<Btn T={T} onClick={()=>onStart({id:genId(),course_name:course.name,course_id:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
+</div></div>;}
+const cid=active.course_id||active.courseId;const ed=cur<active.holes.length,hn=cur+1;
 const ts=active.holes.reduce((s,x)=>s+(x.sc||0),0),tp=active.holes.reduce((s,x)=>s+(x.par||0),0);
-const teeKey=active.tee||Object.keys(course.tees)[0];
-const ty=course.tees[teeKey].y,hy=ty[cur],hp=course.pars[cur],ht=course.tips[cur];
+const teeKey=active.tee||Object.keys(course.tees)[0];const ty=course.tees[teeKey].y,hy=ty[cur],hp=course.pars[cur],ht=course.tips[cur];
 const svHole=()=>{const d={hole:hn,par:h.par||hp,sc:h.sc||(h.par||hp),pt:h.pt,cl:h.cl,yd:h.yd?parseInt(h.yd):hy,fw:h.fw,gir:h.gir,shots:shots};const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
 const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
 return <div>
@@ -309,7 +258,7 @@ return <div>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
 <div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:"1px solid "+T.bdr}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&<St label="To Green" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}</div>
-<ShotMap shots={shots} holeIdx={cur} courseId={active.courseId} theme={T} livePos={gps.pos}/>
+<ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos}/>
 <Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
 {!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
@@ -327,10 +276,11 @@ return <div>
 {active.holes.length>0&&<Crd T={T} style={{marginTop:10}}><Lbl T={T}>Scorecard</Lbl><Scorecard holes={active.holes} onTap={setCur} T={T}/></Crd>}
 </div></div>;
 }
+// ==================== ROUNDS & BAG ====================
 function Rounds({rounds,onDel,T,onToggle,profile}){
 if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>No rounds yet</p></div></div>;
 return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
-<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
 }
 function Bag({rounds,T,onToggle,profile}){
 const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
@@ -338,59 +288,93 @@ return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onTogg
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>Track yardage to see club averages</p></div>
 :stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n+" shot"+(s.n!==1?"s":"")}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min+"\u2013"+s.max}</div></div></div><div style={{marginTop:8,height:3,background:"rgba(128,128,128,0.06)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:"linear-gradient(90deg,"+T.g+"66,"+T.g+")",width:Math.min(100,s.avg/300*100)+"%",transition:"width 0.4s"}}/></div></Crd>)}</div></div>;
 }
+
+// ==================== MAIN APP ====================
 function App(){
-const[view,setView]=useState("loading");
-const[tab,setTab]=useState("dashboard");
-const[profiles,setProfiles]=useState([]);
-const[activeId,setActiveId]=useState(null);
+const[user,setUser]=useState(null);
+const[profile,setProfile]=useState(null);
 const[rounds,setRounds]=useState([]);
 const[active,setActive]=useState(null);
+const[tab,setTab]=useState("dashboard");
+const[loading,setLoading]=useState(true);
 const[isDark,setIsDark]=useState(true);
-const[editingProfile,setEditingProfile]=useState(null);
 const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
-const profile=profiles.find(p=>p.id===activeId)||null;
+
+// Check auth on mount
 useEffect(()=>{
-const ps=ld("profiles",[]);
-const aid=ld("activePlayer",null);
-const t=ld("theme","dark");
-setIsDark(t==="dark");
-setProfiles(ps);
-if(ps.length===0){setView("setup");}
-else if(ps.length===1){setActiveId(ps[0].id);setView("app");}
-else if(aid&&ps.find(p=>p.id===aid)){setActiveId(aid);setView("app");}
-else{setView("picker");}
-},[]);
-useEffect(()=>{
-if(!activeId)return;
-setRounds(ld("r_"+activeId,[]));
-setActive(ld("a_"+activeId,null));
-},[activeId]);
-useEffect(()=>{if(profiles.length>0)sv("profiles",profiles);},[profiles]);
-useEffect(()=>{if(activeId){sv("activePlayer",activeId);sv("r_"+activeId,rounds);sv("a_"+activeId,active);}sv("theme",isDark?"dark":"light");},[rounds,active,activeId,isDark]);
-const saveProfile=(p)=>{
-const idx=profiles.findIndex(x=>x.id===p.id);
-let np;
-if(idx>=0){np=[...profiles];np[idx]=p;}else{np=[...profiles,p];}
-setProfiles(np);setActiveId(p.id);sv("profiles",np);sv("activePlayer",p.id);
-if(!ld("r_"+p.id,null)){sv("r_"+p.id,[]);sv("a_"+p.id,null);}
-setRounds(ld("r_"+p.id,[]));setActive(ld("a_"+p.id,null));
-setEditingProfile(null);setView("app");
+const init=async()=>{
+const{data:{session}}=await sb.auth.getSession();
+if(session?.user){
+setUser(session.user);
+await loadProfile(session.user.id);
+await loadRounds(session.user.id);
+}
+setLoading(false);
 };
-const switchPlayer=()=>{if(profiles.length>1)setView("picker");else setView("setup");};
-const start=useCallback(r=>{setActive(r);setTab("play");},[]);
-const update=useCallback(r=>setActive(r),[]);
-const finish=useCallback(()=>{if(active&&active.holes.length>0)setRounds(p=>[...p,active]);setActive(null);setTab("dashboard");},[active]);
-const del=useCallback(id=>setRounds(p=>p.filter(r=>r.id!==id)),[]);
-if(view==="loading")return null;
-if(view==="setup"||editingProfile)return <ProfileSetup T={T} existing={editingProfile} onSave={saveProfile}/>;
-if(view==="picker")return <ProfilePicker T={T} profiles={profiles} onSelect={id=>{setActiveId(id);setView("app");}} onAdd={()=>setView("setup")}/>;
-if(!profile)return null;
+init();
+const{data:{subscription}}=sb.auth.onAuthStateChange(async(event,session)=>{
+if(event==="SIGNED_IN"&&session?.user){
+setUser(session.user);
+await loadProfile(session.user.id);
+await loadRounds(session.user.id);
+}else if(event==="SIGNED_OUT"){
+setUser(null);setProfile(null);setRounds([]);setActive(null);
+}
+});
+return()=>subscription.unsubscribe();
+},[]);
+
+const loadProfile=async(uid)=>{
+const{data}=await sb.from("profiles").select("*").eq("id",uid).single();
+if(data)setProfile(data);
+};
+const loadRounds=async(uid)=>{
+const{data}=await sb.from("rounds").select("*").eq("user_id",uid).order("date",{ascending:false});
+if(data)setRounds(data);
+};
+
+const handleAuth=async(u)=>{
+setUser(u);
+await loadProfile(u.id);
+await loadRounds(u.id);
+};
+const handleLogout=async()=>{
+await sb.auth.signOut();
+setUser(null);setProfile(null);setRounds([]);setActive(null);setTab("dashboard");
+};
+const updateProfile=(p)=>setProfile(p);
+
+const startRound=useCallback(r=>{setActive(r);setTab("play");},[]);
+const updateRound=useCallback(r=>setActive(r),[]);
+const finishRound=useCallback(async()=>{
+if(active&&active.holes.length>0&&user){
+const ts=active.holes.reduce((s,h)=>s+(h.sc||0),0);
+const tp=active.holes.reduce((s,h)=>s+(h.pt||0),0);
+const{data,error}=await sb.from("rounds").insert({
+user_id:user.id,course_id:active.course_id,course_name:active.course_name,
+tee:active.tee,cr:active.cr,sr:active.sr,date:active.date,
+holes:active.holes,total_score:ts,total_putts:tp
+}).select().single();
+if(data)setRounds(p=>[data,...p]);
+}
+setActive(null);setTab("dashboard");
+},[active,user]);
+
+const deleteRound=useCallback(async(id)=>{
+await sb.from("rounds").delete().eq("id",id);
+setRounds(p=>p.filter(r=>r.id!==id));
+},[]);
+
+if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={dark} size={32}/></div>;
+if(!user)return <AuthScreen onAuth={handleAuth} T={T}/>;
+if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
+
 return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
 {tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="play"&&<Play active={active} onStart={start} onUpdate={update} onFinish={finish} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="rounds"&&<Rounds rounds={rounds} onDel={del} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="play"&&<Play active={active} onStart={startRound} onUpdate={updateRound} onFinish={finishRound} T={T} onToggle={toggle} profile={profile}/>}
+{tab==="rounds"&&<Rounds rounds={rounds} onDel={deleteRound} T={T} onToggle={toggle} profile={profile}/>}
 {tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="profile"&&<ProfileScreen profile={profile} profiles={profiles} rounds={rounds} T={T} onToggle={toggle} onEdit={()=>setEditingProfile(profile)} onSwitch={switchPlayer}/>}
+{tab==="profile"&&<ProfileScreen profile={profile} rounds={rounds} onUpdateProfile={updateProfile} onLogout={handleLogout} T={T} onToggle={toggle}/>}
 <TabBar active={tab} onChange={setTab} T={T}/>
 </div>;
 }
