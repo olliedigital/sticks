@@ -12,7 +12,7 @@
 <title>STICKS</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <!-- Google Maps loaded dynamically -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBl1GISNK1Oaz-BqHwz_-FpeGW9aKKNjnQ&libraries=geometry&callback=Function.prototype" async defer></script>
+<!-- Maps replaced with custom SVG hole illustrations -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -23,9 +23,7 @@ input,select,button{font-family:'Outfit',sans-serif;-webkit-appearance:none;}
 input::placeholder{color:#3f3f46;}
 select{color:#e4e4e7;}
 select option{background:#111114;color:#e4e4e7;}
-.gm-style{border-radius:10px !important;}
-.gm-style .gmnoprint,.gm-style .gm-control-active,.gm-style-cc{display:none !important;}.gm-style a[href*="google"]{display:none !important;}
-.gm-style-iw{background:transparent !important;border:none !important;box-shadow:none !important;padding:0 !important;}.gm-style-iw-d{overflow:hidden !important;}.gm-style-iw-tc{display:none !important;}.gm-style-iw button[aria-label="Close"]{display:none !important;}
+canvas{image-rendering:auto;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
@@ -225,73 +223,81 @@ return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden"}}>
 }
 // ==================== UI COMPONENTS ====================
 const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
+const HOLE_DESIGNS=[
+{shape:"slight_right",fw:0.85,bunkers:[{x:0.7,y:0.35,s:0.7}],trees:[{x:0.2,y:0.5},{x:0.85,y:0.6}],greenShape:"oval",elev:"flat"},
+{shape:"straight",fw:0.6,bunkers:[],trees:[{x:0.15,y:0.4},{x:0.88,y:0.35}],greenShape:"round",elev:"uphill"},
+{shape:"slight_left",fw:0.8,bunkers:[{x:0.35,y:0.25,s:0.6}],trees:[{x:0.5,y:0.5,s:1.2,label:"dead tree"}],greenShape:"double",elev:"downhill"},
+{shape:"straight",fw:0.9,bunkers:[{x:0.65,y:0.55,s:0.5}],trees:[{x:0.2,y:0.3},{x:0.82,y:0.45}],greenShape:"oval",elev:"flat"},
+{shape:"straight",fw:0.7,bunkers:[],trees:[{x:0.15,y:0.55},{x:0.9,y:0.4}],greenShape:"round",elev:"flat"},
+{shape:"straight",fw:0.6,bunkers:[{x:0.6,y:0.2,s:0.5}],trees:[],greenShape:"round",elev:"flat",ocean:true},
+{shape:"straight",fw:0.55,bunkers:[],trees:[{x:0.2,y:0.45},{x:0.85,y:0.5}],greenShape:"oval",elev:"flat"},
+{shape:"straight",fw:0.85,bunkers:[{x:0.3,y:0.3,s:0.6}],trees:[{x:0.8,y:0.6}],greenShape:"double",elev:"uphill"},
+{shape:"straight",fw:0.5,bunkers:[],trees:[],greenShape:"round",elev:"downhill"},
+{shape:"straight",fw:0.85,bunkers:[{x:0.25,y:0.45,s:0.7},{x:0.3,y:0.5,s:0.5}],trees:[{x:0.8,y:0.55}],greenShape:"narrow",elev:"downhill"},
+{shape:"straight",fw:0.6,bunkers:[],trees:[{x:0.2,y:0.5},{x:0.85,y:0.4}],greenShape:"round",elev:"uphill"},
+{shape:"dogleg_left",fw:0.8,bunkers:[{x:0.55,y:0.2,s:0.5}],trees:[{x:0.3,y:0.55}],greenShape:"tiered",elev:"uphill"},
+{shape:"straight",fw:0.65,bunkers:[],trees:[{x:0.2,y:0.4},{x:0.82,y:0.45}],greenShape:"round",elev:"uphill"},
+{shape:"dogleg_right",fw:0.8,bunkers:[{x:0.55,y:0.18,s:0.7}],trees:[{x:0.7,y:0.5,s:1.1,label:"eucalyptus"}],greenShape:"oval",elev:"flat"},
+{shape:"straight",fw:0.9,bunkers:[{x:0.3,y:0.6,s:0.5},{x:0.7,y:0.55,s:0.5}],trees:[{x:0.15,y:0.4},{x:0.88,y:0.35}],greenShape:"oval",elev:"downhill_up"},
+{shape:"straight",fw:0.75,bunkers:[],trees:[{x:0.2,y:0.5}],greenShape:"round",elev:"downhill"},
+{shape:"straight",fw:0.55,bunkers:[{x:0.4,y:0.25,s:0.5}],trees:[],greenShape:"round",elev:"flat"},
+{shape:"straight",fw:0.85,bunkers:[{x:0.65,y:0.35,s:0.5}],trees:[{x:0.2,y:0.55},{x:0.82,y:0.5}],greenShape:"oval",elev:"flat"}
+];
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
-const mapRef=useRef(null);const mapInst=useRef(null);const markersRef=useRef([]);const liveMarkerRef=useRef(null);const polyRef=useRef([]);const circleRef=useRef([]);
-const[is3D,setIs3D]=useState(false);const[distInfo,setDistInfo]=useState(null);
-const course=getCourse(courseId),green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
-const tee=course.teeBoxes?course.teeBoxes[holeIdx]:null;
-const gDist=(a,b)=>{if(!window.google)return 0;return Math.round(window.google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(a.lat,a.lng),new google.maps.LatLng(b.lat,b.lng))*1.09361);};
+const canvasRef=useRef(null);const course=getCourse(courseId);const hasShots=shots&&shots.length>0;
+const par=course.pars[holeIdx];const teeKey=Object.keys(course.tees)[0];const yardage=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
+const design=HOLE_DESIGNS[holeIdx]||HOLE_DESIGNS[0];const tip=course.tips?course.tips[holeIdx]:"";
 useEffect(()=>{
-if(!mapRef.current||!window.google)return;
-if(mapInst.current){markersRef.current.forEach(m=>m.setMap(null));polyRef.current.forEach(p=>p.setMap(null));circleRef.current.forEach(c=>c.setMap(null));if(liveMarkerRef.current)liveMarkerRef.current.setMap(null);markersRef.current=[];polyRef.current=[];circleRef.current=[];liveMarkerRef.current=null;mapInst.current.setCenter({lat:green.lat,lng:green.lng});mapInst.current.setZoom(18);mapInst.current.setTilt(is3D?45:0);mapInst.current.setHeading(0);mapInst.current.setOptions({restriction:{latLngBounds:{north:Math.max(green.lat,tee?tee.lat:green.lat)+0.003,south:Math.min(green.lat,tee?tee.lat:green.lat)-0.003,east:Math.max(green.lng,tee?tee.lng:green.lng)+0.003,west:Math.min(green.lng,tee?tee.lng:green.lng)-0.003},strictBounds:true}});}else{
-mapInst.current=new google.maps.Map(mapRef.current,{center:{lat:green.lat,lng:green.lng},zoom:18,mapTypeId:"satellite",tilt:is3D?45:0,heading:0,disableDefaultUI:true,gestureHandling:"greedy",zoomControl:false,mapTypeControl:false,streetViewControl:false,fullscreenControl:false,rotateControl:true,keyboardShortcuts:false,clickableIcons:false,restriction:{latLngBounds:{north:Math.max(green.lat,tee?tee.lat:green.lat)+0.003,south:Math.min(green.lat,tee?tee.lat:green.lat)-0.003,east:Math.max(green.lng,tee?tee.lng:green.lng)+0.003,west:Math.min(green.lng,tee?tee.lng:green.lng)-0.003},strictBounds:true},minZoom:16,maxZoom:21});}
-const map=mapInst.current;
-map.addListener("idle",()=>{const b=map.getBounds();if(!b)return;const ne=b.getNorthEast(),sw=b.getSouthWest();const holeLat=(green.lat+(tee?tee.lat:green.lat))/2;const holeLng=(green.lng+(tee?tee.lng:green.lng))/2;const dist=Math.max(Math.abs(ne.lat()-sw.lat()),Math.abs(ne.lng()-sw.lng()));if(dist>0.012){map.setZoom(map.getZoom()+1);}});
-const pinSvg={path:"M0,-8 C-4,-8 -7,-5 -7,0 C-7,4 0,12 0,12 C0,12 7,4 7,0 C7,-5 4,-8 0,-8 Z",fillColor:"#ef4444",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:1.3,anchor:new google.maps.Point(0,12)};
-const flagMarker=new google.maps.Marker({position:{lat:green.lat,lng:green.lng},map,icon:pinSvg,zIndex:10,title:"Pin"});
-markersRef.current.push(flagMarker);
-const greenCircle=new google.maps.Circle({center:{lat:green.lat,lng:green.lng},radius:14,map,fillColor:"#22c55e",fillOpacity:0.25,strokeColor:"#22c55e",strokeWeight:1.5,strokeOpacity:0.6,clickable:false});
-circleRef.current.push(greenCircle);
-if(tee){const teeSvg={path:google.maps.SymbolPath.CIRCLE,fillColor:"#60a5fa",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:7};
-const teeMarker=new google.maps.Marker({position:{lat:tee.lat,lng:tee.lng},map,icon:teeSvg,zIndex:5,title:"Tee"});
-const teeLabel=new google.maps.Marker({position:{lat:tee.lat,lng:tee.lng},map,icon:{path:"M0,0",scale:0},label:{text:"T",color:"#fff",fontSize:"9px",fontWeight:"700",fontFamily:"monospace"},zIndex:6});
-markersRef.current.push(teeMarker,teeLabel);
-const holeDist=gDist(tee,green);
-setDistInfo({total:holeDist,front:Math.max(0,holeDist-15),back:holeDist+15});
-const distArc=new google.maps.Circle({center:{lat:tee.lat,lng:tee.lng},radius:holeDist*0.5*0.9144,map,fillColor:"transparent",fillOpacity:0,strokeColor:"rgba(255,255,255,0.2)",strokeWeight:1,strokeOpacity:0.3,clickable:false});
-circleRef.current.push(distArc);
-const bounds=new google.maps.LatLngBounds();bounds.extend({lat:tee.lat,lng:tee.lng});bounds.extend({lat:green.lat,lng:green.lng});map.fitBounds(bounds,{top:30,bottom:30,left:20,right:20});}
-return()=>{};
-},[holeIdx,courseId,is3D]);
-useEffect(()=>{const map=mapInst.current;if(!map)return;
-polyRef.current.forEach(p=>p.setMap(null));polyRef.current=[];
-const oldShot=markersRef.current.filter(m=>m._isShot);oldShot.forEach(m=>m.setMap(null));markersRef.current=markersRef.current.filter(m=>!m._isShot);
-if(!hasShots)return;
-const path=shots.map(s=>({lat:s.lat,lng:s.lng}));path.push({lat:green.lat,lng:green.lng});
-const shotLine=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:3,strokeOpacity:0.85,geodesic:true});
-const shotLineBg=new google.maps.Polyline({path,map,strokeColor:"#000",strokeWeight:5,strokeOpacity:0.3,geodesic:true});
-polyRef.current.push(shotLineBg,shotLine);
-if(path.length>=2){const dashPath=[path[path.length-2],path[path.length-1]];
-const dashLine=new google.maps.Polyline({path:dashPath,map,strokeColor:"#f59e0b",strokeWeight:2,strokeOpacity:0.6,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:0.8,scale:2},offset:"0",repeat:"12px"}]});
-polyRef.current.push(dashLine);}
-shots.forEach((s,i)=>{const shotMarker=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:"#f59e0b",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:10},zIndex:8,title:"Shot "+(i+1)});
-shotMarker._isShot=true;
-const shotLabel=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,icon:{path:"M0,0",scale:0},label:{text:""+(i+1),color:"#000",fontSize:"10px",fontWeight:"700",fontFamily:"monospace"},zIndex:9});
-shotLabel._isShot=true;
-markersRef.current.push(shotMarker,shotLabel);
-if(s.dist){const iw=new google.maps.InfoWindow({content:'<div style="background:#000;color:#f59e0b;padding:2px 6px;border-radius:4px;font:700 10px monospace;border:none;white-space:nowrap">'+s.dist+' yd</div>',disableAutoPan:true,pixelOffset:new google.maps.Size(0,-18)});
-iw.open(map,shotMarker);polyRef.current.push({setMap:()=>iw.close()});}});
-const bounds=new google.maps.LatLngBounds();shots.forEach(s=>bounds.extend({lat:s.lat,lng:s.lng}));bounds.extend({lat:green.lat,lng:green.lng});if(tee)bounds.extend({lat:tee.lat,lng:tee.lng});map.fitBounds(bounds,{top:30,bottom:30,left:20,right:20});
-},[shots?shots.length:0,holeIdx]);
-useEffect(()=>{const map=mapInst.current;if(!map||!livePos)return;
-if(liveMarkerRef.current){liveMarkerRef.current.setPosition({lat:livePos.lat,lng:livePos.lng});return;}
-const liveDot=new google.maps.Marker({position:{lat:livePos.lat,lng:livePos.lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:"#3b82f6",fillOpacity:1,strokeColor:"#fff",strokeWeight:3,scale:8},zIndex:12});
-liveMarkerRef.current=liveDot;
-const pulse=new google.maps.Circle({center:{lat:livePos.lat,lng:livePos.lng},radius:livePos.acc||5,map,fillColor:"#3b82f6",fillOpacity:0.1,strokeColor:"#3b82f6",strokeWeight:1,strokeOpacity:0.3});
-circleRef.current.push(pulse);
-if(!hasShots){const bounds=new google.maps.LatLngBounds();bounds.extend({lat:green.lat,lng:green.lng});bounds.extend({lat:livePos.lat,lng:livePos.lng});map.fitBounds(bounds,{top:30,bottom:30,left:20,right:20});}
-},[livePos?livePos.lat:0,livePos?livePos.lng:0]);
+const c=canvasRef.current;if(!c)return;const ctx=c.getContext("2d");const W=c.width=c.offsetWidth*2;const H=c.height=c.offsetHeight*2;ctx.scale(2,2);const w=W/2,h=H/2;
+const isDark=T.bg==="#09090b";
+ctx.fillStyle=isDark?"#0a1a0a":"#1a3a1a";ctx.fillRect(0,0,w,h);
+const drawRough=(x,y,rw,rh)=>{ctx.fillStyle=isDark?"#0f2a0f":"#1e4a1e";ctx.beginPath();ctx.ellipse(x,y,rw,rh,0,0,Math.PI*2);ctx.fill();};
+const cx=w/2;const teeY=h-35;const greenY=40;const holeH=teeY-greenY;
+drawRough(cx,h/2,w*0.48,holeH*0.55);
+const fwW=w*0.18*design.fw;
+ctx.fillStyle=isDark?"#1a4a1a":"#2d6a2d";ctx.beginPath();
+if(design.shape==="dogleg_left"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.4,cx-fwW-w*0.12,greenY+holeH*0.2,cx-w*0.12-fwW*0.7,greenY);ctx.lineTo(cx-w*0.12+fwW*0.7,greenY);ctx.bezierCurveTo(cx+fwW-w*0.05,greenY+holeH*0.2,cx+fwW,teeY-holeH*0.4,cx+fwW,teeY);}
+else if(design.shape==="dogleg_right"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.4,cx-fwW+w*0.05,greenY+holeH*0.2,cx+w*0.12-fwW*0.7,greenY);ctx.lineTo(cx+w*0.12+fwW*0.7,greenY);ctx.bezierCurveTo(cx+fwW+w*0.12,greenY+holeH*0.2,cx+fwW,teeY-holeH*0.4,cx+fwW,teeY);}
+else if(design.shape==="slight_right"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.5,cx-fwW+w*0.03,greenY+holeH*0.3,cx+w*0.04-fwW,greenY);ctx.lineTo(cx+w*0.04+fwW,greenY);ctx.bezierCurveTo(cx+fwW+w*0.03,greenY+holeH*0.3,cx+fwW,teeY-holeH*0.5,cx+fwW,teeY);}
+else if(design.shape==="slight_left"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.5,cx-fwW-w*0.03,greenY+holeH*0.3,cx-w*0.04-fwW,greenY);ctx.lineTo(cx-w*0.04+fwW,greenY);ctx.bezierCurveTo(cx+fwW-w*0.03,greenY+holeH*0.3,cx+fwW,teeY-holeH*0.5,cx+fwW,teeY);}
+else{ctx.moveTo(cx-fwW,teeY);ctx.lineTo(cx-fwW*0.9,greenY);ctx.lineTo(cx+fwW*0.9,greenY);ctx.lineTo(cx+fwW,teeY);}
+ctx.closePath();ctx.fill();
+let greenCx=cx,greenCy=greenY+8;
+if(design.shape==="dogleg_left")greenCx=cx-w*0.1;
+if(design.shape==="dogleg_right")greenCx=cx+w*0.1;
+if(design.shape==="slight_right")greenCx=cx+w*0.03;
+if(design.shape==="slight_left")greenCx=cx-w*0.03;
+const gr=design.greenShape==="double"?16:design.greenShape==="tiered"?13:design.greenShape==="narrow"?10:14;
+const grW=design.greenShape==="narrow"?gr*0.7:design.greenShape==="double"?gr*1.4:gr;
+const grH=design.greenShape==="narrow"?gr*1.3:gr;
+const greenGrad=ctx.createRadialGradient(greenCx,greenCy,0,greenCx,greenCy,grW+4);
+greenGrad.addColorStop(0,isDark?"#22c55e":"#34d399");greenGrad.addColorStop(0.7,isDark?"#16a34a":"#22c55e");greenGrad.addColorStop(1,isDark?"#15803d":"#16a34a");
+ctx.fillStyle=greenGrad;ctx.beginPath();ctx.ellipse(greenCx,greenCy,grW,grH,0,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle="rgba(255,255,255,0.25)";ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(greenCx,greenCy,grW+2,grH+2,0,0,Math.PI*2);ctx.stroke();
+if(design.greenShape==="tiered"){ctx.strokeStyle="rgba(255,255,255,0.15)";ctx.lineWidth=0.5;ctx.beginPath();ctx.ellipse(greenCx,greenCy-3,grW*0.6,grH*0.5,0,0,Math.PI*2);ctx.stroke();}
+ctx.fillStyle="#ef4444";ctx.beginPath();ctx.arc(greenCx,greenCy,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(greenCx,greenCy,1.5,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle="#ef4444";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(greenCx,greenCy-3);ctx.lineTo(greenCx,greenCy-12);ctx.stroke();
+ctx.fillStyle="#ef4444";ctx.beginPath();ctx.moveTo(greenCx,greenCy-12);ctx.lineTo(greenCx+7,greenCy-10);ctx.lineTo(greenCx,greenCy-8);ctx.fill();
+(design.bunkers||[]).forEach(b=>{const bx=w*b.x;const by=greenY+(teeY-greenY)*b.y;const bs=(b.s||0.6)*12;ctx.fillStyle=isDark?"#c4a44a":"#e8d48b";ctx.beginPath();ctx.ellipse(bx,by,bs,bs*0.6,0.2,0,Math.PI*2);ctx.fill();ctx.strokeStyle=isDark?"#a08530":"#c4a44a";ctx.lineWidth=0.5;ctx.stroke();});
+(design.trees||[]).forEach(t=>{const tx=w*t.x;const ty=greenY+(teeY-greenY)*t.y;const ts=(t.s||0.8)*6;ctx.fillStyle=isDark?"#065f1a":"#0a7a25";ctx.beginPath();ctx.arc(tx,ty,ts,0,Math.PI*2);ctx.fill();ctx.fillStyle=isDark?"#0a8a28":"#0d9e30";ctx.beginPath();ctx.arc(tx-1,ty-1,ts*0.6,0,Math.PI*2);ctx.fill();});
+ctx.fillStyle=isDark?"#60a5fa":"#3b82f6";ctx.beginPath();ctx.arc(cx,teeY,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,teeY,5,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle="#fff";ctx.font="bold 6px monospace";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("T",cx,teeY);
+ctx.strokeStyle="rgba(255,255,255,0.08)";ctx.lineWidth=0.5;const ydStep=yardage>300?100:50;
+for(let d=ydStep;d<yardage;d+=ydStep){const ratio=d/yardage;const dotY=teeY-holeH*ratio;
+ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(cx-fwW*0.7,dotY);ctx.lineTo(cx+fwW*0.7,dotY);ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle="rgba(255,255,255,0.35)";ctx.font="bold 8px monospace";ctx.textAlign="right";ctx.fillText(d+"",cx-fwW*0.7-4,dotY+3);}
+if(design.elev&&design.elev!=="flat"){const elevIcons={uphill:"\u25B2",downhill:"\u25BC",downhill_up:"\u25BC\u25B2"};
+ctx.fillStyle="rgba(255,255,255,0.25)";ctx.font="10px sans-serif";ctx.textAlign="left";ctx.fillText(elevIcons[design.elev]||"",8,h/2);}
+if(design.ocean){ctx.fillStyle="rgba(96,165,250,0.15)";ctx.fillRect(w-12,0,12,h);ctx.fillStyle="rgba(96,165,250,0.3)";ctx.font="8px sans-serif";ctx.textAlign="center";ctx.save();ctx.translate(w-6,h/2);ctx.rotate(-Math.PI/2);ctx.fillText("OCEAN",0,0);ctx.restore();}
+ctx.fillStyle="rgba(255,255,255,0.9)";ctx.font="bold 14px 'Outfit',sans-serif";ctx.textAlign="center";ctx.fillText(yardage+" YDS",cx,h-10);
+},[holeIdx,courseId,T.bg]);
 return(<div style={{marginBottom:10}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{hasShots?"Shot Map":"Course Map"}</div>
-<button onClick={()=>setIs3D(p=>!p)} style={{background:is3D?T.gd:"rgba(128,128,128,0.06)",border:"1px solid "+(is3D?T.gb:T.bdr),borderRadius:6,padding:"3px 10px",fontSize:10,fontWeight:700,color:is3D?T.g:T.td,cursor:"pointer",fontFamily:F}}>{is3D?"3D":"2D"}</button>
+<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{"Hole "+(holeIdx+1)+" \u00b7 Par "+par}</div>
+<div style={{fontSize:10,color:T.g,fontWeight:700,fontFamily:M}}>{yardage+" yd"}</div>
 </div>
-<div ref={mapRef} style={{width:"100%",height:260,borderRadius:12,border:"1px solid "+T.bdr,overflow:"hidden"}}/>
-{distInfo&&!hasShots&&<div style={{display:"flex",justifyContent:"space-around",marginTop:6,padding:"6px 0",background:T.card,borderRadius:8,border:"1px solid "+T.bdr}}>
-<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.g}}>{distInfo.front}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Front</div></div>
-<div style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:800,fontFamily:M,color:T.tx}}>{distInfo.total}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Middle</div></div>
-<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.r}}>{distInfo.back}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Back</div></div>
-</div>}
+<canvas ref={canvasRef} style={{width:"100%",height:280,borderRadius:12,border:"1px solid "+T.bdr,display:"block"}}/>
+{tip&&<div style={{marginTop:6,padding:"8px 10px",background:T.card,borderRadius:8,border:"1px solid "+T.bdr,fontSize:11,color:T.tm,fontFamily:F,lineHeight:"1.5"}}>{"\uD83C\uDFCC\uFE0F "+tip}</div>}
 </div>);
 }
 function Scorecard({holes,onTap,T}){
