@@ -364,12 +364,16 @@ const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
 // Check auth on mount
 useEffect(()=>{
 const init=async()=>{
-const{data:{session}}=await sb.auth.getSession();
-if(session?.user){
-setUser(session.user);
-await loadProfile(session.user.id);
-await loadRounds(session.user.id);
+try{
+const timeout=new Promise((_,rej)=>setTimeout(()=>rej("timeout"),5000));
+const check=sb.auth.getSession();
+const result=await Promise.race([check,timeout]);
+if(result?.data?.session?.user){
+setUser(result.data.session.user);
+await loadProfile(result.data.session.user.id);
+await loadRounds(result.data.session.user.id);
 }
+}catch(e){console.log("Auth init:",e);}
 setLoading(false);
 };
 init();
