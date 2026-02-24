@@ -470,6 +470,7 @@ const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
 
 // Check auth on mount
 useEffect(()=>{
+let sub=null;
 const init=async()=>{
 try{
 const timeout=new Promise((_,rej)=>setTimeout(()=>rej("timeout"),5000));
@@ -477,23 +478,27 @@ const check=sb.auth.getSession();
 const result=await Promise.race([check,timeout]);
 if(result?.data?.session?.user){
 setUser(result.data.session.user);
-await loadProfile(result.data.session.user.id);
-await loadRounds(result.data.session.user.id);
+try{await Promise.race([loadProfile(result.data.session.user.id),new Promise((_,r)=>setTimeout(()=>r("profile timeout"),4000))]);}catch(e2){}
+try{await Promise.race([loadRounds(result.data.session.user.id),new Promise((_,r)=>setTimeout(()=>r("rounds timeout"),4000))]);}catch(e3){}
 }
 }catch(e){console.log("Auth init:",e);}
+console.log("Auth init complete, showing app");
 setLoading(false);
 };
 init();
+try{
 const{data:{subscription}}=sb.auth.onAuthStateChange(async(event,session)=>{
 if(event==="SIGNED_IN"&&session?.user){
 setUser(session.user);
-await loadProfile(session.user.id);
-await loadRounds(session.user.id);
+try{await loadProfile(session.user.id);}catch(e){}
+try{await loadRounds(session.user.id);}catch(e){}
 }else if(event==="SIGNED_OUT"){
 setUser(null);setProfile(null);setRounds([]);setActive(null);
 }
 });
-return()=>subscription.unsubscribe();
+sub=subscription;
+}catch(e){console.log("Auth listener error:",e);}
+return()=>{try{if(sub)sub.unsubscribe();}catch(e){}};
 },[]);
 
 const loadProfile=async(uid)=>{

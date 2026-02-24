@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STICKS — GPS Golf Tracker, Scorecard & Stats</title>
+<meta name="description" content="Track every shot with GPS satellite maps on 30,000+ courses. Free handicap, scoring stats, club distances. The golf app built for players who want to get better.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--green:#059669;--green-l:#34d399;--green-d:#047857;--dark:#0a0a0a;
+--bg:#ffffff;--card:#f8faf9;--card-h:#f0fdf4;
+--bdr:#e5e7eb;--bdr-h:#d1d5db;
+--tx:#111827;--td:#4b5563;--tm:#9ca3af;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);transition:background 0.3s}
+.nav-logo{display:flex;align-items:center;gap:8px}
+.nav-logo svg{height:28px;width:auto}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:13px;font-weight:500;color:var(--td);transition:color 0.2s;letter-spacing:0.01em}
+.nav-links a:hover{color:var(--green)}
+.nav-cta{background:var(--green)!important;color:white!important;padding:8px 20px;border-radius:8px;font-weight:700;font-size:12px;letter-spacing:0.02em}
+.nav-cta:hover{opacity:0.9}
+.mobile-menu{display:none;background:none;border:none;color:var(--td);font-size:24px;cursor:pointer}
+@media(max-width:768px){
+.nav-links{display:none}
+.mobile-menu{display:block}
+.nav-links.open{display:flex;position:absolute;top:60px;left:0;right:0;flex-direction:column;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);padding:20px 24px;gap:16px;border-bottom:1px solid var(--bdr)}
+}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(5,5,7,0.75) 0%,rgba(5,5,7,0.4) 40%,rgba(5,5,7,0.7) 100%)}
+.hero-content{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:120px 24px 80px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(5,150,105,0.12);border:1px solid rgba(5,150,105,0.2);font-size:12px;font-weight:600;color:var(--green);margin-bottom:24px}
+.hero-badge span{width:6px;height:6px;border-radius:3px;background:var(--green);animation:pulse 2s ease-in-out infinite}
+.hero h1{font-size:clamp(36px,6vw,64px);font-weight:900;line-height:1.05;letter-spacing:-0.03em;margin-bottom:20px;max-width:650px;color:white}
+.hero h1 em{font-style:normal;color:var(--green-l)}
+.hero p{font-size:18px;color:rgba(255,255,255,0.75);line-height:1.6;max-width:480px;margin-bottom:36px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;border-radius:14px;background:linear-gradient(135deg,#059669,#047857);color:white;font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(5,150,105,0.25);transition:transform 0.2s,box-shadow 0.2s;font-family:'Outfit',sans-serif}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(5,150,105,0.3)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;border-radius:14px;background:rgba(0,0,0,0.04);border:1px solid var(--bdr);color:var(--td);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Outfit',sans-serif}
+.btn-secondary:hover{background:rgba(0,0,0,0.06);border-color:var(--bdr-h)}
+
+/* STATS BAR */
+.stats-bar{background:var(--card);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)}
+.stats-inner{max-width:1200px;margin:0 auto;padding:40px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-num{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--green)}
+.stat-label{font-size:12px;color:var(--td);text-transform:uppercase;letter-spacing:0.15em;margin-top:4px;font-weight:500}
+@media(max-width:600px){.stats-inner{grid-template-columns:repeat(2,1fr);gap:20px}.stat-num{font-size:24px}}
+
+/* FEATURES */
+.features{max-width:1200px;margin:0 auto;padding:100px 24px}
+.section-tag{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:12px}
+.section-title{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.02em;margin-bottom:16px;line-height:1.1}
+.section-sub{font-size:16px;color:var(--td);max-width:500px;line-height:1.6;margin-bottom:60px}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:28px 24px;transition:all 0.3s;position:relative;overflow:hidden}
+.feature-card:hover{border-color:rgba(5,150,105,0.25);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.06);background:var(--card-h)}
+.feature-icon{width:44px;height:44px;border-radius:12px;background:rgba(5,150,105,0.08);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.feature-card h3{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--tx)}
+.feature-card p{font-size:13px;color:var(--td);line-height:1.55}
+.feature-card .badge{position:absolute;top:12px;right:12px;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+.badge-free{background:rgba(5,150,105,0.08);color:var(--green)}
+.badge-pro{background:rgba(234,179,8,0.08);color:#b45309}
+@media(max-width:768px){.feature-grid{grid-template-columns:1fr}}
+
+/* SHOWCASE */
+.showcase{padding:100px 24px;position:relative;overflow:hidden}
+.showcase-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.showcase-img{border-radius:20px;overflow:hidden;position:relative}
+.showcase-img img{width:100%;height:400px;object-fit:cover;display:block}
+.showcase-img::after{content:'';position:absolute;inset:0;border-radius:20px;border:1px solid var(--bdr)}
+.showcase-text h2{font-size:clamp(24px,3vw,36px);font-weight:800;letter-spacing:-0.02em;margin-bottom:16px;line-height:1.15;color:var(--tx)}
+.showcase-text p{font-size:15px;color:var(--td);line-height:1.65;margin-bottom:24px}
+.showcase-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.showcase-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--td)}
+.showcase-list li .check{width:20px;height:20px;border-radius:6px;background:rgba(5,150,105,0.1);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.showcase.reverse .showcase-inner{direction:rtl}
+.showcase.reverse .showcase-inner > *{direction:ltr}
+@media(max-width:768px){.showcase-inner{grid-template-columns:1fr;gap:32px}.showcase.reverse .showcase-inner{direction:ltr}}
+
+/* PRICING */
+.pricing{max-width:1000px;margin:0 auto;padding:100px 24px}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px}
+.price-card{background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:32px 28px;position:relative}
+.price-card.featured{border-color:rgba(5,150,105,0.3);box-shadow:0 0 60px rgba(5,150,105,0.06)}
+.price-card.featured::before{content:'MOST POPULAR';position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:6px;background:var(--green);color:white;font-size:9px;font-weight:800;letter-spacing:0.1em}
+.price-name{font-size:13px;font-weight:700;color:var(--td);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px}
+.price-amount{font-size:42px;font-weight:900;font-family:'JetBrains Mono',monospace;margin-bottom:4px;color:var(--tx)}
+.price-period{font-size:13px;color:var(--tm);margin-bottom:24px}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.price-features li{font-size:13px;color:var(--td);display:flex;align-items:center;gap:8px}
+.price-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:12px}
+.price-features li.no::before{content:'—';color:var(--tm)}
+@media(max-width:600px){.pricing-grid{grid-template-columns:1fr}}
+
+/* TESTIMONIALS */
+.testimonials{padding:80px 24px;background:var(--card);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)}
+.test-inner{max-width:1200px;margin:0 auto}
+.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.test-card{background:white;border:1px solid var(--bdr);border-radius:14px;padding:24px}
+.test-stars{color:#eab308;font-size:14px;margin-bottom:12px;letter-spacing:2px}
+.test-text{font-size:14px;color:var(--td);line-height:1.6;margin-bottom:16px}
+.test-author{font-size:12px;font-weight:600;color:var(--tx)}
+.test-role{font-size:11px;color:var(--tm)}
+@media(max-width:768px){.test-grid{grid-template-columns:1fr}}
+
+/* BLOG / CATEGORIES */
+.blog{max-width:1200px;margin:0 auto;padding:100px 24px}
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.blog-card{border-radius:14px;overflow:hidden;border:1px solid var(--bdr);background:white;transition:all 0.3s;cursor:pointer}
+.blog-card:hover{border-color:rgba(5,150,105,0.25);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+.blog-card img{width:100%;height:160px;object-fit:cover;display:block}
+.blog-card-body{padding:18px 16px}
+.blog-cat{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px}
+.blog-card h3{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.blog-card p{font-size:12px;color:var(--td);line-height:1.5}
+@media(max-width:768px){.blog-grid{grid-template-columns:1fr}}
+
+/* CTA */
+.cta{padding:100px 24px;text-align:center;position:relative;overflow:hidden}
+.cta::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(5,150,105,0.04) 0%,transparent 70%)}
+.cta h2{font-size:clamp(28px,4vw,42px);font-weight:900;letter-spacing:-0.02em;margin-bottom:16px;color:var(--tx)}
+.cta p{font-size:16px;color:var(--td);margin-bottom:32px;max-width:440px;margin-left:auto;margin-right:auto}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--bdr);padding:60px 24px 40px;background:var(--card)}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
+.footer-brand p{font-size:13px;color:var(--td);line-height:1.6;margin-top:12px;max-width:280px}
+.footer-col h4{font-size:11px;font-weight:700;color:var(--td);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:14px}
+.footer-col a{display:block;font-size:13px;color:var(--tm);margin-bottom:10px;transition:color 0.2s}
+.footer-col a:hover{color:var(--green)}
+.footer-bottom{max-width:1200px;margin:24px auto 0;padding-top:24px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;font-size:11px;color:var(--tm)}
+@media(max-width:768px){.footer-inner{grid-template-columns:1fr 1fr;gap:28px}.footer-bottom{flex-direction:column;gap:8px}}
+
+/* ANIMATIONS */
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity 0.6s,transform 0.6s}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+<a href="#" class="nav-logo">
+<svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="gf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
+<line x1="8" y1="4" x2="8" y2="38" stroke="url(#gf)" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M10 4 L26 10.5 L10 17Z" fill="url(#gf)" opacity="0.9"/>
+<circle cx="8" cy="40" r="2.5" fill="#34d399" opacity="0.35"/>
+<text x="36" y="32" font-family="Outfit,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#111827">STICKS</text>
+</svg>
+</a>
+<div class="nav-links" id="navLinks">
+<a href="#features">Features</a>
+<a href="#pricing">Pricing</a>
+<a href="#courses">Courses</a>
+<a href="#blog">Blog</a>
+<a href="https://sticks-xi.vercel.app" class="nav-cta">Open App</a>
+</div>
+<button class="mobile-menu" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<img class="hero-bg" src="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1600&q=90" alt="Golf course aerial">
+<div class="hero-overlay"></div>
+<div class="hero-content">
+<div class="hero-badge"><span></span> Free for all golfers</div>
+<h1>Track every shot.<br>Know <em>your game.</em></h1>
+<p>GPS shot tracking with satellite maps, smart stats, handicap calculation, and club distance analytics — on 30,000+ courses worldwide.</p>
+<div class="hero-btns">
+<a href="https://sticks-xi.vercel.app" class="btn-primary">Start Tracking — It's Free →</a>
+<a href="#features" class="btn-secondary">See Features</a>
+</div>
+</div>
+</section>
+
+<!-- STATS -->
+<section class="stats-bar">
+<div class="stats-inner">
+<div><div class="stat-num">30K+</div><div class="stat-label">Courses</div></div>
+<div><div class="stat-num">FREE</div><div class="stat-label">Handicap</div></div>
+<div><div class="stat-num">GPS</div><div class="stat-label">Satellite Maps</div></div>
+<div><div class="stat-num">∞</div><div class="stat-label">Rounds</div></div>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+<div class="section-tag">Features</div>
+<div class="section-title">Everything you need<br>to play better golf</div>
+<div class="section-sub">From GPS distances to smart stats — STICKS gives you the tools to understand your game and lower your scores.</div>
+<div class="feature-grid">
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">⛳</div>
+<h3>GPS Shot Tracking</h3>
+<p>Mark each shot with GPS coordinates. See distance, accuracy, and shot-by-shot patterns on satellite maps.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">📊</div>
+<h3>Smart Stats</h3>
+<p>GIR, fairways hit, putts per round, scoring distribution — all calculated automatically from your rounds.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">🏌️</div>
+<h3>Handicap Index</h3>
+<p>Your handicap calculated from your best 8 of 20 rounds using official differential formula. Updated every round.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">🎒</div>
+<h3>Club Bag Analytics</h3>
+<p>Track yardage for every club. See your real averages, min/max, and which clubs you actually hit well.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">🗺️</div>
+<h3>30,000+ Courses</h3>
+<p>Search any course in the database. Full hole-by-hole pars, yardages, ratings, and slope for every tee box.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-free">Free</span>
+<div class="feature-icon">☁️</div>
+<h3>Cloud Sync</h3>
+<p>Your rounds save to the cloud automatically. Access your stats from any device, anytime. Never lose data.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-pro">Coming Soon</span>
+<div class="feature-icon">🤖</div>
+<h3>AI Club Recs</h3>
+<p>Get personalized club recommendations based on distance, wind, elevation, and your real club averages.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-pro">Coming Soon</span>
+<div class="feature-icon">🏆</div>
+<h3>Match Play & Skins</h3>
+<p>Built-in game modes for match play, skins, Nassau, and more. Track bets and settle up automatically.</p>
+</div>
+<div class="feature-card fade-up">
+<span class="badge badge-pro">Coming Soon</span>
+<div class="feature-icon">📱</div>
+<h3>Round Replay</h3>
+<p>Animated shot-by-shot replay of your round on satellite maps. Share your best moments with friends.</p>
+</div>
+</div>
+</section>
+
+<!-- SHOWCASE 1 -->
+<section class="showcase" id="courses">
+<div class="showcase-inner">
+<div class="showcase-img fade-up">
+<img src="https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=90" alt="Satellite golf course view">
+</div>
+<div class="showcase-text fade-up">
+<div class="section-tag">Satellite Maps</div>
+<h2>See every shot on real satellite imagery</h2>
+<p>Built-in courses include GPS coordinates for every green. Mark shots with one tap and watch your round unfold on Mapbox satellite maps.</p>
+<ul class="showcase-list">
+<li><span class="check">✓</span> Live GPS position with blue pulsing dot</li>
+<li><span class="check">✓</span> Numbered shot markers with yardage labels</li>
+<li><span class="check">✓</span> Distance to green calculated in real-time</li>
+<li><span class="check">✓</span> Shot path lines connecting each shot</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- SHOWCASE 2 -->
+<section class="showcase reverse">
+<div class="showcase-inner">
+<div class="showcase-img fade-up">
+<img src="https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=1200&q=90" alt="Golf stats and scorecard">
+</div>
+<div class="showcase-text fade-up">
+<div class="section-tag">Smart Scorecard</div>
+<h2>More than just a score — know where to improve</h2>
+<p>Front 9 / Back 9 subtotals, color-coded holes by performance, scoring distribution from eagles to double bogeys.</p>
+<ul class="showcase-list">
+<li><span class="check">✓</span> Fairways, GIR, and putts per hole</li>
+<li><span class="check">✓</span> Club selection tracking per shot</li>
+<li><span class="check">✓</span> Undo button for easy corrections</li>
+<li><span class="check">✓</span> Complete round history with trends</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+<div class="section-tag">Pricing</div>
+<div class="section-title">Simple, honest pricing</div>
+<div class="section-sub">Start free. Upgrade when you're ready for more.</div>
+<div class="pricing-grid">
+<div class="price-card">
+<div class="price-name">Free</div>
+<div class="price-amount">$0</div>
+<div class="price-period">Forever. No credit card needed.</div>
+<ul class="price-features">
+<li>Unlimited rounds & score tracking</li>
+<li>Basic stats (avg score, putts)</li>
+<li>3 built-in courses with GPS maps</li>
+<li>Handicap index calculation</li>
+<li>Cloud sync across devices</li>
+<li class="no">30,000+ course database</li>
+<li class="no">Satellite shot maps (all courses)</li>
+<li class="no">AI club recommendations</li>
+</ul>
+<a href="https://sticks-xi.vercel.app" class="btn-secondary" style="width:100%;justify-content:center;padding:14px">Get Started Free</a>
+</div>
+<div class="price-card featured">
+<div class="price-name">Sticks Pro</div>
+<div class="price-amount">$3.99<span style="font-size:16px;font-weight:400;color:var(--td)">/mo</span></div>
+<div class="price-period">or $39.99/year — save 17%</div>
+<ul class="price-features">
+<li>Everything in Free</li>
+<li>30,000+ course search & data</li>
+<li>Satellite shot maps on all courses</li>
+<li>Full club bag analytics</li>
+<li>AI club recommendations</li>
+<li>Scoring trends & charts</li>
+<li>Strokes gained analysis</li>
+<li>Shareable round summary cards</li>
+</ul>
+<a href="https://sticks-xi.vercel.app" class="btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:14px">Start 7-Day Free Trial</a>
+</div>
+</div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+<div class="test-inner">
+<div class="section-tag" style="text-align:center">Reviews</div>
+<div class="section-title" style="text-align:center">Golfers love STICKS</div>
+<div class="test-grid">
+<div class="test-card fade-up">
+<div class="test-stars">★★★★★</div>
+<div class="test-text">"Finally an app that just tracks my game without 50 menus and upsells. GPS is accurate, scorecard is fast. Exactly what I wanted."</div>
+<div class="test-author">Jake M.</div>
+<div class="test-role">12 handicap · Goat Hill Park</div>
+</div>
+<div class="test-card fade-up">
+<div class="test-stars">★★★★★</div>
+<div class="test-text">"The satellite shot map is incredible. Seeing my round laid out on real imagery helps me understand my misses and plan better."</div>
+<div class="test-author">Sarah K.</div>
+<div class="test-role">18 handicap · Encinitas Ranch</div>
+</div>
+<div class="test-card fade-up">
+<div class="test-stars">★★★★★</div>
+<div class="test-text">"Club distance tracking changed my game. I stopped guessing on approach shots. Knowing my real 7-iron is 155, not 165, saved me 4 strokes."</div>
+<div class="test-author">Mike R.</div>
+<div class="test-role">8 handicap · Sandpiper Golf Club</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- BLOG -->
+<section class="blog" id="blog">
+<div class="section-tag">The 19th Hole</div>
+<div class="section-title">Tips, news & gear</div>
+<div class="section-sub">Golf content to help you play better and enjoy the game more.</div>
+<div class="blog-grid">
+<div class="blog-card fade-up">
+<img src="https://images.unsplash.com/photo-1600183952086-0a77e8f0edb2?w=800&q=80" alt="Golf improvement">
+<div class="blog-card-body">
+<div class="blog-cat">Game Improvement</div>
+<h3>5 Stats That Actually Predict Lower Scores</h3>
+<p>Forget driving distance. These are the numbers that correlate with shooting lower rounds — and how to track them.</p>
+</div>
+</div>
+<div class="blog-card fade-up">
+<img src="https://images.unsplash.com/photo-1611374243147-44a702c2d44c?w=800&q=80" alt="Course review">
+<div class="blog-card-body">
+<div class="blog-cat">Course Reviews</div>
+<h3>North County San Diego: Top 5 Public Courses</h3>
+<p>From Goat Hill Park to Encinitas Ranch — our picks for the best accessible courses in the 760.</p>
+</div>
+</div>
+<div class="blog-card fade-up">
+<img src="https://images.unsplash.com/photo-1595429035839-c99c298ffdde?w=800&q=80" alt="Golf gear">
+<div class="blog-card-body">
+<div class="blog-cat">Gear</div>
+<h3>Why GPS Apps Are Replacing Rangefinders in 2025</h3>
+<p>The data is clear: golf GPS apps now match laser accuracy while offering way more insight. Here's the breakdown.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+<h2>Ready to know <em style="font-style:normal;color:var(--green)">your game?</em></h2>
+<p>Join golfers tracking every shot, every round, every club. Free forever — no credit card required.</p>
+<a href="https://sticks-xi.vercel.app" class="btn-primary">Open STICKS — It's Free →</a>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+<div class="footer-inner">
+<div class="footer-brand">
+<svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:32px;width:auto">
+<defs><linearGradient id="gf2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
+<line x1="8" y1="4" x2="8" y2="38" stroke="url(#gf2)" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M10 4 L26 10.5 L10 17Z" fill="url(#gf2)" opacity="0.9"/>
+<circle cx="8" cy="40" r="2.5" fill="#34d399" opacity="0.35"/>
+<text x="36" y="32" font-family="Outfit,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#111827">STICKS</text>
+</svg>
+<p>GPS golf tracking, stats, and handicap calculation on 30,000+ courses. Built by golfers, for golfers.</p>
+</div>
+<div class="footer-col">
+<h4>Product</h4>
+<a href="#features">Features</a>
+<a href="#pricing">Pricing</a>
+<a href="#courses">Courses</a>
+<a href="https://sticks-xi.vercel.app">Open App</a>
+</div>
+<div class="footer-col">
+<h4>Resources</h4>
+<a href="#blog">Blog</a>
+<a href="#blog">Game Improvement</a>
+<a href="#blog">Course Reviews</a>
+<a href="#blog">Gear & Tech</a>
+</div>
+<div class="footer-col">
+<h4>Company</h4>
+<a href="#">About</a>
+<a href="#">Contact</a>
+<a href="#">Privacy</a>
+<a href="#">Terms</a>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© 2025 STICKS Golf. All rights reserved.</span>
+<span>Built in Encinitas, CA 🌴</span>
+</div>
+</footer>
+
+<script>
+// Scroll animation
+const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+// Nav background on scroll
+window.addEventListener('scroll',()=>{
+document.getElementById('nav').style.background=window.scrollY>60?'rgba(255,255,255,0.97)':'rgba(255,255,255,0.85)';
+});
+</script>
+
+</body>
+</html>
