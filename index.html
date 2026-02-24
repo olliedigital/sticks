@@ -54,6 +54,17 @@ const COURSES=[
 {id:"sandpiper",name:"Sandpiper Golf Club",loc:"Santa Barbara, CA",par:72,holes:18,greens:[{lat:34.4415,lng:-119.8825},{lat:34.4428,lng:-119.8810},{lat:34.4440,lng:-119.8795},{lat:34.4450,lng:-119.8812},{lat:34.4438,lng:-119.8830},{lat:34.4425,lng:-119.8845},{lat:34.4412,lng:-119.8858},{lat:34.4400,lng:-119.8842},{lat:34.4390,lng:-119.8825},{lat:34.4378,lng:-119.8808},{lat:34.4370,lng:-119.8792},{lat:34.4382,lng:-119.8778},{lat:34.4395,lng:-119.8762},{lat:34.4408,lng:-119.8748},{lat:34.4420,lng:-119.8735},{lat:34.4432,lng:-119.8752},{lat:34.4445,lng:-119.8768},{lat:34.4435,lng:-119.8785}],tees:{black:{r:75.0,s:135,y:[530,471,430,258,513,195,394,399,420,390,228,347,532,445,602,395,429,181]},gold:{r:72.6,s:130,y:[511,447,407,226,495,173,368,370,401,345,202,325,455,425,582,373,374,167]},silver:{r:70.3,s:126,y:[495,402,387,196,483,155,357,362,393,321,172,306,405,385,540,348,353,136]},copper:{r:67.6,s:120,y:[454,376,353,165,430,125,333,350,368,315,148,252,392,330,471,337,304,99]}},pars:[5,4,4,3,5,3,4,4,4,4,3,4,5,4,5,4,4,3],tips:["Opens with a reachable par 5. Two good shots set up an easy wedge. Don't miss left.","Hardest hole on the course. Long uphill par 4 \u2014 two of your best to reach this green.","Slight dogleg right. Mid-iron approach to a well-bunkered green. Miss right is dead.","Downhill par 3 with ocean views behind you. Take one less club, wind usually helps.","Par 5 with a narrow landing area. Lay up short of the fairway bunkers for a clean look.","Short par 3 but all carry. Front bunkers grab anything short. Favor the center.","Tight fairway with trouble left. Keep your tee shot right-center for the best angle in.","Elevation change makes this play shorter than the card. Trust the yardage from the tee.","Strong finisher to the front nine. Accurate drive is more important than distance here.","Welcome to the ocean holes. Clifftop par 4 \u2014 stunning and demanding. Favor the left side.","Iconic par 3 on the ocean bluffs. Wind is a factor. Check conditions before committing.","Dogleg right with the ocean on your right. Don't get distracted by the views.","Long par 5 along the cliffs. Three smart shots beat two heroic ones here.","Tough par 4 with elevation. Number 2 handicap hole \u2014 two solid shots to get home.","Longest hole on the course at 600+. Three full shots, uphill finish. Par is a great score.","Back inland now. Straightforward par 4 with a receptive green. Birdie opportunity.","Long par 4 playing into the prevailing wind. Club up and keep it below the hole.","Finishing par 3 \u2014 shorter than it looks. Pin position matters. End your round strong."]}
 ];
 const GOLF_API="PS7CU654LQUULN2VZ2EKPGWXAI";
+// Golf imagery from Unsplash (free commercial use)
+const GOLF_IMG={
+hero:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80",
+aerial:"https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=600&q=80",
+sunset:"https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=600&q=80",
+green:"https://images.unsplash.com/photo-1592919505780-303950717480?w=600&q=80",
+fairway:"https://images.unsplash.com/photo-1600183952086-0a77e8f0edb2?w=600&q=80",
+flag:"https://images.unsplash.com/photo-1611374243147-44a702c2d44c?w=600&q=80",
+ball:"https://images.unsplash.com/photo-1595429035839-c99c298ffdde?w=600&q=80",
+dawn:"https://images.unsplash.com/photo-1622396636133-bf4e4ca23ace?w=600&q=80",
+};
 const getCourse=(id)=>COURSES.find(c=>c.id===id)||COURSES[0];
 const apiToLocal=(c,teeData)=>{
 if(!c)return null;
@@ -103,6 +114,7 @@ const[name,setName]=useState("");
 const[loading,setLoading]=useState(false);
 const[error,setError]=useState("");
 const[msg,setMsg]=useState("");
+const[imgLoaded,setImgLoaded]=useState(false);
 
 const handleLogin=async()=>{
 setLoading(true);setError("");
@@ -128,40 +140,40 @@ if(e){setError(e.message);setLoading(false);return;}
 setMsg("Password reset link sent to your email");setLoading(false);setMode("login");
 };
 const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset;
-const inputS={width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(52,211,153,0.1)",borderRadius:12,padding:"14px 16px",color:"#e4e4e7",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border 0.2s"};
-return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px",position:"relative",overflow:"hidden"}}>
-{/* Background effects */}
-<div style={{position:"absolute",top:"-30%",right:"-20%",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,rgba(52,211,153,0.06) 0%,transparent 70%)",pointerEvents:"none"}}/>
-<div style={{position:"absolute",bottom:"-20%",left:"-15%",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(5,150,105,0.04) 0%,transparent 70%)",pointerEvents:"none"}}/>
-{/* Decorative golf elements */}
-<div style={{position:"absolute",top:"12%",right:"8%",animation:"float 4s ease-in-out infinite",opacity:0.06}}>
-<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1"><circle cx="12" cy="12" r="4"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>
-</div>
-<div style={{position:"absolute",bottom:"15%",left:"6%",animation:"float 5s ease-in-out infinite 1s",opacity:0.04}}>
-<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1"><path d="M4 20l8-16 8 16"/></svg>
-</div>
+const inputS={width:"100%",background:"rgba(0,0,0,0.35)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"14px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10};
+const heroImg="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80";
+return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden"}}>
+{/* Hero background image */}
+<img src={heroImg} onLoad={()=>setImgLoaded(true)} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:imgLoaded?1:0,transition:"opacity 0.8s"}}/>
+{/* Dark gradient overlay */}
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.5) 30%,rgba(0,0,0,0.85) 65%,rgba(5,5,7,0.98) 100%)"}}/>
 {/* Content */}
-<div style={{textAlign:"center",marginBottom:32,animation:"fadeUp 0.6s ease-out",position:"relative",zIndex:1}}>
-<div style={{display:"flex",justifyContent:"center",marginBottom:12}}><LOGO/></div>
-<p style={{color:"#52525b",fontSize:13,fontFamily:F,fontWeight:500,letterSpacing:"0.15em",textTransform:"uppercase"}}>Track your game. Know your numbers.</p>
+<div style={{position:"relative",zIndex:2,minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"40px 24px 40px"}}>
+<div style={{animation:"fadeUp 0.7s ease-out"}}>
+<div style={{marginBottom:24}}>
+<div style={{display:"flex",alignItems:"center",marginBottom:6}}><LOGO/></div>
+<p style={{color:"rgba(255,255,255,0.45)",fontSize:13,fontFamily:F,fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>GPS Shot Tracking \u00b7 30K+ Courses</p>
 </div>
-<div style={{background:"rgba(255,255,255,0.02)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(52,211,153,0.08)",borderRadius:18,padding:"28px 22px",maxWidth:380,margin:"0 auto",width:"100%",animation:"fadeUp 0.6s ease-out 0.1s both",position:"relative",zIndex:1,boxShadow:"0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
-<div style={{display:"flex",gap:4,marginBottom:22,background:"rgba(255,255,255,0.03)",borderRadius:10,padding:3}}>
-{[{id:"login",l:"Log In"},{id:"signup",l:"Sign Up"}].map(t=><button key={t.id} onClick={()=>{setMode(t.id);setError("");setMsg("");}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",background:mode===t.id?"rgba(52,211,153,0.1)":"transparent",color:mode===t.id?"#34d399":"#3f3f46",fontSize:13,fontWeight:600,fontFamily:F,transition:"all 0.2s",boxShadow:mode===t.id?"0 1px 4px rgba(52,211,153,0.1)":"none"}}>{t.l}</button>)}
+<div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:20,padding:"24px 20px",maxWidth:400,animation:"fadeUp 0.7s ease-out 0.1s both",boxShadow:"0 8px 40px rgba(0,0,0,0.4)"}}>
+<div style={{display:"flex",gap:4,marginBottom:18,background:"rgba(255,255,255,0.04)",borderRadius:10,padding:3}}>
+{[{id:"login",l:"Log In"},{id:"signup",l:"Sign Up"}].map(t=><button key={t.id} onClick={()=>{setMode(t.id);setError("");setMsg("");}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",background:mode===t.id?"rgba(52,211,153,0.15)":"transparent",color:mode===t.id?"#34d399":"rgba(255,255,255,0.3)",fontSize:13,fontWeight:600,fontFamily:F,transition:"all 0.2s"}}>{t.l}</button>)}
 </div>
 {mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
 <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" style={inputS} autoComplete="email"/>
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
-{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.06)",borderRadius:8,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
-{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.06)",borderRadius:8,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:14,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.6:1,marginTop:6,boxShadow:"0 4px 20px rgba(52,211,153,0.2)",transition:"all 0.2s",letterSpacing:"0.02em"}}>
+{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.08)",borderRadius:8,border:"1px solid rgba(248,113,113,0.15)"}}>{error}</div>}
+{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.08)",borderRadius:8,border:"1px solid rgba(52,211,153,0.15)"}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:14,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4,boxShadow:"0 4px 20px rgba(52,211,153,0.25)",letterSpacing:"0.02em"}}>
 {loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
-{mode==="login"&&<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"#3f3f46",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center",transition:"color 0.2s"}}>Forgot password?</button>}
-{mode==="reset"&&<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"#3f3f46",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center"}}>Back to login</button>}
+{mode==="login"&&<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center"}}>Forgot password?</button>}
+{mode==="reset"&&<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center"}}>Back to login</button>}
 </div>
-<div style={{textAlign:"center",marginTop:28,animation:"fadeUp 0.6s ease-out 0.3s both",position:"relative",zIndex:1}}>
-<p style={{color:"#27272a",fontSize:11,fontFamily:F}}>GPS Shot Tracking \u00b7 30,000+ Courses \u00b7 Cloud Sync</p>
+{/* Feature pills */}
+<div style={{display:"flex",justifyContent:"center",gap:8,marginTop:20,animation:"fadeUp 0.7s ease-out 0.3s both"}}>
+{["\u26f3 Satellite Maps","\ud83d\udcca Smart Stats","\u2601\ufe0f Cloud Sync"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.4)",fontSize:10,fontFamily:F,fontWeight:500}}>{f}</div>)}
+</div>
+</div>
 </div>
 </div>;
 }
@@ -232,11 +244,18 @@ if(editing)return <div><Hdr title="Edit Profile" T={T} onToggleTheme={onToggle} 
 </div></div>;
 return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:10,textAlign:"center",paddingTop:20,paddingBottom:20}}>
-<div style={{display:"flex",justifyContent:"center"}}><Avatar name={profile.name} color={profile.color} size={64}/></div>
-<div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:F,marginTop:10}}>{profile.name}</div>
-<div style={{fontSize:12,color:T.tm,fontFamily:F,marginTop:4}}>{home.name}</div>
-<div style={{display:"flex",justifyContent:"center",gap:24,marginTop:14,paddingTop:14,borderTop:"1px solid "+T.bdr}}>
+{/* Profile hero with golf backdrop */}
+<div style={{borderRadius:14,overflow:"hidden",position:"relative",marginBottom:10}}>
+<img src={GOLF_IMG.aerial} style={{width:"100%",height:140,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:14,left:0,right:0,textAlign:"center"}}>
+<div style={{display:"flex",justifyContent:"center"}}><Avatar name={profile.name} color={profile.color} size={52}/></div>
+<div style={{fontSize:18,fontWeight:700,color:"#fff",fontFamily:F,marginTop:6}}>{profile.name}</div>
+<div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F,marginTop:2}}>{home.name}</div>
+</div>
+</div>
+<Crd T={T} style={{marginBottom:10}}>
+<div style={{display:"flex",justifyContent:"center",gap:24,padding:"6px 0"}}>
 <St label="Rounds" value={done.length} small T={T}/><St label="Handicap" value={hcp!=null?hcp:"\u2014"} small T={T}/><St label="Goal" value={profile.goal||"\u2014"} small T={T}/>
 </div>
 {hcp!=null&&profile.goal&&<div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:hcp<=profile.goal?T.gd:T.od,border:"1px solid "+(hcp<=profile.goal?T.gb:T.o+"22")}}>
@@ -260,10 +279,40 @@ const fwT=ah.filter(h=>h.par>3).length;const fwP=fwT?Math.round(ah.filter(h=>h.f
 const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0),0))):null;
 const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
 const totH=Object.values(dist).reduce((s,v)=>s+v,0);
-if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"60px 20px",textAlign:"center"}}><div style={{width:72,height:72,borderRadius:20,background:"linear-gradient(135deg,"+T.gd+",rgba(52,211,153,0.15))",margin:"0 auto 20px",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 24px rgba(52,211,153,0.1)"}}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="1.5" strokeLinecap="round"><path d="M12 2L12 8M12 22L12 16M2 12L8 12M22 12L16 12"/><circle cx="12" cy="12" r="3"/></svg></div><h2 style={{color:T.tx,fontSize:19,fontWeight:700,margin:"0 0 8px",fontFamily:F}}>Ready to play?</h2><p style={{color:T.tm,fontSize:13,fontFamily:F,lineHeight:1.6,maxWidth:240,margin:"0 auto"}}>Head to the Play tab to start tracking your first round</p></div></div>;
+if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px 100px"}}>
+<div style={{borderRadius:16,overflow:"hidden",position:"relative",marginBottom:16}}>
+<img src={GOLF_IMG.sunset} style={{width:"100%",height:200,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 30%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16,right:16}}>
+<h2 style={{color:"#fff",fontSize:20,fontWeight:700,margin:"0 0 4px",fontFamily:F}}>Ready to play?</h2>
+<p style={{color:"rgba(255,255,255,0.7)",fontSize:13,fontFamily:F,margin:0}}>Head to the Play tab to start tracking</p>
+</div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div style={{borderRadius:12,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.green} style={{width:"100%",height:100,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.6) 100%)"}}/>
+<div style={{position:"absolute",bottom:8,left:10}}><div style={{color:"#fff",fontSize:11,fontWeight:700,fontFamily:F}}>GPS Tracking</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9,fontFamily:F}}>Satellite maps</div></div>
+</div>
+<div style={{borderRadius:12,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.ball} style={{width:"100%",height:100,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.6) 100%)"}}/>
+<div style={{position:"absolute",bottom:8,left:10}}><div style={{color:"#fff",fontSize:11,fontWeight:700,fontFamily:F}}>Smart Stats</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9,fontFamily:F}}>Track every shot</div></div>
+</div>
+</div>
+</div></div>;
 return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:8,background:"linear-gradient(135deg,rgba(52,211,153,0.08),rgba(5,150,105,0.03),"+T.card+")",border:"1px solid rgba(52,211,153,0.15)",boxShadow:"0 4px 24px rgba(52,211,153,0.06)"}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F,fontWeight:700,marginBottom:6}}>Handicap Index</div><div style={{fontSize:48,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1,textShadow:"0 0 40px rgba(52,211,153,0.15)"}}>{hcp!=null?hcp:"\u2014"}</div>{hcp==null&&<div style={{fontSize:11,color:T.td,marginTop:8,fontFamily:F}}>Need 5+ full rounds</div>}</div></Crd>
+{/* Hero course photo banner */}
+<div style={{borderRadius:14,overflow:"hidden",position:"relative",marginBottom:10}}>
+<img src={GOLF_IMG.dawn} style={{width:"100%",height:120,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(0,0,0,0.4),rgba(0,0,0,0.15))"}}/>
+<div style={{position:"absolute",top:"50%",left:16,transform:"translateY(-50%)"}}>
+<div style={{color:"rgba(255,255,255,0.6)",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F}}>Handicap Index</div>
+<div style={{fontSize:44,fontWeight:800,color:"#fff",fontFamily:M,lineHeight:1,textShadow:"0 2px 12px rgba(0,0,0,0.3)"}}>{hcp!=null?hcp:"\u2014"}</div>
+{hcp==null&&<div style={{fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:F,marginTop:2}}>Need 5+ full rounds</div>}
+</div>
+</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
@@ -289,14 +338,17 @@ if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q);setSearchResults(r);setSearching(false);},400);};
 const selectApiCourse=(c)=>{setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
+const COURSE_IMG={goat_hill:GOLF_IMG.aerial,encinitas_ranch:GOLF_IMG.fairway,sandpiper:GOLF_IMG.flag};
 return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <Crd T={T} style={{marginBottom:10}}>
 <Lbl T={T}>Course</Lbl>
 {!showSearch?<div style={{display:"flex",flexDirection:"column",gap:6}}>
-{apiCourse&&<button onClick={()=>selectApiCourse(apiCourse)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:T.gd,border:"1px solid "+T.gb,color:T.g,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700}}>{apiCourse.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{apiCourse.loc}</div></div><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {apiCourse.par}</div></button>}
-{COURSES.map(c=>{const a=!apiCourse&&courseId===c.id;return <button key={c.id} onClick={()=>selectBuiltIn(c.id)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,color:a?T.g:T.td,fontFamily:F,transition:"all 0.12s",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,opacity:0.7}}>{c.loc}</div></div><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div></div></button>;})}
-<button onClick={()=>setShowSearch(true)} style={{padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px dashed "+T.gb,color:T.g,fontFamily:F,fontSize:13,fontWeight:600,textAlign:"center"}}>Search 30,000+ Courses</button>
+{apiCourse&&<button onClick={()=>selectApiCourse(apiCourse)} style={{padding:0,borderRadius:12,cursor:"pointer",background:T.gd,border:"1px solid "+T.gb,overflow:"hidden",textAlign:"left"}}><div style={{position:"relative"}}><img src={GOLF_IMG.green} style={{width:"100%",height:70,objectFit:"cover",display:"block"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.1) 100%)"}}/><div style={{position:"absolute",top:"50%",left:14,transform:"translateY(-50)"}}><div style={{color:"#fff",fontSize:14,fontWeight:700,fontFamily:F}}>{apiCourse.name}</div><div style={{color:"rgba(255,255,255,0.6)",fontSize:11,fontFamily:F,marginTop:1}}>{apiCourse.loc} · Par {apiCourse.par}</div></div></div></button>}
+{COURSES.map((c,ci)=>{const a=!apiCourse&&courseId===c.id;return <button key={c.id} onClick={()=>selectBuiltIn(c.id)} style={{padding:0,borderRadius:12,cursor:"pointer",overflow:"hidden",border:a?"2px solid "+T.g:"1px solid "+T.bdr,textAlign:"left",position:"relative"}}><img src={COURSE_IMG[c.id]||GOLF_IMG.aerial} style={{width:"100%",height:70,objectFit:"cover",display:"block",opacity:a?1:0.75,transition:"opacity 0.2s"}}/><div style={{position:"absolute",inset:0,background:a?"linear-gradient(90deg,rgba(0,0,0,0.4),rgba(0,0,0,0.1))":"linear-gradient(90deg,rgba(0,0,0,0.55),rgba(0,0,0,0.15))"}}/>{a&&<div style={{position:"absolute",top:8,right:8,width:22,height:22,borderRadius:11,background:T.g,display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L20 7"/></svg></div>}<div style={{position:"absolute",top:"50%",left:14,transform:"translateY(-50%)"}}><div style={{color:"#fff",fontSize:14,fontWeight:700,fontFamily:F,textShadow:"0 1px 4px rgba(0,0,0,0.3)"}}>{c.name}</div><div style={{color:"rgba(255,255,255,0.65)",fontSize:11,fontFamily:F,marginTop:1}}>{c.loc} · Par {c.par}</div></div></button>;})}
+<button onClick={()=>setShowSearch(true)} style={{padding:"14px",borderRadius:12,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px dashed "+T.gb,color:T.g,fontFamily:F,fontSize:13,fontWeight:600,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+Search 30,000+ Courses</button>
 </div>
 :<div>
 <div style={{display:"flex",gap:6,marginBottom:8}}><input type="text" value={searchQ} onChange={e=>doSearch(e.target.value)} placeholder="Search course name..." autoFocus style={{flex:1,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.gb,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/><button onClick={()=>{setShowSearch(false);setSearchQ("");setSearchResults([]);}} style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"none",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Cancel</button></div>
@@ -339,14 +391,24 @@ return <div>
 }
 // ==================== ROUNDS & BAG ====================
 function Rounds({rounds,onDel,T,onToggle,profile}){
-if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>No rounds yet</p></div></div>;
+if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px"}}>
+<div style={{borderRadius:14,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.fairway} style={{width:"100%",height:180,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16}}><div style={{color:"#fff",fontSize:16,fontWeight:700,fontFamily:F}}>No rounds yet</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:F,marginTop:2}}>Your history will appear here</div></div>
+</div></div></div>;
 return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
 }
 function Bag({rounds,T,onToggle,profile}){
 const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
 return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
-<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"80px 20px",textAlign:"center"}}><p style={{color:T.td,fontSize:13,fontFamily:F}}>Track yardage to see club averages</p></div>
+<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"0"}}>
+<div style={{borderRadius:14,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.ball} style={{width:"100%",height:180,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16}}><div style={{color:"#fff",fontSize:16,fontWeight:700,fontFamily:F}}>Your Bag</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:F,marginTop:2}}>Track yardage to see club averages</div></div>
+</div></div>
 :stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n+" shot"+(s.n!==1?"s":"")}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min+"\u2013"+s.max}</div></div></div><div style={{marginTop:8,height:3,background:"rgba(128,128,128,0.06)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:"linear-gradient(90deg,"+T.g+"66,"+T.g+")",width:Math.min(100,s.avg/300*100)+"%",transition:"width 0.4s"}}/></div></Crd>)}</div></div>;
 }
 
