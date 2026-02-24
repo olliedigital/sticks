@@ -46,7 +46,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
 const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
-const GMAPS_KEY="AIzaSyBl1GISNK1Oaz-BqHwz_-FpeGW9aKKNjnQ";
+// Map rendering uses custom SVG illustrations
 const COURSES=[
 {id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,greens:[{lat:33.19762,lng:-117.35778},{lat:33.19838,lng:-117.35712},{lat:33.19772,lng:-117.35598},{lat:33.19672,lng:-117.35528},{lat:33.19618,lng:-117.35598},{lat:33.19568,lng:-117.35702},{lat:33.19515,lng:-117.35798},{lat:33.19432,lng:-117.35868},{lat:33.19498,lng:-117.35948},{lat:33.19588,lng:-117.36028},{lat:33.19658,lng:-117.36108},{lat:33.19738,lng:-117.36038},{lat:33.19812,lng:-117.36108},{lat:33.19868,lng:-117.36002},{lat:33.19782,lng:-117.35852},{lat:33.19688,lng:-117.35758},{lat:33.19618,lng:-117.35838},{lat:33.19702,lng:-117.35912}],teeBoxes:[{lat:33.19830,lng:-117.35862},{lat:33.19775,lng:-117.35788},{lat:33.19845,lng:-117.35725},{lat:33.19788,lng:-117.35608},{lat:33.19678,lng:-117.35538},{lat:33.19622,lng:-117.35608},{lat:33.19572,lng:-117.35712},{lat:33.19525,lng:-117.35808},{lat:33.19442,lng:-117.35878},{lat:33.19505,lng:-117.35958},{lat:33.19598,lng:-117.36038},{lat:33.19668,lng:-117.36118},{lat:33.19745,lng:-117.36048},{lat:33.19818,lng:-117.36118},{lat:33.19875,lng:-117.36012},{lat:33.19792,lng:-117.35862},{lat:33.19695,lng:-117.35768},{lat:33.19628,lng:-117.35848}],tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green \u2014 aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight \u2014 keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."]},
 {id:"encinitas_ranch",name:"Encinitas Ranch",loc:"Encinitas, CA",par:72,holes:18,greens:[{lat:33.0678,lng:-117.1575},{lat:33.0672,lng:-117.1562},{lat:33.0660,lng:-117.1548},{lat:33.0650,lng:-117.1565},{lat:33.0642,lng:-117.1582},{lat:33.0652,lng:-117.1598},{lat:33.0665,lng:-117.1610},{lat:33.0680,lng:-117.1618},{lat:33.0692,lng:-117.1602},{lat:33.0700,lng:-117.1585},{lat:33.0712,lng:-117.1568},{lat:33.0705,lng:-117.1552},{lat:33.0695,lng:-117.1538},{lat:33.0682,lng:-117.1525},{lat:33.0670,lng:-117.1540},{lat:33.0660,lng:-117.1558},{lat:33.0672,lng:-117.1572},{lat:33.0685,lng:-117.1588}],tees:{blue:{r:71.0,s:126,y:[347,192,527,342,354,160,365,407,497,442,540,169,398,433,373,361,185,495]},green:{r:69.3,s:122,y:[347,168,527,342,300,160,336,330,497,407,540,169,370,375,373,324,160,495]},white:{r:67.5,s:117,y:[297,168,522,285,300,139,336,330,470,407,487,130,370,375,320,324,160,470]},gold:{r:64.5,s:110,y:[275,122,495,245,250,120,315,290,430,357,440,110,333,347,255,282,130,439]}},pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],tips:["Forgiving opener. Wide fairway, avoid the right bunker. Mid-iron approach.","All carry over a canyon. Club up if wind is in your face.","Reachable in two for long hitters. Layup to 100 leaves a wedge in.","Dogleg left. Aim right-center off the tee. Green slopes back to front.","Elevated tee with ocean views. Favor the left side of the fairway.","Short par 3 but don't be short \u2014 bunkers guard the front.","Tight driving hole. Keep it in play, the green is well-bunkered.","Longest par 4 on the front. Two solid shots to reach this elevated green.","Risk-reward par 5. Lay up short of the cross bunkers or go for it.","Tough opener to the back nine. Dogleg right, big hitters can cut the corner.","Longest hole on the course. Three good shots to get home.","Downhill par 3. Take less club than you think, green runs away from you.","Narrow fairway with canyon left. Play to the right side off the tee.","Long par 4 with elevation change. Driver to the flat spot, then mid-iron in.","Scenic hole along the bluffs. Stay left off the tee, green is wide but shallow.","Back-to-front slope on the green. Below the hole is key here.","Over a canyon to a well-guarded green. Check the pin position before choosing club.","Great finishing par 5. Reachable in two but water guards the green. Solid layup works."]},
@@ -224,80 +224,96 @@ return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden"}}>
 // ==================== UI COMPONENTS ====================
 const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
 const HOLE_DESIGNS=[
-{shape:"slight_right",fw:0.85,bunkers:[{x:0.7,y:0.35,s:0.7}],trees:[{x:0.2,y:0.5},{x:0.85,y:0.6}],greenShape:"oval",elev:"flat"},
-{shape:"straight",fw:0.6,bunkers:[],trees:[{x:0.15,y:0.4},{x:0.88,y:0.35}],greenShape:"round",elev:"uphill"},
-{shape:"slight_left",fw:0.8,bunkers:[{x:0.35,y:0.25,s:0.6}],trees:[{x:0.5,y:0.5,s:1.2,label:"dead tree"}],greenShape:"double",elev:"downhill"},
-{shape:"straight",fw:0.9,bunkers:[{x:0.65,y:0.55,s:0.5}],trees:[{x:0.2,y:0.3},{x:0.82,y:0.45}],greenShape:"oval",elev:"flat"},
-{shape:"straight",fw:0.7,bunkers:[],trees:[{x:0.15,y:0.55},{x:0.9,y:0.4}],greenShape:"round",elev:"flat"},
-{shape:"straight",fw:0.6,bunkers:[{x:0.6,y:0.2,s:0.5}],trees:[],greenShape:"round",elev:"flat",ocean:true},
-{shape:"straight",fw:0.55,bunkers:[],trees:[{x:0.2,y:0.45},{x:0.85,y:0.5}],greenShape:"oval",elev:"flat"},
-{shape:"straight",fw:0.85,bunkers:[{x:0.3,y:0.3,s:0.6}],trees:[{x:0.8,y:0.6}],greenShape:"double",elev:"uphill"},
-{shape:"straight",fw:0.5,bunkers:[],trees:[],greenShape:"round",elev:"downhill"},
-{shape:"straight",fw:0.85,bunkers:[{x:0.25,y:0.45,s:0.7},{x:0.3,y:0.5,s:0.5}],trees:[{x:0.8,y:0.55}],greenShape:"narrow",elev:"downhill"},
-{shape:"straight",fw:0.6,bunkers:[],trees:[{x:0.2,y:0.5},{x:0.85,y:0.4}],greenShape:"round",elev:"uphill"},
-{shape:"dogleg_left",fw:0.8,bunkers:[{x:0.55,y:0.2,s:0.5}],trees:[{x:0.3,y:0.55}],greenShape:"tiered",elev:"uphill"},
-{shape:"straight",fw:0.65,bunkers:[],trees:[{x:0.2,y:0.4},{x:0.82,y:0.45}],greenShape:"round",elev:"uphill"},
-{shape:"dogleg_right",fw:0.8,bunkers:[{x:0.55,y:0.18,s:0.7}],trees:[{x:0.7,y:0.5,s:1.1,label:"eucalyptus"}],greenShape:"oval",elev:"flat"},
-{shape:"straight",fw:0.9,bunkers:[{x:0.3,y:0.6,s:0.5},{x:0.7,y:0.55,s:0.5}],trees:[{x:0.15,y:0.4},{x:0.88,y:0.35}],greenShape:"oval",elev:"downhill_up"},
-{shape:"straight",fw:0.75,bunkers:[],trees:[{x:0.2,y:0.5}],greenShape:"round",elev:"downhill"},
-{shape:"straight",fw:0.55,bunkers:[{x:0.4,y:0.25,s:0.5}],trees:[],greenShape:"round",elev:"flat"},
-{shape:"straight",fw:0.85,bunkers:[{x:0.65,y:0.35,s:0.5}],trees:[{x:0.2,y:0.55},{x:0.82,y:0.5}],greenShape:"oval",elev:"flat"}
+{fw:"M50,385 Q50,300 48,240 Q46,180 52,130 Q56,90 58,55",bunkers:[{x:68,y:78,rx:8,ry:5},{x:32,y:195,rx:6,ry:4}],green:{x:58,y:42,rx:14,ry:12},trees:[{x:22,y:150,s:8},{x:78,y:165,s:7},{x:82,y:115,s:9},{x:18,y:95,s:6},{x:80,y:245,s:7}],water:[],dogleg:"right",elev:""},
+{fw:"M50,385 Q50,300 50,200 Q50,140 50,80",bunkers:[{x:36,y:72,rx:7,ry:5},{x:64,y:68,rx:6,ry:5}],green:{x:50,y:52,rx:13,ry:11},trees:[{x:20,y:175,s:8},{x:80,y:195,s:7},{x:18,y:115,s:6},{x:82,y:125,s:7}],water:[],dogleg:"",elev:"uphill"},
+{fw:"M50,385 Q50,300 48,220 Q44,160 40,120 Q36,90 34,60",bunkers:[{x:24,y:68,rx:7,ry:4},{x:48,y:98,rx:5,ry:4}],green:{x:34,y:42,rx:16,ry:11},trees:[{x:78,y:155,s:9},{x:20,y:175,s:7},{x:72,y:95,s:8},{x:12,y:85,s:6}],water:[],dogleg:"left",elev:""},
+{fw:"M50,385 Q50,320 50,240 Q50,170 50,110 Q50,80 50,50",bunkers:[{x:34,y:108,rx:6,ry:4},{x:66,y:58,rx:7,ry:5},{x:28,y:198,rx:5,ry:3}],green:{x:50,y:38,rx:13,ry:11},trees:[{x:18,y:148,s:8},{x:82,y:175,s:9},{x:22,y:245,s:7},{x:80,y:95,s:7}],water:[],dogleg:"",elev:""},
+{fw:"M50,385 Q50,310 48,230 Q46,170 48,110",bunkers:[{x:34,y:105,rx:6,ry:4}],green:{x:48,y:78,rx:12,ry:10},trees:[{x:20,y:195,s:7},{x:80,y:215,s:8},{x:77,y:135,s:6},{x:22,y:128,s:7}],water:[],dogleg:"",elev:""},
+{fw:"M50,385 Q50,310 48,220 Q46,155 44,100",bunkers:[{x:30,y:88,rx:7,ry:4},{x:58,y:82,rx:5,ry:4}],green:{x:44,y:62,rx:13,ry:11},trees:[{x:18,y:155,s:7},{x:82,y:175,s:8}],water:[{path:"M72,195 Q76,158 73,118 Q71,98 68,88",w:12}],dogleg:"",elev:""},
+{fw:"M50,385 Q50,310 50,210 Q50,155 52,105",bunkers:[{x:38,y:92,rx:6,ry:4},{x:66,y:97,rx:5,ry:4}],green:{x:52,y:68,rx:12,ry:10},trees:[{x:23,y:215,s:8},{x:80,y:195,s:7},{x:20,y:128,s:6},{x:82,y:138,s:7}],water:[],dogleg:"",elev:""},
+{fw:"M50,385 Q50,315 50,240 Q50,170 48,110 Q46,80 44,52",bunkers:[{x:58,y:58,rx:7,ry:4},{x:30,y:118,rx:5,ry:4},{x:67,y:178,rx:6,ry:3}],green:{x:44,y:38,rx:15,ry:11},trees:[{x:18,y:195,s:8},{x:82,y:215,s:9},{x:77,y:98,s:7},{x:16,y:95,s:7}],water:[],dogleg:"",elev:""},
+{fw:"M50,385 Q50,320 50,250 Q50,195 50,145",bunkers:[{x:36,y:128,rx:5,ry:4}],green:{x:50,y:105,rx:11,ry:10},trees:[{x:23,y:248,s:7},{x:77,y:258,s:6},{x:20,y:168,s:7},{x:80,y:178,s:6}],water:[],dogleg:"",elev:"downhill"},
+{fw:"M50,385 Q50,315 50,240 Q48,170 44,118 Q40,88 38,55",bunkers:[{x:28,y:148,rx:7,ry:4},{x:50,y:60,rx:6,ry:4}],green:{x:38,y:42,rx:13,ry:11},trees:[{x:18,y:195,s:8},{x:82,y:178,s:9},{x:77,y:108,s:7},{x:15,y:118,s:6}],water:[],dogleg:"",elev:"downhill"},
+{fw:"M50,385 Q50,310 50,230 Q50,158 50,108",bunkers:[{x:36,y:98,rx:6,ry:4},{x:64,y:102,rx:5,ry:4}],green:{x:50,y:72,rx:12,ry:10},trees:[{x:20,y:195,s:8},{x:80,y:208,s:7},{x:18,y:128,s:6},{x:82,y:138,s:7}],water:[],dogleg:"",elev:"uphill"},
+{fw:"M50,385 Q50,315 50,245 Q46,175 38,125 Q32,95 28,62",bunkers:[{x:18,y:68,rx:6,ry:4},{x:42,y:108,rx:5,ry:3},{x:68,y:198,rx:6,ry:4}],green:{x:28,y:45,rx:13,ry:11},trees:[{x:78,y:148,s:9},{x:82,y:98,s:8},{x:18,y:175,s:7},{x:12,y:78,s:6}],water:[],dogleg:"left",elev:"uphill"},
+{fw:"M50,385 Q50,310 50,230 Q50,158 50,108",bunkers:[{x:36,y:98,rx:6,ry:5},{x:64,y:95,rx:5,ry:4}],green:{x:50,y:72,rx:12,ry:10},trees:[{x:23,y:198,s:8},{x:80,y:208,s:7},{x:20,y:128,s:7},{x:82,y:138,s:6}],water:[],dogleg:"",elev:"uphill"},
+{fw:"M50,385 Q50,315 52,240 Q56,175 62,125 Q66,95 66,62",bunkers:[{x:55,y:60,rx:8,ry:5},{x:78,y:98,rx:5,ry:4}],green:{x:66,y:42,rx:13,ry:11},trees:[{x:22,y:178,s:8},{x:28,y:118,s:7},{x:82,y:195,s:9},{x:85,y:78,s:6}],water:[],dogleg:"right",elev:""},
+{fw:"M50,395 Q50,340 50,275 Q50,215 50,155 Q50,105 50,58 Q50,35 50,18",bunkers:[{x:64,y:148,rx:6,ry:4},{x:34,y:98,rx:7,ry:4},{x:62,y:28,rx:6,ry:5}],green:{x:50,y:15,rx:14,ry:12},trees:[{x:18,y:248,s:9},{x:82,y:258,s:8},{x:16,y:148,s:7},{x:84,y:158,s:8},{x:20,y:58,s:7},{x:80,y:68,s:7}],water:[],dogleg:"",elev:"downhill"},
+{fw:"M50,385 Q50,315 50,240 Q48,170 44,118 Q40,88 38,55",bunkers:[{x:26,y:58,rx:7,ry:4},{x:56,y:118,rx:5,ry:3}],green:{x:38,y:38,rx:14,ry:12},trees:[{x:18,y:195,s:8},{x:82,y:178,s:9},{x:77,y:98,s:7},{x:16,y:95,s:6}],water:[],dogleg:"",elev:"downhill"},
+{fw:"M50,385 Q50,310 50,230 Q50,158 50,108",bunkers:[{x:64,y:95,rx:6,ry:5},{x:36,y:98,rx:5,ry:4}],green:{x:50,y:68,rx:13,ry:11},trees:[{x:20,y:198,s:8},{x:80,y:208,s:7},{x:18,y:128,s:7},{x:84,y:128,s:6}],water:[],dogleg:"",elev:"uphill"},
+{fw:"M50,385 Q50,315 50,240 Q50,170 50,110 Q50,80 50,50",bunkers:[{x:34,y:108,rx:6,ry:4},{x:66,y:58,rx:7,ry:5}],green:{x:50,y:38,rx:13,ry:11},trees:[{x:20,y:198,s:8},{x:80,y:215,s:9},{x:18,y:128,s:7},{x:82,y:98,s:7}],water:[],dogleg:"",elev:""}
 ];
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
-const canvasRef=useRef(null);const course=getCourse(courseId);const hasShots=shots&&shots.length>0;
-const par=course.pars[holeIdx];const teeKey=Object.keys(course.tees)[0];const yardage=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
-const design=HOLE_DESIGNS[holeIdx]||HOLE_DESIGNS[0];const tip=course.tips?course.tips[holeIdx]:"";
-useEffect(()=>{
-const c=canvasRef.current;if(!c)return;const ctx=c.getContext("2d");const W=c.width=c.offsetWidth*2;const H=c.height=c.offsetHeight*2;ctx.scale(2,2);const w=W/2,h=H/2;
-const isDark=T.bg==="#09090b";
-ctx.fillStyle=isDark?"#0a1a0a":"#1a3a1a";ctx.fillRect(0,0,w,h);
-const drawRough=(x,y,rw,rh)=>{ctx.fillStyle=isDark?"#0f2a0f":"#1e4a1e";ctx.beginPath();ctx.ellipse(x,y,rw,rh,0,0,Math.PI*2);ctx.fill();};
-const cx=w/2;const teeY=h-35;const greenY=40;const holeH=teeY-greenY;
-drawRough(cx,h/2,w*0.48,holeH*0.55);
-const fwW=w*0.18*design.fw;
-ctx.fillStyle=isDark?"#1a4a1a":"#2d6a2d";ctx.beginPath();
-if(design.shape==="dogleg_left"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.4,cx-fwW-w*0.12,greenY+holeH*0.2,cx-w*0.12-fwW*0.7,greenY);ctx.lineTo(cx-w*0.12+fwW*0.7,greenY);ctx.bezierCurveTo(cx+fwW-w*0.05,greenY+holeH*0.2,cx+fwW,teeY-holeH*0.4,cx+fwW,teeY);}
-else if(design.shape==="dogleg_right"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.4,cx-fwW+w*0.05,greenY+holeH*0.2,cx+w*0.12-fwW*0.7,greenY);ctx.lineTo(cx+w*0.12+fwW*0.7,greenY);ctx.bezierCurveTo(cx+fwW+w*0.12,greenY+holeH*0.2,cx+fwW,teeY-holeH*0.4,cx+fwW,teeY);}
-else if(design.shape==="slight_right"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.5,cx-fwW+w*0.03,greenY+holeH*0.3,cx+w*0.04-fwW,greenY);ctx.lineTo(cx+w*0.04+fwW,greenY);ctx.bezierCurveTo(cx+fwW+w*0.03,greenY+holeH*0.3,cx+fwW,teeY-holeH*0.5,cx+fwW,teeY);}
-else if(design.shape==="slight_left"){ctx.moveTo(cx-fwW,teeY);ctx.bezierCurveTo(cx-fwW,teeY-holeH*0.5,cx-fwW-w*0.03,greenY+holeH*0.3,cx-w*0.04-fwW,greenY);ctx.lineTo(cx-w*0.04+fwW,greenY);ctx.bezierCurveTo(cx+fwW-w*0.03,greenY+holeH*0.3,cx+fwW,teeY-holeH*0.5,cx+fwW,teeY);}
-else{ctx.moveTo(cx-fwW,teeY);ctx.lineTo(cx-fwW*0.9,greenY);ctx.lineTo(cx+fwW*0.9,greenY);ctx.lineTo(cx+fwW,teeY);}
-ctx.closePath();ctx.fill();
-let greenCx=cx,greenCy=greenY+8;
-if(design.shape==="dogleg_left")greenCx=cx-w*0.1;
-if(design.shape==="dogleg_right")greenCx=cx+w*0.1;
-if(design.shape==="slight_right")greenCx=cx+w*0.03;
-if(design.shape==="slight_left")greenCx=cx-w*0.03;
-const gr=design.greenShape==="double"?16:design.greenShape==="tiered"?13:design.greenShape==="narrow"?10:14;
-const grW=design.greenShape==="narrow"?gr*0.7:design.greenShape==="double"?gr*1.4:gr;
-const grH=design.greenShape==="narrow"?gr*1.3:gr;
-const greenGrad=ctx.createRadialGradient(greenCx,greenCy,0,greenCx,greenCy,grW+4);
-greenGrad.addColorStop(0,isDark?"#22c55e":"#34d399");greenGrad.addColorStop(0.7,isDark?"#16a34a":"#22c55e");greenGrad.addColorStop(1,isDark?"#15803d":"#16a34a");
-ctx.fillStyle=greenGrad;ctx.beginPath();ctx.ellipse(greenCx,greenCy,grW,grH,0,0,Math.PI*2);ctx.fill();
-ctx.strokeStyle="rgba(255,255,255,0.25)";ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(greenCx,greenCy,grW+2,grH+2,0,0,Math.PI*2);ctx.stroke();
-if(design.greenShape==="tiered"){ctx.strokeStyle="rgba(255,255,255,0.15)";ctx.lineWidth=0.5;ctx.beginPath();ctx.ellipse(greenCx,greenCy-3,grW*0.6,grH*0.5,0,0,Math.PI*2);ctx.stroke();}
-ctx.fillStyle="#ef4444";ctx.beginPath();ctx.arc(greenCx,greenCy,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(greenCx,greenCy,1.5,0,Math.PI*2);ctx.fill();
-ctx.strokeStyle="#ef4444";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(greenCx,greenCy-3);ctx.lineTo(greenCx,greenCy-12);ctx.stroke();
-ctx.fillStyle="#ef4444";ctx.beginPath();ctx.moveTo(greenCx,greenCy-12);ctx.lineTo(greenCx+7,greenCy-10);ctx.lineTo(greenCx,greenCy-8);ctx.fill();
-(design.bunkers||[]).forEach(b=>{const bx=w*b.x;const by=greenY+(teeY-greenY)*b.y;const bs=(b.s||0.6)*12;ctx.fillStyle=isDark?"#c4a44a":"#e8d48b";ctx.beginPath();ctx.ellipse(bx,by,bs,bs*0.6,0.2,0,Math.PI*2);ctx.fill();ctx.strokeStyle=isDark?"#a08530":"#c4a44a";ctx.lineWidth=0.5;ctx.stroke();});
-(design.trees||[]).forEach(t=>{const tx=w*t.x;const ty=greenY+(teeY-greenY)*t.y;const ts=(t.s||0.8)*6;ctx.fillStyle=isDark?"#065f1a":"#0a7a25";ctx.beginPath();ctx.arc(tx,ty,ts,0,Math.PI*2);ctx.fill();ctx.fillStyle=isDark?"#0a8a28":"#0d9e30";ctx.beginPath();ctx.arc(tx-1,ty-1,ts*0.6,0,Math.PI*2);ctx.fill();});
-ctx.fillStyle=isDark?"#60a5fa":"#3b82f6";ctx.beginPath();ctx.arc(cx,teeY,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,teeY,5,0,Math.PI*2);ctx.stroke();
-ctx.fillStyle="#fff";ctx.font="bold 6px monospace";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("T",cx,teeY);
-ctx.strokeStyle="rgba(255,255,255,0.08)";ctx.lineWidth=0.5;const ydStep=yardage>300?100:50;
-for(let d=ydStep;d<yardage;d+=ydStep){const ratio=d/yardage;const dotY=teeY-holeH*ratio;
-ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(cx-fwW*0.7,dotY);ctx.lineTo(cx+fwW*0.7,dotY);ctx.stroke();ctx.setLineDash([]);
-ctx.fillStyle="rgba(255,255,255,0.35)";ctx.font="bold 8px monospace";ctx.textAlign="right";ctx.fillText(d+"",cx-fwW*0.7-4,dotY+3);}
-if(design.elev&&design.elev!=="flat"){const elevIcons={uphill:"\u25B2",downhill:"\u25BC",downhill_up:"\u25BC\u25B2"};
-ctx.fillStyle="rgba(255,255,255,0.25)";ctx.font="10px sans-serif";ctx.textAlign="left";ctx.fillText(elevIcons[design.elev]||"",8,h/2);}
-if(design.ocean){ctx.fillStyle="rgba(96,165,250,0.15)";ctx.fillRect(w-12,0,12,h);ctx.fillStyle="rgba(96,165,250,0.3)";ctx.font="8px sans-serif";ctx.textAlign="center";ctx.save();ctx.translate(w-6,h/2);ctx.rotate(-Math.PI/2);ctx.fillText("OCEAN",0,0);ctx.restore();}
-ctx.fillStyle="rgba(255,255,255,0.9)";ctx.font="bold 14px 'Outfit',sans-serif";ctx.textAlign="center";ctx.fillText(yardage+" YDS",cx,h-10);
-},[holeIdx,courseId,T.bg]);
+const course=getCourse(courseId);const hasShots=shots&&shots.length>0;
+const hole=HOLE_DESIGNS[holeIdx]||HOLE_DESIGNS[0];
+const hp=course.pars[holeIdx]||4;
+const teeKey=Object.keys(course.tees)[0];const hy=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
+const isDk=T.bg==="#09090b";
+const tip=course.tips?course.tips[holeIdx]:"";
+const rough=isDk?"#1a3a1a":"#2d5a2d";const fairway=isDk?"#245a30":"#3a8a4a";const greenC=isDk?"#2a7a3a":"#4aaa5a";
+const sandC=isDk?"#8a7a5a":"#d4c090";const waterC=isDk?"#1a4a6a":"#4a9adf";
+const treeC=isDk?"#0d2a10":"#1a4a20";const treeLt=isDk?"#1a4020":"#2a6a35";
+const groundC=isDk?"#0f1a0f":"#1a3a1a";
+const yardMarks=[];
+if(hy>=200)yardMarks.push({yd:100,y:385-((100/hy)*345)});
+if(hy>=280)yardMarks.push({yd:150,y:385-((150/hy)*345)});
+if(hy>=350)yardMarks.push({yd:200,y:385-((200/hy)*345)});
+if(hy>=420)yardMarks.push({yd:250,y:385-((250/hy)*345)});
 return(<div style={{marginBottom:10}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{"Hole "+(holeIdx+1)+" \u00b7 Par "+par}</div>
-<div style={{fontSize:10,color:T.g,fontWeight:700,fontFamily:M}}>{yardage+" yd"}</div>
+<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{"Hole "+(holeIdx+1)+" \u00b7 Par "+hp}</div>
+<div style={{fontSize:10,color:T.g,fontWeight:700,fontFamily:M}}>{hy+" yd"}</div>
 </div>
-<canvas ref={canvasRef} style={{width:"100%",height:280,borderRadius:12,border:"1px solid "+T.bdr,display:"block"}}/>
+<div style={{position:"relative",width:"100%",background:groundC,borderRadius:12,border:"1px solid "+T.bdr,overflow:"hidden"}}>
+<svg viewBox="0 0 100 420" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
+<defs>
+<radialGradient id={"rg"+holeIdx} cx="50%" cy="40%" r="55%"><stop offset="0%" stopColor={rough} stopOpacity="0.95"/><stop offset="100%" stopColor={groundC}/></radialGradient>
+<filter id="gblur"><feGaussianBlur stdDeviation="1.8"/></filter>
+<filter id="sblur"><feGaussianBlur stdDeviation="0.6"/></filter>
+<linearGradient id="fwgrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={fairway} stopOpacity="0.6"/><stop offset="30%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="70%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="100%" stopColor={fairway} stopOpacity="0.6"/></linearGradient>
+</defs>
+<rect x="0" y="0" width="100" height="420" fill={"url(#rg"+holeIdx+")"}/>
+{hole.trees.map((t,i)=><g key={"t"+i} opacity="0.85"><circle cx={t.x} cy={t.y} r={t.s+4} fill={treeC} opacity="0.4" filter="url(#gblur)"/><circle cx={t.x} cy={t.y} r={t.s} fill={treeLt}/><circle cx={t.x-1.5} cy={t.y-1.5} r={t.s*0.55} fill={isDk?"#2a5530":"#3a7a45"} opacity="0.6"/><circle cx={t.x+1} cy={t.y+1} r={t.s*0.35} fill={treeC} opacity="0.4"/></g>)}
+<path d={hole.fw} stroke={fairway} strokeWidth="34" fill="none" strokeLinecap="round" filter="url(#gblur)" opacity="0.5"/>
+<path d={hole.fw} stroke="url(#fwgrad)" strokeWidth="28" fill="none" strokeLinecap="round"/>
+<path d={hole.fw} stroke={isDk?"#2e7e42":"#55b565"} strokeWidth="18" fill="none" strokeLinecap="round" opacity="0.35"/>
+<path d={hole.fw} stroke={isDk?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.06)"} strokeWidth="1" fill="none" strokeLinecap="round" strokeDasharray="2,8"/>
+{hole.water.map((w,i)=><g key={"w"+i}><path d={w.path} stroke={isDk?"#0a3a5a":"#3a8acc"} strokeWidth={(w.w||10)+4} fill="none" strokeLinecap="round" opacity="0.3" filter="url(#gblur)"/><path d={w.path} stroke={waterC} strokeWidth={w.w||10} fill="none" strokeLinecap="round" opacity="0.75"/><path d={w.path} stroke={isDk?"#3a7aaa":"#6abaee"} strokeWidth={Math.max(1,(w.w||10)-6)} fill="none" strokeLinecap="round" opacity="0.3"/></g>)}
+{hole.bunkers.map((b,i)=><g key={"b"+i}><ellipse cx={b.x} cy={b.y} rx={b.rx+2} ry={b.ry+2} fill={isDk?"#3a2a0a":"#8a6a30"} opacity="0.3" filter="url(#sblur)"/><ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill={sandC} opacity="0.9"/><ellipse cx={b.x-0.8} cy={b.y-0.5} rx={b.rx*0.55} ry={b.ry*0.55} fill={isDk?"#a09070":"#e8d8b0"} opacity="0.45"/><ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill="none" stroke={isDk?"#6a5a2a":"#b09060"} strokeWidth="0.4" opacity="0.5"/></g>)}
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx+3} ry={hole.green.ry+3} fill={isDk?"#0a3a15":"#1a5a25"} opacity="0.4" filter="url(#sblur)"/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill={greenC}/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx*0.65} ry={hole.green.ry*0.65} fill={isDk?"#35954a":"#5ec06a"} opacity="0.3"/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5"/>
+<circle cx={hole.green.x} cy={hole.green.y-2} r="1.3" fill="#fff" opacity="0.9"/>
+<line x1={hole.green.x} y1={hole.green.y-2} x2={hole.green.x} y2={hole.green.y-10} stroke="#fff" strokeWidth="0.7" opacity="0.9"/>
+<polygon points={(hole.green.x)+","+(hole.green.y-12)+" "+(hole.green.x+5.5)+","+(hole.green.y-10)+" "+(hole.green.x)+","+(hole.green.y-8)} fill="#ef4444"/>
+{yardMarks.map(m=><g key={m.yd}>
+<line x1="18" y1={m.y} x2="82" y2={m.y} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.5,3"/>
+<rect x="1" y={m.y-5.5} width="15" height="11" rx="2.5" fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3"/>
+<text x="8.5" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="5.5" fontFamily="monospace" fontWeight="700">{m.yd}</text>
+</g>)}
+<rect x="44" y="378" width="12" height="7" rx="1.5" fill={isDk?"#2a6aaa":"#4a8add"} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5"/>
+<text x="50" y="383.5" textAnchor="middle" fill="#fff" fontSize="4" fontFamily="monospace" fontWeight="800">TEE</text>
+<rect x="68" y="372" width="30" height="42" rx="4" fill="rgba(0,0,0,0.65)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3"/>
+<text x="83" y="385" textAnchor="middle" fill={T.g} fontSize="5.5" fontFamily="monospace" fontWeight="700">{"PAR "+hp}</text>
+<text x="83" y="396" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="800">{hy}</text>
+<text x="83" y="405" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="4.5" fontFamily="monospace" fontWeight="600">YDS</text>
+{hole.elev&&<g>
+<rect x="2" y="372" width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/>
+<text x="12" y="381.5" textAnchor="middle" fill={hole.elev==="uphill"?"#f59e0b":"#60a5fa"} fontSize="4.5" fontFamily="monospace" fontWeight="700">{hole.elev==="uphill"?"\u25B2 UP":"\u25BC DN"}</text>
+</g>}
+{hole.dogleg&&<g>
+<rect x="2" y={hole.elev?"355":"372"} width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/>
+<text x="12" y={hole.elev?"364.5":"381.5"} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="4" fontFamily="monospace" fontWeight="700">{hole.dogleg==="left"?"\u21B0 DGL":"\u21B1 DGR"}</text>
+</g>}
+</svg>
+</div>
 {tip&&<div style={{marginTop:6,padding:"8px 10px",background:T.card,borderRadius:8,border:"1px solid "+T.bdr,fontSize:11,color:T.tm,fontFamily:F,lineHeight:"1.5"}}>{"\uD83C\uDFCC\uFE0F "+tip}</div>}
+<div style={{display:"flex",justifyContent:"space-around",marginTop:6,padding:"6px 0",background:T.card,borderRadius:8,border:"1px solid "+T.bdr}}>
+<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.g}}>{Math.max(0,hy-15)}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Front</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:800,fontFamily:M,color:T.tx}}>{hy}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Middle</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.r}}>{hy+15}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Back</div></div>
+</div>
 </div>);
 }
 function Scorecard({holes,onTap,T}){
