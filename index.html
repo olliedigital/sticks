@@ -26,6 +26,10 @@ select option{background:#111114;color:#e4e4e7;}
 .mapboxgl-map{border-radius:10px !important;}
 .mapboxgl-ctrl-attrib,.mapboxgl-ctrl-logo{display:none !important;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:0.8}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 </style>
 </head>
 <body>
@@ -83,8 +87,16 @@ const light={bg:"#f4f4f5",card:"#ffffff",bdr:"rgba(0,0,0,0.06)",g:"#059669",gd:"
 // ==================== AUTH SCREENS ====================
 const Spinner=({T,size=20})=><div style={{width:size,height:size,border:"2px solid "+T.bdr,borderTop:"2px solid "+T.g,borderRadius:"50%",animation:"spin 0.6s linear infinite",margin:"0 auto"}}/>;
 
+const LOGO=()=><svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:160,height:"auto"}}>
+<defs><linearGradient id="gflag" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#34d399"/><stop offset="100%" stopColor="#059669"/></linearGradient></defs>
+<line x1="8" y1="4" x2="8" y2="38" stroke="url(#gflag)" strokeWidth="2.5" strokeLinecap="round"/>
+<path d="M10 4 L26 10.5 L10 17Z" fill="url(#gflag)" opacity="0.9"/>
+<circle cx="8" cy="40" r="2.5" fill="#34d399" opacity="0.35"/>
+<text x="36" y="32" fontFamily="'Outfit',sans-serif" fontWeight="800" fontSize="30" letterSpacing="-1.5" fill="white">STICKS</text>
+</svg>;
+
 function AuthScreen({onAuth,T}){
-const[mode,setMode]=useState("login"); // login, signup, reset
+const[mode,setMode]=useState("login");
 const[email,setEmail]=useState("");
 const[password,setPassword]=useState("");
 const[name,setName]=useState("");
@@ -116,26 +128,40 @@ if(e){setError(e.message);setLoading(false);return;}
 setMsg("Password reset link sent to your email");setLoading(false);setMode("login");
 };
 const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset;
-const inputS={width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:10,padding:"13px 16px",color:T.tx,fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10};
-return <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px"}}>
-<div style={{textAlign:"center",marginBottom:36}}>
-<div style={{fontSize:42,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.04em"}}>STICKS</div>
-<p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:6}}>Track your game. Know your numbers.</p>
+const inputS={width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(52,211,153,0.1)",borderRadius:12,padding:"14px 16px",color:"#e4e4e7",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border 0.2s"};
+return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 24px",position:"relative",overflow:"hidden"}}>
+{/* Background effects */}
+<div style={{position:"absolute",top:"-30%",right:"-20%",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,rgba(52,211,153,0.06) 0%,transparent 70%)",pointerEvents:"none"}}/>
+<div style={{position:"absolute",bottom:"-20%",left:"-15%",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(5,150,105,0.04) 0%,transparent 70%)",pointerEvents:"none"}}/>
+{/* Decorative golf elements */}
+<div style={{position:"absolute",top:"12%",right:"8%",animation:"float 4s ease-in-out infinite",opacity:0.06}}>
+<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1"><circle cx="12" cy="12" r="4"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>
 </div>
-<div style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:14,padding:"24px 20px",maxWidth:380,margin:"0 auto",width:"100%"}}>
-<div style={{display:"flex",gap:4,marginBottom:20,background:"rgba(128,128,128,0.04)",borderRadius:8,padding:3}}>
-{[{id:"login",l:"Log In"},{id:"signup",l:"Sign Up"}].map(t=><button key={t.id} onClick={()=>{setMode(t.id);setError("");setMsg("");}} style={{flex:1,padding:"9px 0",borderRadius:6,border:"none",cursor:"pointer",background:mode===t.id?T.gd:"transparent",color:mode===t.id?T.g:T.td,fontSize:13,fontWeight:600,fontFamily:F,transition:"all 0.15s"}}>{t.l}</button>)}
+<div style={{position:"absolute",bottom:"15%",left:"6%",animation:"float 5s ease-in-out infinite 1s",opacity:0.04}}>
+<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1"><path d="M4 20l8-16 8 16"/></svg>
+</div>
+{/* Content */}
+<div style={{textAlign:"center",marginBottom:32,animation:"fadeUp 0.6s ease-out",position:"relative",zIndex:1}}>
+<div style={{display:"flex",justifyContent:"center",marginBottom:12}}><LOGO/></div>
+<p style={{color:"#52525b",fontSize:13,fontFamily:F,fontWeight:500,letterSpacing:"0.15em",textTransform:"uppercase"}}>Track your game. Know your numbers.</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.02)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(52,211,153,0.08)",borderRadius:18,padding:"28px 22px",maxWidth:380,margin:"0 auto",width:"100%",animation:"fadeUp 0.6s ease-out 0.1s both",position:"relative",zIndex:1,boxShadow:"0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
+<div style={{display:"flex",gap:4,marginBottom:22,background:"rgba(255,255,255,0.03)",borderRadius:10,padding:3}}>
+{[{id:"login",l:"Log In"},{id:"signup",l:"Sign Up"}].map(t=><button key={t.id} onClick={()=>{setMode(t.id);setError("");setMsg("");}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",background:mode===t.id?"rgba(52,211,153,0.1)":"transparent",color:mode===t.id?"#34d399":"#3f3f46",fontSize:13,fontWeight:600,fontFamily:F,transition:"all 0.2s",boxShadow:mode===t.id?"0 1px 4px rgba(52,211,153,0.1)":"none"}}>{t.l}</button>)}
 </div>
 {mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
 <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" style={inputS} autoComplete="email"/>
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
-{error&&<div style={{color:T.r,fontSize:12,fontFamily:F,marginBottom:8,padding:"8px 10px",background:T.rd,borderRadius:6}}>{error}</div>}
-{msg&&<div style={{color:T.g,fontSize:12,fontFamily:F,marginBottom:8,padding:"8px 10px",background:T.gd,borderRadius:6}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"13px",borderRadius:10,background:T.g,color:T.bg,fontSize:14,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.6:1,marginTop:4}}>
-{loading?<Spinner T={{...T,g:T.bg,bdr:T.bg+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Account":"Send Reset Link"}
+{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.06)",borderRadius:8,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
+{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.06)",borderRadius:8,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:14,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.6:1,marginTop:6,boxShadow:"0 4px 20px rgba(52,211,153,0.2)",transition:"all 0.2s",letterSpacing:"0.02em"}}>
+{loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
-{mode==="login"&&<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:T.tm,fontSize:12,fontFamily:F,cursor:"pointer",marginTop:12,width:"100%",textAlign:"center"}}>Forgot password?</button>}
-{mode==="reset"&&<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:T.tm,fontSize:12,fontFamily:F,cursor:"pointer",marginTop:12,width:"100%",textAlign:"center"}}>Back to login</button>}
+{mode==="login"&&<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"#3f3f46",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center",transition:"color 0.2s"}}>Forgot password?</button>}
+{mode==="reset"&&<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"#3f3f46",fontSize:12,fontFamily:F,cursor:"pointer",marginTop:14,width:"100%",textAlign:"center"}}>Back to login</button>}
+</div>
+<div style={{textAlign:"center",marginTop:28,animation:"fadeUp 0.6s ease-out 0.3s both",position:"relative",zIndex:1}}>
+<p style={{color:"#27272a",fontSize:11,fontFamily:F}}>GPS Shot Tracking \u00b7 30,000+ Courses \u00b7 Cloud Sync</p>
 </div>
 </div>;
 }
@@ -172,7 +198,7 @@ const sub=(label,arr)=><tr style={{background:T.gd,fontWeight:700}}><td style={{
 return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>{f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}{b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}{holes.length===18&&<tr style={{background:T.g+"11",fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}</tbody></table></div>;
 }
 const TabBar=({active:a,onChange:o,T})=>(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:T.bg+"ee",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:"1px solid "+T.bdr,display:"flex",justifyContent:"space-around",padding:"10px 0 env(safe-area-inset-bottom, 14px)"}}>{["Stats","Play","Rounds","Bag","Me"].map((t,i)=>{const id=["dashboard","play","rounds","bag","profile"][i];return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 12px",color:a===id?T.g:T.td,fontFamily:F,fontSize:10,fontWeight:a===id?700:500,letterSpacing:"0.06em",textTransform:"uppercase",transition:"color 0.15s"}}>{t}</button>;})}</div>);
-const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={30}/>}<div><h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"Light":"Dark"}</button>}{right}</div></div>);
+const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={30}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"\u2600":"Moon"}</button>}{right}</div></div>);
 const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:12,padding:14,cursor:o?"pointer":"default",...s}}>{children}</div>;
 const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{children}</div>;
 const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:T.bg,fontWeight:700,border:"none"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb},ghost:{background:"transparent",color:T.tm,border:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:10,padding:"12px 18px",fontSize:13,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.15s",...s}}>{children}</button>;};
@@ -234,10 +260,10 @@ const fwT=ah.filter(h=>h.par>3).length;const fwP=fwT?Math.round(ah.filter(h=>h.f
 const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0),0))):null;
 const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
 const totH=Object.values(dist).reduce((s,v)=>s+v,0);
-if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"80px 20px",textAlign:"center"}}><div style={{width:56,height:56,borderRadius:14,background:T.gd,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg></div><h2 style={{color:T.tx,fontSize:17,fontWeight:600,margin:"0 0 6px",fontFamily:F}}>No rounds yet</h2><p style={{color:T.tm,fontSize:13,fontFamily:F}}>Start tracking from the Play tab</p></div></div>;
+if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"60px 20px",textAlign:"center"}}><div style={{width:72,height:72,borderRadius:20,background:"linear-gradient(135deg,"+T.gd+",rgba(52,211,153,0.15))",margin:"0 auto 20px",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 24px rgba(52,211,153,0.1)"}}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="1.5" strokeLinecap="round"><path d="M12 2L12 8M12 22L12 16M2 12L8 12M22 12L16 12"/><circle cx="12" cy="12" r="3"/></svg></div><h2 style={{color:T.tx,fontSize:19,fontWeight:700,margin:"0 0 8px",fontFamily:F}}>Ready to play?</h2><p style={{color:T.tm,fontSize:13,fontFamily:F,lineHeight:1.6,maxWidth:240,margin:"0 auto"}}>Head to the Play tab to start tracking your first round</p></div></div>;
 return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:8,background:"linear-gradient(135deg,"+T.gd+","+T.card+")",border:"1px solid "+T.gb}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:F,fontWeight:700,marginBottom:4}}>Handicap</div><div style={{fontSize:40,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{hcp!=null?hcp:"\u2014"}</div>{hcp==null&&<div style={{fontSize:11,color:T.td,marginTop:6,fontFamily:F}}>Need 5+ full rounds</div>}</div></Crd>
+<Crd T={T} style={{marginBottom:8,background:"linear-gradient(135deg,rgba(52,211,153,0.08),rgba(5,150,105,0.03),"+T.card+")",border:"1px solid rgba(52,211,153,0.15)",boxShadow:"0 4px 24px rgba(52,211,153,0.06)"}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F,fontWeight:700,marginBottom:6}}>Handicap Index</div><div style={{fontSize:48,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1,textShadow:"0 0 40px rgba(52,211,153,0.15)"}}>{hcp!=null?hcp:"\u2014"}</div>{hcp==null&&<div style={{fontSize:11,color:T.td,marginTop:8,fontFamily:F}}>Need 5+ full rounds</div>}</div></Crd>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
@@ -400,7 +426,7 @@ await sb.from("rounds").delete().eq("id",id);
 setRounds(p=>p.filter(r=>r.id!==id));
 },[]);
 
-if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={dark} size={32}/></div>;
+if(loading)return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user)return <AuthScreen onAuth={handleAuth} T={T}/>;
 if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 
