@@ -117,7 +117,7 @@ const[msg,setMsg]=useState("");
 const touchStart=useRef(null);
 
 const slides=[
-{img:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=90",title:"Track Every Shot",sub:"GPS shot tracking with custom hole maps on 30,000+ courses worldwide",icon:"\u26f3"},
+{img:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=90",title:"Track Every Shot",sub:"GPS shot tracking with satellite maps on 30,000+ courses worldwide",icon:"\u26f3"},
 {img:"https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1400&q=90",title:"Know Your Game",sub:"Handicap index, scoring trends, GIR, fairways, putts — all the stats that matter",icon:"\ud83d\udcca"},
 {img:"https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=1400&q=90",title:"Club Distances",sub:"See your real averages for every club in your bag based on tracked yardage",icon:"\ud83c\udfcc\ufe0f"},
 {img:"https://images.unsplash.com/photo-1622396636133-bf4e4ca23ace?w=1400&q=90",title:"Play Anywhere",sub:"Works on any device. Your rounds sync to the cloud so you never lose data",icon:"\u2601\ufe0f"},
@@ -358,12 +358,16 @@ if(editing)return <div><Hdr title="Edit Profile" T={T} onToggleTheme={onToggle} 
 </div></div>;
 return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-{/* Profile card - clean, no image */}
-<Crd T={T} style={{marginBottom:10,padding:"20px",textAlign:"center"}}>
+{/* Profile hero with golf backdrop */}
+<div style={{borderRadius:14,overflow:"hidden",position:"relative",marginBottom:10}}>
+<img src={GOLF_IMG.aerial} style={{width:"100%",height:140,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:14,left:0,right:0,textAlign:"center"}}>
 <div style={{display:"flex",justifyContent:"center"}}><Avatar name={profile.name} color={profile.color} size={52}/></div>
-<div style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:F,marginTop:8}}>{profile.name}</div>
-<div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{home.name}</div>
-</Crd>
+<div style={{fontSize:18,fontWeight:700,color:"#fff",fontFamily:F,marginTop:6}}>{profile.name}</div>
+<div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F,marginTop:2}}>{home.name}</div>
+</div>
+</div>
 <Crd T={T} style={{marginBottom:10}}>
 <div style={{display:"flex",justifyContent:"center",gap:24,padding:"6px 0"}}>
 <St label="Rounds" value={done.length} small T={T}/><St label="Handicap" value={hcp!=null?hcp:"\u2014"} small T={T}/><St label="Goal" value={profile.goal||"\u2014"} small T={T}/>
@@ -390,25 +394,39 @@ const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0)
 const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
 const totH=Object.values(dist).reduce((s,v)=>s+v,0);
 if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px 100px"}}>
-<Crd T={T} style={{marginBottom:12,padding:"24px 20px",textAlign:"center"}}>
-<div style={{fontSize:36,marginBottom:8}}>⛳</div>
-<h2 style={{color:T.tx,fontSize:18,fontWeight:700,margin:"0 0 6px",fontFamily:F}}>Ready to play?</h2>
-<p style={{color:T.tm,fontSize:13,fontFamily:F,margin:"0 0 16px",lineHeight:1.5}}>Start your first round to see stats, handicap, and scoring trends.</p>
-</Crd>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-{[{icon:"\uD83D\uDCCD",label:"GPS Tracking",desc:"Live distances"},{icon:"\uD83D\uDCCA",label:"Smart Stats",desc:"Every shot"},{icon:"\uD83C\uDFC6",label:"Handicap",desc:"Free index"}].map(f=><Crd key={f.label} T={T} style={{textAlign:"center",padding:"14px 8px"}}><div style={{fontSize:20,marginBottom:4}}>{f.icon}</div><div style={{fontSize:10,fontWeight:700,color:T.tx,fontFamily:F}}>{f.label}</div><div style={{fontSize:9,color:T.td,fontFamily:F,marginTop:2}}>{f.desc}</div></Crd>)}
+<div style={{borderRadius:16,overflow:"hidden",position:"relative",marginBottom:16}}>
+<img src={GOLF_IMG.sunset} style={{width:"100%",height:200,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 30%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16,right:16}}>
+<h2 style={{color:"#fff",fontSize:20,fontWeight:700,margin:"0 0 4px",fontFamily:F}}>Ready to play?</h2>
+<p style={{color:"rgba(255,255,255,0.7)",fontSize:13,fontFamily:F,margin:0}}>Head to the Play tab to start tracking</p>
+</div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div style={{borderRadius:12,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.green} style={{width:"100%",height:100,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.6) 100%)"}}/>
+<div style={{position:"absolute",bottom:8,left:10}}><div style={{color:"#fff",fontSize:11,fontWeight:700,fontFamily:F}}>GPS Tracking</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9,fontFamily:F}}>Satellite maps</div></div>
+</div>
+<div style={{borderRadius:12,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.ball} style={{width:"100%",height:100,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 20%,rgba(0,0,0,0.6) 100%)"}}/>
+<div style={{position:"absolute",bottom:8,left:10}}><div style={{color:"#fff",fontSize:11,fontWeight:700,fontFamily:F}}>Smart Stats</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9,fontFamily:F}}>Track every shot</div></div>
+</div>
 </div>
 </div></div>;
 return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:10,padding:"18px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-<div>
-<div style={{fontSize:9,color:T.td,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F}}>Handicap Index</div>
-<div style={{fontSize:38,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1,marginTop:4}}>{hcp!=null?hcp:"\u2014"}</div>
-{hcp==null&&<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:4}}>Need 5+ full rounds</div>}
+{/* Hero course photo banner */}
+<div style={{borderRadius:14,overflow:"hidden",position:"relative",marginBottom:10}}>
+<img src={GOLF_IMG.dawn} style={{width:"100%",height:120,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(0,0,0,0.4),rgba(0,0,0,0.15))"}}/>
+<div style={{position:"absolute",top:"50%",left:16,transform:"translateY(-50%)"}}>
+<div style={{color:"rgba(255,255,255,0.6)",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F}}>Handicap Index</div>
+<div style={{fontSize:44,fontWeight:800,color:"#fff",fontFamily:M,lineHeight:1,textShadow:"0 2px 12px rgba(0,0,0,0.3)"}}>{hcp!=null?hcp:"\u2014"}</div>
+{hcp==null&&<div style={{fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:F,marginTop:2}}>Need 5+ full rounds</div>}
 </div>
-<div style={{fontSize:32,opacity:0.15}}>⛳</div>
-</Crd>
+</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
@@ -434,14 +452,14 @@ if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q);setSearchResults(r);setSearching(false);},400);};
 const selectApiCourse=(c)=>{setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
-// Course images removed - using clean list design
+const COURSE_IMG={goat_hill:GOLF_IMG.aerial,encinitas_ranch:GOLF_IMG.fairway,sandpiper:GOLF_IMG.flag};
 return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <Crd T={T} style={{marginBottom:10}}>
 <Lbl T={T}>Course</Lbl>
 {!showSearch?<div style={{display:"flex",flexDirection:"column",gap:6}}>
-{apiCourse&&<button onClick={()=>selectApiCourse(apiCourse)} style={{width:"100%",padding:"14px 16px",borderRadius:10,cursor:"pointer",background:T.gd,border:"1px solid "+T.gb,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700,color:T.g,fontFamily:F}}>{apiCourse.name}</div><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{apiCourse.loc+" \u00b7 Par "+apiCourse.par}</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2.5" strokeLinecap="round"><path d="M5 12l5 5L20 7"/></svg></button>}
-{COURSES.map((c,ci)=>{const a=!apiCourse&&courseId===c.id;return <button key={c.id} onClick={()=>selectBuiltIn(c.id)} style={{width:"100%",padding:"14px 16px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700,color:a?T.g:T.tx,fontFamily:F}}>{c.name}</div><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{c.loc+" \u00b7 Par "+c.par}</div></div>{a&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2.5" strokeLinecap="round"><path d="M5 12l5 5L20 7"/></svg>}</button>;})}
+{apiCourse&&<button onClick={()=>selectApiCourse(apiCourse)} style={{padding:0,borderRadius:12,cursor:"pointer",background:T.gd,border:"1px solid "+T.gb,overflow:"hidden",textAlign:"left"}}><div style={{position:"relative"}}><img src={GOLF_IMG.green} style={{width:"100%",height:70,objectFit:"cover",display:"block"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.1) 100%)"}}/><div style={{position:"absolute",top:"50%",left:14,transform:"translateY(-50)"}}><div style={{color:"#fff",fontSize:14,fontWeight:700,fontFamily:F}}>{apiCourse.name}</div><div style={{color:"rgba(255,255,255,0.6)",fontSize:11,fontFamily:F,marginTop:1}}>{apiCourse.loc} · Par {apiCourse.par}</div></div></div></button>}
+{COURSES.map((c,ci)=>{const a=!apiCourse&&courseId===c.id;return <button key={c.id} onClick={()=>selectBuiltIn(c.id)} style={{padding:0,borderRadius:12,cursor:"pointer",overflow:"hidden",border:a?"2px solid "+T.g:"1px solid "+T.bdr,textAlign:"left",position:"relative"}}><img src={COURSE_IMG[c.id]||GOLF_IMG.aerial} style={{width:"100%",height:70,objectFit:"cover",display:"block",opacity:a?1:0.75,transition:"opacity 0.2s"}}/><div style={{position:"absolute",inset:0,background:a?"linear-gradient(90deg,rgba(0,0,0,0.4),rgba(0,0,0,0.1))":"linear-gradient(90deg,rgba(0,0,0,0.55),rgba(0,0,0,0.15))"}}/>{a&&<div style={{position:"absolute",top:8,right:8,width:22,height:22,borderRadius:11,background:T.g,display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L20 7"/></svg></div>}<div style={{position:"absolute",top:"50%",left:14,transform:"translateY(-50%)"}}><div style={{color:"#fff",fontSize:14,fontWeight:700,fontFamily:F,textShadow:"0 1px 4px rgba(0,0,0,0.3)"}}>{c.name}</div><div style={{color:"rgba(255,255,255,0.65)",fontSize:11,fontFamily:F,marginTop:1}}>{c.loc} · Par {c.par}</div></div></button>;})}
 <button onClick={()=>setShowSearch(true)} style={{padding:"14px",borderRadius:12,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px dashed "+T.gb,color:T.g,fontFamily:F,fontSize:13,fontWeight:600,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
 Search 30,000+ Courses</button>
@@ -488,11 +506,11 @@ return <div>
 // ==================== ROUNDS & BAG ====================
 function Rounds({rounds,onDel,T,onToggle,profile}){
 if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px"}}>
-<Crd T={T} style={{textAlign:"center",padding:"32px 20px"}}>
-<div style={{fontSize:32,marginBottom:8,opacity:0.3}}>📋</div>
-<div style={{color:T.tx,fontSize:16,fontWeight:700,fontFamily:F}}>No rounds yet</div>
-<div style={{color:T.td,fontSize:12,fontFamily:F,marginTop:4}}>Your round history will appear here</div>
-</Crd></div></div>;
+<div style={{borderRadius:14,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.fairway} style={{width:"100%",height:180,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16}}><div style={{color:"#fff",fontSize:16,fontWeight:700,fontFamily:F}}>No rounds yet</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:F,marginTop:2}}>Your history will appear here</div></div>
+</div></div></div>;
 return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
 }
@@ -500,11 +518,11 @@ function Bag({rounds,T,onToggle,profile}){
 const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
 return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"0"}}>
-<Crd T={T} style={{textAlign:"center",padding:"32px 20px"}}>
-<div style={{fontSize:32,marginBottom:8,opacity:0.3}}>🏌️</div>
-<div style={{color:T.tx,fontSize:16,fontWeight:700,fontFamily:F}}>Your Bag</div>
-<div style={{color:T.td,fontSize:12,fontFamily:F,marginTop:4}}>Track yardage to see club averages</div>
-</Crd></div>
+<div style={{borderRadius:14,overflow:"hidden",position:"relative"}}>
+<img src={GOLF_IMG.ball} style={{width:"100%",height:180,objectFit:"cover",display:"block"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.7) 100%)"}}/>
+<div style={{position:"absolute",bottom:16,left:16}}><div style={{color:"#fff",fontSize:16,fontWeight:700,fontFamily:F}}>Your Bag</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:F,marginTop:2}}>Track yardage to see club averages</div></div>
+</div></div>
 :stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n+" shot"+(s.n!==1?"s":"")}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min+"\u2013"+s.max}</div></div></div><div style={{marginTop:8,height:3,background:"rgba(128,128,128,0.06)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:"linear-gradient(90deg,"+T.g+"66,"+T.g+")",width:Math.min(100,s.avg/300*100)+"%",transition:"width 0.4s"}}/></div></Crd>)}</div></div>;
 }
 
