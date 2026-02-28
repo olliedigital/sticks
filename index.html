@@ -95,21 +95,13 @@ const LOGO=()=><svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/20
 </svg>;
 
 function AuthScreen({onAuth,T}){
-const[mode,setMode]=useState("onboard"); // onboard, login, signup, reset
-const[slide,setSlide]=useState(0);
+const[mode,setMode]=useState("landing"); // landing, login, signup, reset
 const[email,setEmail]=useState("");
 const[password,setPassword]=useState("");
 const[name,setName]=useState("");
 const[loading,setLoading]=useState(false);
 const[error,setError]=useState("");
 const[msg,setMsg]=useState("");
-const touchStart=useRef(null);
-const slides=[
-{title:"Track Every Shot",sub:"GPS shot tracking with custom hole maps on 30,000+ courses.",icon:"\u26f3"},
-{title:"Know Your Game",sub:"Handicap index, scoring trends, GIR, fairways, and putts.",icon:"\uD83D\uDCCA"},
-{title:"Club Distances",sub:"Real averages for every club based on tracked yardage.",icon:"\uD83C\uDFCC\uFE0F"},
-{title:"Free. Forever.",sub:"No subscriptions, no ads. Your data syncs across all devices.",icon:"\u2601\uFE0F"},
-];
 const handleLogin=async()=>{
 setLoading(true);setError("");
 const{data,error:e}=await sb.auth.signInWithPassword({email,password});
@@ -134,67 +126,49 @@ if(e){setError(e.message);setLoading(false);return;}
 setMsg("Password reset link sent to your email");setLoading(false);setMode("login");
 };
 const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset;
-const onTouchS=e=>{touchStart.current=e.touches[0].clientX;};
-const onTouchE=e=>{if(!touchStart.current)return;const diff=touchStart.current-e.changedTouches[0].clientX;if(Math.abs(diff)>50){if(diff>0&&slide<slides.length-1)setSlide(s=>s+1);if(diff<0&&slide>0)setSlide(s=>s-1);}touchStart.current=null;};
-useEffect(()=>{if(mode!=="onboard")return;const t=setInterval(()=>setSlide(s=>(s+1)%slides.length),4000);return()=>clearInterval(t);},[mode]);
+const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border-color 0.15s"};
 
-if(mode==="onboard"){
-const s=slides[slide];
-return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column"}} onTouchStart={onTouchS} onTouchEnd={onTouchE}>
-{/* Top section with logo */}
-<div style={{padding:"60px 28px 0",flex:"0 0 auto"}}>
-<LOGO/>
+if(mode==="landing"){
+return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 32px"}}>
+<div style={{marginBottom:40}}><LOGO/></div>
+<h1 style={{fontSize:32,fontWeight:800,color:"#fff",margin:"0 0 12px",fontFamily:F,lineHeight:1.1,letterSpacing:"-0.03em"}}>Track your game.<br/>Know your numbers.</h1>
+<p style={{fontSize:15,color:"rgba(255,255,255,0.35)",fontFamily:F,margin:0,lineHeight:1.6,maxWidth:320}}>GPS shot tracking, handicap index, club distances, and scoring stats. Free forever.</p>
 </div>
-{/* Feature carousel */}
-<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px"}}>
-<div style={{fontSize:48,marginBottom:16,transition:"all 0.3s"}} key={slide}>{s.icon}</div>
-<h1 style={{fontSize:28,fontWeight:800,color:"#fff",margin:"0 0 10px",fontFamily:F,lineHeight:1.15,letterSpacing:"-0.02em"}}>{s.title}</h1>
-<p style={{fontSize:15,color:"rgba(255,255,255,0.45)",fontFamily:F,margin:0,lineHeight:1.55,maxWidth:300}}>{s.sub}</p>
-{/* Dots */}
-<div style={{display:"flex",gap:6,marginTop:28}}>
-{slides.map((_,i)=><div key={i} onClick={()=>setSlide(i)} style={{width:i===slide?24:7,height:7,borderRadius:4,background:i===slide?"#34d399":"rgba(255,255,255,0.1)",transition:"all 0.3s",cursor:"pointer"}}/>)}
-</div>
-</div>
-{/* Bottom CTA */}
-<div style={{padding:"0 28px 48px",flex:"0 0 auto"}}>
-<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Get Started Free</button>
-<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>I have an account</button>
-<div style={{display:"flex",justifyContent:"center",gap:24,marginTop:24}}>
-{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#34d399",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
+<div style={{padding:"0 32px 48px"}}>
+<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"#34d399",color:"#050507",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Create Free Account</button>
+<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"transparent",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>Sign In</button>
+<div style={{display:"flex",justifyContent:"center",gap:28,marginTop:28}}>
+{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#34d399",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
 </div>
 </div>;
 }
 
-// Login / Signup / Reset form
-const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"15px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10};
 return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column"}}>
-{/* Top bar */}
-<div style={{padding:"52px 24px 0",display:"flex",alignItems:"center",gap:12,flex:"0 0 auto"}}>
-<button onClick={()=>{setMode("onboard");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190"}</button>
-<LOGO/>
+<div style={{padding:"52px 28px 0",flex:"0 0 auto"}}>
+<button onClick={()=>{setMode("landing");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190 Back"}</button>
 </div>
-{/* Form */}
-<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 24px",maxWidth:400,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
-<h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 4px",fontFamily:F}}>{mode==="login"?"Welcome back":mode==="signup"?"Create account":"Reset password"}</h2>
-<p style={{fontSize:13,color:"rgba(255,255,255,0.3)",fontFamily:F,margin:"0 0 24px"}}>{mode==="login"?"Sign in to continue":mode==="signup"?"Start tracking your game":"We\u2019ll send a reset link"}</p>
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px",maxWidth:400,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
+<h2 style={{fontSize:26,fontWeight:800,color:"#fff",margin:"0 0 4px",fontFamily:F}}>{mode==="login"?"Welcome back":mode==="signup"?"Create account":"Reset password"}</h2>
+<p style={{fontSize:13,color:"rgba(255,255,255,0.28)",fontFamily:F,margin:"0 0 28px"}}>{mode==="login"?"Sign in to sync your rounds":mode==="signup"?"Start tracking for free":"We\u2019ll email you a reset link"}</p>
 {mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
-<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" style={inputS} autoComplete="email"/>
+<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" style={inputS} autoComplete="email"/>
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
-{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.06)",borderRadius:8,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
-{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.06)",borderRadius:8,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
-{loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Free Account":"Send Reset Link"}
+{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(248,113,113,0.06)",borderRadius:10,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
+{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(52,211,153,0.06)",borderRadius:10,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"#34d399",color:"#050507",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
+{loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
-{mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:16}}>
+{mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:18}}>
 <button onClick={()=>{setMode("signup");setError("");}} style={{background:"none",border:"none",color:"#34d399",fontSize:12,fontFamily:F,cursor:"pointer",fontWeight:600}}>Create account</button>
 <button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Forgot password?</button>
 </div>}
-{mode==="signup"&&<div style={{textAlign:"center",marginTop:16}}>
-<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#34d399",fontWeight:600}}>Log in</span></button>
+{mode==="signup"&&<div style={{textAlign:"center",marginTop:18}}>
+<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#34d399",fontWeight:600}}>Sign in</span></button>
 </div>}
-{mode==="reset"&&<div style={{textAlign:"center",marginTop:16}}>
-<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Back to login</button>
+{mode==="reset"&&<div style={{textAlign:"center",marginTop:18}}>
+<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Back to sign in</button>
 </div>}
 </div>
 </div>;
