@@ -53,17 +53,6 @@ const COURSES=[
 {id:"sandpiper",name:"Sandpiper Golf Club",loc:"Santa Barbara, CA",par:72,holes:18,greens:[{lat:34.4415,lng:-119.8825},{lat:34.4428,lng:-119.8810},{lat:34.4440,lng:-119.8795},{lat:34.4450,lng:-119.8812},{lat:34.4438,lng:-119.8830},{lat:34.4425,lng:-119.8845},{lat:34.4412,lng:-119.8858},{lat:34.4400,lng:-119.8842},{lat:34.4390,lng:-119.8825},{lat:34.4378,lng:-119.8808},{lat:34.4370,lng:-119.8792},{lat:34.4382,lng:-119.8778},{lat:34.4395,lng:-119.8762},{lat:34.4408,lng:-119.8748},{lat:34.4420,lng:-119.8735},{lat:34.4432,lng:-119.8752},{lat:34.4445,lng:-119.8768},{lat:34.4435,lng:-119.8785}],tees:{black:{r:75.0,s:135,y:[530,471,430,258,513,195,394,399,420,390,228,347,532,445,602,395,429,181]},gold:{r:72.6,s:130,y:[511,447,407,226,495,173,368,370,401,345,202,325,455,425,582,373,374,167]},silver:{r:70.3,s:126,y:[495,402,387,196,483,155,357,362,393,321,172,306,405,385,540,348,353,136]},copper:{r:67.6,s:120,y:[454,376,353,165,430,125,333,350,368,315,148,252,392,330,471,337,304,99]}},pars:[5,4,4,3,5,3,4,4,4,4,3,4,5,4,5,4,4,3],tips:["Opens with a reachable par 5. Two good shots set up an easy wedge. Don't miss left.","Hardest hole on the course. Long uphill par 4 \u2014 two of your best to reach this green.","Slight dogleg right. Mid-iron approach to a well-bunkered green. Miss right is dead.","Downhill par 3 with ocean views behind you. Take one less club, wind usually helps.","Par 5 with a narrow landing area. Lay up short of the fairway bunkers for a clean look.","Short par 3 but all carry. Front bunkers grab anything short. Favor the center.","Tight fairway with trouble left. Keep your tee shot right-center for the best angle in.","Elevation change makes this play shorter than the card. Trust the yardage from the tee.","Strong finisher to the front nine. Accurate drive is more important than distance here.","Welcome to the ocean holes. Clifftop par 4 \u2014 stunning and demanding. Favor the left side.","Iconic par 3 on the ocean bluffs. Wind is a factor. Check conditions before committing.","Dogleg right with the ocean on your right. Don't get distracted by the views.","Long par 5 along the cliffs. Three smart shots beat two heroic ones here.","Tough par 4 with elevation. Number 2 handicap hole \u2014 two solid shots to get home.","Longest hole on the course at 600+. Three full shots, uphill finish. Par is a great score.","Back inland now. Straightforward par 4 with a receptive green. Birdie opportunity.","Long par 4 playing into the prevailing wind. Club up and keep it below the hole.","Finishing par 3 \u2014 shorter than it looks. Pin position matters. End your round strong."]}
 ];
 const GOLF_API="PS7CU654LQUULN2VZ2EKPGWXAI";
-// Golf imagery from Unsplash (free commercial use)
-const GOLF_IMG={
-hero:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=90",
-aerial:"https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=90",
-sunset:"https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=1200&q=90",
-green:"https://images.unsplash.com/photo-1592919505780-303950717480?w=1200&q=90",
-fairway:"https://images.unsplash.com/photo-1600183952086-0a77e8f0edb2?w=1200&q=90",
-flag:"https://images.unsplash.com/photo-1611374243147-44a702c2d44c?w=1200&q=90",
-ball:"https://images.unsplash.com/photo-1595429035839-c99c298ffdde?w=1200&q=90",
-dawn:"https://images.unsplash.com/photo-1622396636133-bf4e4ca23ace?w=1200&q=90",
-};
 const getCourse=(id)=>COURSES.find(c=>c.id===id)||COURSES[0];
 const apiToLocal=(c,teeData)=>{
 if(!c)return null;
@@ -115,14 +104,12 @@ const[loading,setLoading]=useState(false);
 const[error,setError]=useState("");
 const[msg,setMsg]=useState("");
 const touchStart=useRef(null);
-
 const slides=[
-{img:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=90",title:"Track Every Shot",sub:"GPS shot tracking with custom hole maps on 30,000+ courses worldwide",icon:"\u26f3"},
-{img:"https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1400&q=90",title:"Know Your Game",sub:"Handicap index, scoring trends, GIR, fairways, putts — all the stats that matter",icon:"\ud83d\udcca"},
-{img:"https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=1400&q=90",title:"Club Distances",sub:"See your real averages for every club in your bag based on tracked yardage",icon:"\ud83c\udfcc\ufe0f"},
-{img:"https://images.unsplash.com/photo-1622396636133-bf4e4ca23ace?w=1400&q=90",title:"Play Anywhere",sub:"Works on any device. Your rounds sync to the cloud so you never lose data",icon:"\u2601\ufe0f"},
+{title:"Track Every Shot",sub:"GPS shot tracking with custom hole maps on 30,000+ courses.",icon:"\u26f3"},
+{title:"Know Your Game",sub:"Handicap index, scoring trends, GIR, fairways, and putts.",icon:"\uD83D\uDCCA"},
+{title:"Club Distances",sub:"Real averages for every club based on tracked yardage.",icon:"\uD83C\uDFCC\uFE0F"},
+{title:"Free. Forever.",sub:"No subscriptions, no ads. Your data syncs across all devices.",icon:"\u2601\uFE0F"},
 ];
-
 const handleLogin=async()=>{
 setLoading(true);setError("");
 const{data,error:e}=await sb.auth.signInWithPassword({email,password});
@@ -149,37 +136,31 @@ setMsg("Password reset link sent to your email");setLoading(false);setMode("logi
 const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset;
 const onTouchS=e=>{touchStart.current=e.touches[0].clientX;};
 const onTouchE=e=>{if(!touchStart.current)return;const diff=touchStart.current-e.changedTouches[0].clientX;if(Math.abs(diff)>50){if(diff>0&&slide<slides.length-1)setSlide(s=>s+1);if(diff<0&&slide>0)setSlide(s=>s-1);}touchStart.current=null;};
+useEffect(()=>{if(mode!=="onboard")return;const t=setInterval(()=>setSlide(s=>(s+1)%slides.length),4000);return()=>clearInterval(t);},[mode]);
 
 if(mode==="onboard"){
 const s=slides[slide];
-return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden",background:"#050507"}} onTouchStart={onTouchS} onTouchEnd={onTouchE}>
-{/* Preload all images */}
-{slides.map((sl,i)=><img key={i} src={sl.img} style={{display:"none"}}/>)}
-{/* Current slide image */}
-<div style={{position:"absolute",inset:0,transition:"opacity 0.5s"}}>
-<img src={s.img} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.2) 35%,rgba(5,5,7,0.85) 62%,rgba(5,5,7,1) 80%)"}}/>
+return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column"}} onTouchStart={onTouchS} onTouchEnd={onTouchE}>
+{/* Top section with logo */}
+<div style={{padding:"60px 28px 0",flex:"0 0 auto"}}>
+<LOGO/>
 </div>
-{/* Content */}
-<div style={{position:"relative",zIndex:2,minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 28px 44px"}}>
-{/* Logo top */}
-<div style={{position:"absolute",top:52,left:28,animation:"fadeUp 0.6s ease-out"}}><LOGO/></div>
-{/* Feature content */}
-<div style={{marginBottom:28,animation:"fadeUp 0.5s ease-out"}}>
-<div style={{fontSize:36,marginBottom:8}}>{s.icon}</div>
+{/* Feature carousel */}
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px"}}>
+<div style={{fontSize:48,marginBottom:16,transition:"all 0.3s"}} key={slide}>{s.icon}</div>
 <h1 style={{fontSize:28,fontWeight:800,color:"#fff",margin:"0 0 10px",fontFamily:F,lineHeight:1.15,letterSpacing:"-0.02em"}}>{s.title}</h1>
-<p style={{fontSize:15,color:"rgba(255,255,255,0.55)",fontFamily:F,margin:0,lineHeight:1.55,maxWidth:320}}>{s.sub}</p>
-</div>
+<p style={{fontSize:15,color:"rgba(255,255,255,0.45)",fontFamily:F,margin:0,lineHeight:1.55,maxWidth:300}}>{s.sub}</p>
 {/* Dots */}
-<div style={{display:"flex",gap:6,marginBottom:24}}>
-{slides.map((_,i)=><div key={i} onClick={()=>setSlide(i)} style={{width:i===slide?24:7,height:7,borderRadius:4,background:i===slide?"#34d399":"rgba(255,255,255,0.15)",transition:"all 0.3s",cursor:"pointer"}}/>)}
+<div style={{display:"flex",gap:6,marginTop:28}}>
+{slides.map((_,i)=><div key={i} onClick={()=>setSlide(i)} style={{width:i===slide?24:7,height:7,borderRadius:4,background:i===slide?"#34d399":"rgba(255,255,255,0.1)",transition:"all 0.3s",cursor:"pointer"}}/>)}
 </div>
-{/* CTA buttons */}
-<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,boxShadow:"0 4px 24px rgba(52,211,153,0.25)",letterSpacing:"0.01em"}}>Get Started — It's Free</button>
-<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>I already have an account</button>
-{/* Stats bar */}
-<div style={{display:"flex",justifyContent:"center",gap:24,marginTop:20}}>
-{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221e",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:"#34d399",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
+</div>
+{/* Bottom CTA */}
+<div style={{padding:"0 28px 48px",flex:"0 0 auto"}}>
+<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Get Started Free</button>
+<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>I have an account</button>
+<div style={{display:"flex",justifyContent:"center",gap:24,marginTop:24}}>
+{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#34d399",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
 </div>
 </div>;
@@ -187,37 +168,34 @@ return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden",back
 
 // Login / Signup / Reset form
 const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"15px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10};
-return <div style={{minHeight:"100vh",position:"relative",overflow:"hidden"}}>
-<img src={slides[0].img} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(5,5,7,0.92) 50%,rgba(5,5,7,1) 70%)"}}/>
-<div style={{position:"relative",zIndex:2,minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 24px 44px"}}>
-{/* Back + Logo */}
-<div style={{position:"absolute",top:52,left:24,display:"flex",alignItems:"center",gap:12}}>
-<button onClick={()=>{setMode("onboard");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 12px",cursor:"pointer",color:"rgba(255,255,255,0.6)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190"}</button>
+return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column"}}>
+{/* Top bar */}
+<div style={{padding:"52px 24px 0",display:"flex",alignItems:"center",gap:12,flex:"0 0 auto"}}>
+<button onClick={()=>{setMode("onboard");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190"}</button>
 <LOGO/>
 </div>
-<div style={{animation:"fadeUp 0.5s ease-out"}}>
-<h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 4px",fontFamily:F}}>{mode==="login"?"Welcome back":mode==="signup"?"Create your account":"Reset password"}</h2>
-<p style={{fontSize:13,color:"rgba(255,255,255,0.35)",fontFamily:F,margin:"0 0 20px"}}>{mode==="login"?"Sign in to continue tracking":mode==="signup"?"Start tracking your game for free":"We'll send you a reset link"}</p>
+{/* Form */}
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 24px",maxWidth:400,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
+<h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 4px",fontFamily:F}}>{mode==="login"?"Welcome back":mode==="signup"?"Create account":"Reset password"}</h2>
+<p style={{fontSize:13,color:"rgba(255,255,255,0.3)",fontFamily:F,margin:"0 0 24px"}}>{mode==="login"?"Sign in to continue":mode==="signup"?"Start tracking your game":"We\u2019ll send a reset link"}</p>
 {mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
-<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" style={inputS} autoComplete="email"/>
+<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" style={inputS} autoComplete="email"/>
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
-{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.08)",borderRadius:8,border:"1px solid rgba(248,113,113,0.12)"}}>{error}</div>}
-{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.08)",borderRadius:8,border:"1px solid rgba(52,211,153,0.12)"}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:2,boxShadow:"0 4px 20px rgba(52,211,153,0.2)"}}>
+{error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(248,113,113,0.06)",borderRadius:8,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
+{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:8,padding:"10px 12px",background:"rgba(52,211,153,0.06)",borderRadius:8,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#34d399,#059669)",color:"#050507",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
 {loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Log In":mode==="signup"?"Create Free Account":"Send Reset Link"}
 </button>
-{mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:14}}>
+{mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:16}}>
 <button onClick={()=>{setMode("signup");setError("");}} style={{background:"none",border:"none",color:"#34d399",fontSize:12,fontFamily:F,cursor:"pointer",fontWeight:600}}>Create account</button>
-<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Forgot password?</button>
+<button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Forgot password?</button>
 </div>}
-{mode==="signup"&&<div style={{textAlign:"center",marginTop:14}}>
-<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.35)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#34d399",fontWeight:600}}>Log in</span></button>
+{mode==="signup"&&<div style={{textAlign:"center",marginTop:16}}>
+<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#34d399",fontWeight:600}}>Log in</span></button>
 </div>}
-{mode==="reset"&&<div style={{textAlign:"center",marginTop:14}}>
-<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.35)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Back to login</button>
+{mode==="reset"&&<div style={{textAlign:"center",marginTop:16}}>
+<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Back to login</button>
 </div>}
-</div>
 </div>
 </div>;
 }
