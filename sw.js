@@ -1,4 +1,4 @@
-const CACHE = 'sticks-v6';
+const CACHE = 'sticks-v7';
 const ASSETS = ['/','/index.html','/manifest.json',
 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap',
 'https://unpkg.com/react@18/umd/react.production.min.js',
