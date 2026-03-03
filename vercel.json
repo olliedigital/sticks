@@ -1,8 +1,4 @@
 {
-  "framework": null,
-  "buildCommand": "npm install",
-  "installCommand": "npm install",
-  "outputDirectory": ".",
   "functions": {
     "api/*.js": {
       "memory": 128,
