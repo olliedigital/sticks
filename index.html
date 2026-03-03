@@ -47,6 +47,14 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
 const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 // Map rendering uses custom SVG illustrations
+const STRIPE_PK="pk_test_51T6grnKAn7D5IDFmuYZzTiCpoJhOr99tkTjwA9b1cdHFTL8MSGRRRzEigNO8xuPFLaFWyATWabrwmKE9SWNogSDc00T41oV7ve";
+const PRICE_MONTHLY="price_1T6gvTKAn7D5IDFmlWlrBl1d";
+const PRICE_ANNUAL="price_1T6gvTKAn7D5IDFmZAQvNx6m";
+const FREE_ROUND_LIMIT=3;
+const API_BASE=window.location.origin;
+const startCheckout=async(priceId,userId,email)=>{try{const r=await fetch(API_BASE+"/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId,userId,email,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;else throw new Error(d.error||"Checkout failed");}catch(e){alert("Error: "+e.message);}};
+const openPortal=async(customerId)=>{try{const r=await fetch(API_BASE+"/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;}catch(e){alert("Error: "+e.message);}};
+
 const COURSES=[
 {id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,greens:[{lat:33.19762,lng:-117.35778},{lat:33.19838,lng:-117.35712},{lat:33.19772,lng:-117.35598},{lat:33.19672,lng:-117.35528},{lat:33.19618,lng:-117.35598},{lat:33.19568,lng:-117.35702},{lat:33.19515,lng:-117.35798},{lat:33.19432,lng:-117.35868},{lat:33.19498,lng:-117.35948},{lat:33.19588,lng:-117.36028},{lat:33.19658,lng:-117.36108},{lat:33.19738,lng:-117.36038},{lat:33.19812,lng:-117.36108},{lat:33.19868,lng:-117.36002},{lat:33.19782,lng:-117.35852},{lat:33.19688,lng:-117.35758},{lat:33.19618,lng:-117.35838},{lat:33.19702,lng:-117.35912}],teeBoxes:[{lat:33.19830,lng:-117.35862},{lat:33.19775,lng:-117.35788},{lat:33.19845,lng:-117.35725},{lat:33.19788,lng:-117.35608},{lat:33.19678,lng:-117.35538},{lat:33.19622,lng:-117.35608},{lat:33.19572,lng:-117.35712},{lat:33.19525,lng:-117.35808},{lat:33.19442,lng:-117.35878},{lat:33.19505,lng:-117.35958},{lat:33.19598,lng:-117.36038},{lat:33.19668,lng:-117.36118},{lat:33.19745,lng:-117.36048},{lat:33.19818,lng:-117.36118},{lat:33.19875,lng:-117.36012},{lat:33.19792,lng:-117.35862},{lat:33.19695,lng:-117.35768},{lat:33.19628,lng:-117.35848}],tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green \u2014 aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight \u2014 keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."]},
 {id:"encinitas_ranch",name:"Encinitas Ranch",loc:"Encinitas, CA",par:72,holes:18,greens:[{lat:33.0678,lng:-117.1575},{lat:33.0672,lng:-117.1562},{lat:33.0660,lng:-117.1548},{lat:33.0650,lng:-117.1565},{lat:33.0642,lng:-117.1582},{lat:33.0652,lng:-117.1598},{lat:33.0665,lng:-117.1610},{lat:33.0680,lng:-117.1618},{lat:33.0692,lng:-117.1602},{lat:33.0700,lng:-117.1585},{lat:33.0712,lng:-117.1568},{lat:33.0705,lng:-117.1552},{lat:33.0695,lng:-117.1538},{lat:33.0682,lng:-117.1525},{lat:33.0670,lng:-117.1540},{lat:33.0660,lng:-117.1558},{lat:33.0672,lng:-117.1572},{lat:33.0685,lng:-117.1588}],tees:{blue:{r:71.0,s:126,y:[347,192,527,342,354,160,365,407,497,442,540,169,398,433,373,361,185,495]},green:{r:69.3,s:122,y:[347,168,527,342,300,160,336,330,497,407,540,169,370,375,373,324,160,495]},white:{r:67.5,s:117,y:[297,168,522,285,300,139,336,330,470,407,487,130,370,375,320,324,160,470]},gold:{r:64.5,s:110,y:[275,122,495,245,250,120,315,290,430,357,440,110,333,347,255,282,130,439]}},pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],tips:["Forgiving opener. Wide fairway, avoid the right bunker. Mid-iron approach.","All carry over a canyon. Club up if wind is in your face.","Reachable in two for long hitters. Layup to 100 leaves a wedge in.","Dogleg left. Aim right-center off the tee. Green slopes back to front.","Elevated tee with ocean views. Favor the left side of the fairway.","Short par 3 but don't be short \u2014 bunkers guard the front.","Tight driving hole. Keep it in play, the green is well-bunkered.","Longest par 4 on the front. Two solid shots to reach this elevated green.","Risk-reward par 5. Lay up short of the cross bunkers or go for it.","Tough opener to the back nine. Dogleg right, big hitters can cut the corner.","Longest hole on the course. Three good shots to get home.","Downhill par 3. Take less club than you think, green runs away from you.","Narrow fairway with canyon left. Play to the right side off the tee.","Long par 4 with elevation change. Driver to the flat spot, then mid-iron in.","Scenic hole along the bluffs. Stay left off the tee, green is wide but shallow.","Back-to-front slope on the green. Below the hole is key here.","Over a canyon to a well-guarded green. Check the pin position before choosing club.","Great finishing par 5. Reachable in two but water guards the green. Solid layup works."]},
@@ -173,6 +181,68 @@ return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDi
 </div>
 </div>;
 }
+// ==================== UPGRADE / PAYWALL ====================
+function UpgradeScreen({user,T,onClose}){
+const[plan,setPlan]=useState("annual");const[loading,setLoading]=useState(false);
+const go=async()=>{setLoading(true);await startCheckout(plan==="annual"?PRICE_ANNUAL:PRICE_MONTHLY,user.id,user.email);};
+const features=[
+{f:"Unlimited round history",free:"3 rounds",pro:true},
+{f:"GPS shot tracking",free:false,pro:true},
+{f:"Custom hole maps",free:false,pro:true},
+{f:"Club distance analytics",free:false,pro:true},
+{f:"Full stats dashboard",free:"Basic",pro:true},
+{f:"30K+ course search",free:false,pro:true},
+{f:"Cloud sync",free:false,pro:true},
+{f:"Handicap index",free:true,pro:true}
+];
+return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,overflowY:"auto"}}>
+<div style={{padding:"20px 20px 60px",maxWidth:420,margin:"0 auto"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+<div style={{fontSize:10,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Upgrade</div>
+{onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:T.td,fontSize:18,cursor:"pointer",padding:4}}>{"\u00d7"}</button>}
+</div>
+<div style={{textAlign:"center",marginBottom:28}}>
+<div style={{fontSize:28,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.03em"}}>STICKS Pro</div>
+<p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:8,lineHeight:1.5}}>Unlock everything. Track smarter. Play better.</p>
+</div>
+<div style={{display:"flex",gap:8,marginBottom:20}}>
+<button onClick={()=>setPlan("monthly")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="monthly"?T.card:"transparent",border:plan==="monthly"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center"}}>
+<div style={{fontSize:22,fontWeight:800,color:plan==="monthly"?T.tx:T.td,fontFamily:M}}>$9.99</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/month</div>
+</button>
+<button onClick={()=>setPlan("annual")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="annual"?T.card:"transparent",border:plan==="annual"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center",position:"relative"}}>
+<div style={{position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:T.g,color:T.bg,fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:10,fontFamily:F,whiteSpace:"nowrap"}}>SAVE 33%</div>
+<div style={{fontSize:22,fontWeight:800,color:plan==="annual"?T.tx:T.td,fontFamily:M}}>$79.99</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/year ($6.67/mo)</div>
+</button>
+</div>
+<div style={{marginBottom:24}}>
+{features.map(r=><div key={r.f} style={{display:"flex",alignItems:"center",padding:"10px 0",borderBottom:"1px solid "+T.bdr}}>
+<div style={{fontSize:13,color:T.tx,fontFamily:F,flex:1}}>{r.f}</div>
+<div style={{width:55,textAlign:"center",fontSize:11,fontFamily:F,color:r.free===true?T.g:r.free===false?T.td:T.td}}>{r.free===true?"\u2713":r.free===false?"\u2014":r.free}</div>
+<div style={{width:55,textAlign:"center",fontSize:11,fontFamily:F,color:T.g,fontWeight:700}}>{"\u2713"}</div>
+</div>)}
+<div style={{display:"flex",padding:"6px 0"}}>
+<div style={{flex:1}}/>
+<div style={{width:55,textAlign:"center",fontSize:9,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Free</div>
+<div style={{width:55,textAlign:"center",fontSize:9,color:T.g,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700}}>Pro</div>
+</div>
+</div>
+<button disabled={loading} onClick={go} style={{width:"100%",padding:"16px",borderRadius:14,background:T.g,color:T.bg,fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"wait":"pointer",opacity:loading?0.6:1}}>
+{loading?"Redirecting to checkout...":"Get STICKS Pro"+(plan==="annual"?" \u2014 $79.99/yr":" \u2014 $9.99/mo")}
+</button>
+<div style={{textAlign:"center",marginTop:12,fontSize:11,color:T.td,fontFamily:F}}>Cancel anytime. Secure payment via Stripe.</div>
+</div></div>;
+}
+const ProBanner=({T,onUpgrade,rounds})=>{
+const left=Math.max(0,FREE_ROUND_LIMIT-(rounds||0));
+if(left>1)return null;
+return <div onClick={onUpgrade} style={{cursor:"pointer",padding:"12px 16px",margin:"0 0 10px",borderRadius:10,background:T.gd,border:"1px solid "+T.gb,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div><div style={{fontSize:12,fontWeight:700,color:T.g,fontFamily:F}}>{left===0?"Round limit reached":"1 free round left"}</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>Upgrade to Pro for unlimited rounds</div></div>
+<div style={{fontSize:10,fontWeight:700,color:T.g,fontFamily:F,padding:"6px 12px",border:"1px solid "+T.gb,borderRadius:8}}>Upgrade</div>
+</div>;
+};
 // ==================== UI COMPONENTS ====================
 const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
 const HOLE_DESIGNS=[
@@ -285,7 +355,7 @@ const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
 // ==================== PROFILE SCREEN ====================
-function ProfileScreen({profile,rounds,onUpdateProfile,onLogout,T,onToggle}){
+function ProfileScreen({profile,rounds,onUpdateProfile,onLogout,T,onToggle,isPro,onUpgrade,user}){
 const[editing,setEditing]=useState(false);
 const[name,setName]=useState(profile.name);
 const[color,setColor]=useState(profile.color);
@@ -325,13 +395,26 @@ return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggl
 </Crd>
 <Crd T={T} style={{marginBottom:8}}><div style={{display:"flex",flexDirection:"column",gap:8}}>
 <Btn v="secondary" T={T} onClick={()=>setEditing(true)}>Edit Profile</Btn>
+<Crd T={T} style={{marginBottom:10}}>
+<Lbl T={T}>Subscription</Lbl>
+{isPro?<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div><div style={{fontSize:14,fontWeight:700,color:T.g,fontFamily:F}}>STICKS Pro</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>Active subscription</div></div>
+{profile.stripe_customer_id&&<button onClick={()=>openPortal(profile.stripe_customer_id)} style={{padding:"8px 14px",borderRadius:8,background:T.card,border:"1px solid "+T.bdr,color:T.tx,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:F}}>Manage</button>}
+</div>
+:<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div><div style={{fontSize:14,fontWeight:600,color:T.tx,fontFamily:F}}>Free Plan</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{rounds.filter(r=>r.holes&&r.holes.length===18).length+"/"+FREE_ROUND_LIMIT+" rounds used"}</div></div>
+<button onClick={onUpgrade} style={{padding:"8px 14px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F}}>Upgrade</button>
+</div>}
+</Crd>
 <Btn v="danger" T={T} onClick={onLogout}>Log Out</Btn>
 </div></Crd>
 <div style={{textAlign:"center",padding:"20px 0"}}><div style={{fontSize:10,color:T.td,fontFamily:F}}>Member since {new Date(profile.created_at).toLocaleDateString()}</div></div>
 </div></div>;
 }
 // ==================== DASHBOARD ====================
-function Dashboard({rounds,T,onToggle,profile}){
+function Dashboard({rounds,T,onToggle,profile,isPro,onUpgrade}){
 const hcp=calcHcp(rounds);const done=rounds.filter(r=>r.holes&&r.holes.length===18);const rec=done.slice(-10);
 const avg=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.sc||0),0),0)/rec.length*10)/10:null;
 const avgP=rec.length?Math.round(rec.reduce((s,r)=>s+r.holes.reduce((a,h)=>a+(h.pt||0),0),0)/rec.length*10)/10:null;
@@ -361,6 +444,7 @@ return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"
 </div>
 <div style={{fontSize:32,opacity:0.15}}>⛳</div>
 </Crd>
+{!isPro&&<ProBanner T={T} onUpgrade={onUpgrade} rounds={done.length}/>}
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
@@ -368,7 +452,7 @@ return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"
 </div></div>;
 }
 // ==================== PLAY ====================
-function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile}){
+function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile,isPro,onUpgrade,roundCount}){
 const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
 const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
 const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
@@ -407,6 +491,7 @@ Search 30,000+ Courses</button>
 </Crd>
 <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}</div>
 <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:"1px solid "+T.bdr}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div></Crd>
+{!isPro&&<ProBanner T={T} onUpgrade={onUpgrade} rounds={roundCount}/>}
 <Btn T={T} onClick={()=>onStart({id:genId(),course_name:course.name,course_id:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
 </div></div>;}
 const cid=active.course_id||active.courseId;const ed=cur<active.holes.length,hn=cur+1;
@@ -448,7 +533,7 @@ if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTh
 return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:14,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr}}><span style={{fontSize:11,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
 }
-function Bag({rounds,T,onToggle,profile}){
+function Bag({rounds,T,onToggle,profile,isPro,onUpgrade}){
 const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
 return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"0"}}>
@@ -469,6 +554,8 @@ const[active,setActive]=useState(null);
 const[tab,setTab]=useState("dashboard");
 const[loading,setLoading]=useState(true);
 const[isDark,setIsDark]=useState(true);
+const[isPro,setIsPro]=useState(false);
+const[showUpgrade,setShowUpgrade]=useState(false);
 const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
 
 // Check auth on mount
@@ -506,7 +593,13 @@ return()=>{try{if(sub)sub.unsubscribe();}catch(e){}};
 
 const loadProfile=async(uid)=>{
 const{data}=await sb.from("profiles").select("*").eq("id",uid).single();
-if(data)setProfile(data);
+if(data){setProfile(data);if(data.is_pro)setIsPro(true);}
+// Check URL for upgrade success
+const params=new URLSearchParams(window.location.search);
+if(params.get("upgraded")==="true"){setIsPro(true);window.history.replaceState({},"",window.location.pathname);
+try{await sb.from("profiles").update({is_pro:true}).eq("id",uid);}catch(e){}}
+// Also check localStorage as fallback
+if(localStorage.getItem("sticks_pro_"+uid)==="true")setIsPro(true);
 };
 const loadRounds=async(uid)=>{
 const{data}=await sb.from("rounds").select("*").eq("user_id",uid).order("date",{ascending:false});
@@ -524,7 +617,10 @@ setUser(null);setProfile(null);setRounds([]);setActive(null);setTab("dashboard")
 };
 const updateProfile=(p)=>setProfile(p);
 
-const startRound=useCallback(r=>{setActive(r);setTab("play");},[]);
+const startRound=useCallback(r=>{
+if(!isPro&&rounds.length>=FREE_ROUND_LIMIT){setShowUpgrade(true);return;}
+setActive(r);setTab("play");
+},[isPro,rounds.length]);
 const updateRound=useCallback(r=>setActive(r),[]);
 const finishRound=useCallback(async()=>{
 if(active&&active.holes.length>0&&user){
@@ -550,11 +646,12 @@ if(!user)return <AuthScreen onAuth={handleAuth} T={T}/>;
 if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 
 return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
-{tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="play"&&<Play active={active} onStart={startRound} onUpdate={updateRound} onFinish={finishRound} T={T} onToggle={toggle} profile={profile}/>}
+{showUpgrade&&<UpgradeScreen user={user} T={T} onClose={()=>setShowUpgrade(false)}/>}
+{tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)}/>}
+{tab==="play"&&<Play active={active} onStart={startRound} onUpdate={updateRound} onFinish={finishRound} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)} roundCount={rounds.length}/>}
 {tab==="rounds"&&<Rounds rounds={rounds} onDel={deleteRound} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle} profile={profile}/>}
-{tab==="profile"&&<ProfileScreen profile={profile} rounds={rounds} onUpdateProfile={updateProfile} onLogout={handleLogout} T={T} onToggle={toggle}/>}
+{tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)}/>}
+{tab==="profile"&&<ProfileScreen profile={profile} rounds={rounds} onUpdateProfile={updateProfile} onLogout={handleLogout} T={T} onToggle={toggle} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)} user={user}/>}
 <TabBar active={tab} onChange={setTab} T={T}/>
 </div>;
 }
