@@ -137,27 +137,71 @@ const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset
 const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border-color 0.15s"};
 
 if(mode==="landing"){
-return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 32px"}}>
-<div style={{marginBottom:40}}><LOGO/></div>
-<h1 style={{fontSize:32,fontWeight:800,color:"#fff",margin:"0 0 12px",fontFamily:F,lineHeight:1.1,letterSpacing:"-0.03em"}}>Track your game.<br/>Know your numbers.</h1>
-<p style={{fontSize:15,color:"rgba(255,255,255,0.35)",fontFamily:F,margin:0,lineHeight:1.6,maxWidth:320}}>GPS shot tracking, handicap index, club distances, and scoring stats. Free forever.</p>
+return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",justifyContent:"space-between",overflow:"hidden",position:"relative"}}>
+{/* Background gradient glow */}
+<div style={{position:"absolute",top:"-30%",left:"50%",transform:"translateX(-50%)",width:"140%",height:"60%",background:"radial-gradient(ellipse at center, rgba(16,185,129,0.08) 0%, transparent 70%)",pointerEvents:"none"}}/>
+{/* Golf course illustration */}
+<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,overflow:"hidden",pointerEvents:"none"}}>
+<svg viewBox="0 0 400 800" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",opacity:0.12}}>
+{/* Rolling hills */}
+<path d="M-20 500 Q80 420 180 460 Q280 500 380 440 L420 440 L420 800 L-20 800Z" fill="#10b981"/>
+<path d="M-20 540 Q100 480 200 520 Q300 560 420 490 L420 800 L-20 800Z" fill="#059669"/>
+<path d="M-20 600 Q60 560 160 580 Q260 600 360 560 Q420 540 420 540 L420 800 L-20 800Z" fill="#047857"/>
+{/* Flag pin */}
+<line x1="200" y1="320" x2="200" y2="445" stroke="#10b981" strokeWidth="2"/>
+<path d="M200 320 L230 335 L200 350Z" fill="#10b981"/>
+<circle cx="200" cy="448" r="3" fill="#10b981"/>
+{/* Bunker */}
+<ellipse cx="280" cy="470" rx="30" ry="10" fill="#fbbf24" opacity="0.4"/>
+{/* Trees */}
+<circle cx="60" cy="430" r="18" fill="#065f46" opacity="0.7"/>
+<circle cx="50" cy="420" r="14" fill="#047857" opacity="0.6"/>
+<circle cx="340" cy="410" r="22" fill="#065f46" opacity="0.6"/>
+<circle cx="355" cy="400" r="16" fill="#047857" opacity="0.5"/>
+{/* Shot trail arc */}
+<path d="M120 580 Q200 280 280 460" stroke="#10b981" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.5"/>
+<circle cx="120" cy="580" r="4" fill="#10b981" opacity="0.6"/>
+<circle cx="280" cy="460" r="4" fill="#10b981" opacity="0.6"/>
+{/* Distance markers */}
+<text x="195" y="540" fontFamily="monospace" fontSize="8" fill="#10b981" opacity="0.5" textAnchor="middle">247 YDS</text>
+</svg>
 </div>
-<div style={{padding:"0 32px 48px"}}>
-<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"#10b981",color:"#0a0a0c",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Create Free Account</button>
+{/* Content */}
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 32px",position:"relative",zIndex:1}}>
+<div style={{marginBottom:32}}><LOGO/></div>
+<h1 style={{fontSize:34,fontWeight:800,color:"#fff",margin:"0 0 12px",fontFamily:F,lineHeight:1.08,letterSpacing:"-0.04em"}}>Track every shot.<br/><span style={{color:"#10b981"}}>Own your game.</span></h1>
+<p style={{fontSize:15,color:"rgba(255,255,255,0.35)",fontFamily:F,margin:0,lineHeight:1.6,maxWidth:320}}>GPS shot mapping, live handicap tracking, club analytics, and 30,000+ courses. Built for players who want to improve.</p>
+</div>
+<div style={{padding:"0 32px 48px",position:"relative",zIndex:1}}>
+{/* Feature pills */}
+<div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+{["\u{1F4CD} GPS Tracking","\u{1F3CC}\uFE0F 30K+ Courses","\u{1F4CA} Live Handicap","\u{1F3AF} Club Analytics"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.15)",fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F,fontWeight:500}}>{f}</div>)}
+</div>
+<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg, #10b981 0%, #059669 100%)",color:"#0a0a0c",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em",boxShadow:"0 4px 24px rgba(16,185,129,0.25)"}}>Get Started Free</button>
 <button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"transparent",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>Sign In</button>
-<div style={{display:"flex",justifyContent:"center",gap:28,marginTop:28}}>
-{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
+<div style={{display:"flex",justifyContent:"center",gap:32,marginTop:28}}>
+{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Forever"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
 </div>
 </div>;
 }
 
-return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column"}}>
-<div style={{padding:"52px 28px 0",flex:"0 0 auto"}}>
+return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
+{/* Subtle bg glow */}
+<div style={{position:"absolute",top:"-20%",right:"-30%",width:"80%",height:"60%",background:"radial-gradient(ellipse at center, rgba(16,185,129,0.06) 0%, transparent 70%)",pointerEvents:"none"}}/>
+<div style={{padding:"52px 28px 0",flex:"0 0 auto",position:"relative",zIndex:1}}>
 <button onClick={()=>{setMode("landing");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190 Back"}</button>
 </div>
-<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px",maxWidth:400,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
+<div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px",maxWidth:400,margin:"0 auto",width:"100%",boxSizing:"border-box",position:"relative",zIndex:1}}>
+{/* Golf ball icon */}
+<div style={{marginBottom:24}}>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+<circle cx="24" cy="24" r="22" fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.2)" strokeWidth="1"/>
+{mode==="login"?<path d="M18 20 L24 14 L30 20 L30 32 L18 32Z" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinejoin="round"/>
+:mode==="signup"?<><circle cx="24" cy="22" r="5" fill="none" stroke="#10b981" strokeWidth="1.5"/><path d="M16 34 C16 28 20 26 24 26 C28 26 32 28 32 34" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/></>
+:<path d="M18 24 L22 28 L30 18" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
+</svg>
+</div>
 <h2 style={{fontSize:26,fontWeight:800,color:"#fff",margin:"0 0 4px",fontFamily:F}}>{mode==="login"?"Welcome back":mode==="signup"?"Create account":"Reset password"}</h2>
 <p style={{fontSize:13,color:"rgba(255,255,255,0.28)",fontFamily:F,margin:"0 0 28px"}}>{mode==="login"?"Sign in to sync your rounds":mode==="signup"?"Start tracking for free":"We\u2019ll email you a reset link"}</p>
 {mode==="signup"&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={inputS} autoComplete="name"/>}
@@ -673,7 +717,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 if('serviceWorker' in navigator){
   caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
-  navigator.serviceWorker.getRegistrations().then(rs=>{rs.forEach(r=>r.unregister());setTimeout(()=>navigator.serviceWorker.register('sw.js?v=11').catch(()=>{}),1500);});
+  navigator.serviceWorker.getRegistrations().then(rs=>{rs.forEach(r=>r.unregister());setTimeout(()=>navigator.serviceWorker.register('sw.js?v=12').catch(()=>{}),1500);});
 }
 </script>
 </body>

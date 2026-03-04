@@ -1,4 +1,4 @@
-const CACHE = 'sticks-v11';
+const CACHE = 'sticks-v12';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 self.addEventListener('install', e => {
   self.skipWaiting();
