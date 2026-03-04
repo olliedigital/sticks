@@ -571,6 +571,8 @@ const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
 // Check auth on mount
 useEffect(()=>{
 let sub=null;
+// Nuclear fallback - ALWAYS show app after 3s
+const fallback=setTimeout(()=>{console.log("Fallback: forcing loading=false");setLoading(false);},3000);
 const init=async()=>{
 try{
 const timeout=new Promise((_,rej)=>setTimeout(()=>rej("timeout"),5000));
@@ -583,6 +585,7 @@ try{await Promise.race([loadRounds(result.data.session.user.id),new Promise((_,r
 }
 }catch(e){console.log("Auth init:",e);}
 console.log("Auth init complete, showing app");
+clearTimeout(fallback);
 setLoading(false);
 };
 init();
