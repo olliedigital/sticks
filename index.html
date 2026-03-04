@@ -10,16 +10,16 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>STICKS</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <!-- Google Maps loaded dynamically -->
 <!-- Maps replaced with custom SVG hole illustrations -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body,#root{height:100%;width:100%;overflow:hidden;}
-body{font-family:'Outfit',sans-serif;background:#09090b;overscroll-behavior:none;}
+body{font-family:'DM Sans',sans-serif;background:#09090b;overscroll-behavior:none;}
 ::-webkit-scrollbar{display:none;}
-input,select,button{font-family:'Outfit',sans-serif;-webkit-appearance:none;}
+input,select,button{font-family:'DM Sans',sans-serif;-webkit-appearance:none;}
 input::placeholder{color:#3f3f46;}
 select{color:#e4e4e7;}
 select option{background:#111114;color:#e4e4e7;}
@@ -45,7 +45,7 @@ const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
-const AVATARS=["#34d399","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
+const AVATARS=["#10b981","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 // Map rendering uses custom SVG illustrations
 const STRIPE_PK="pk_test_51T6grnKAn7D5IDFmuYZzTiCpoJhOr99tkTjwA9b1cdHFTL8MSGRRRzEigNO8xuPFLaFWyATWabrwmKE9SWNogSDc00T41oV7ve";
 const PRICE_MONTHLY="price_1T6gvTKAn7D5IDFmlWlrBl1d";
@@ -88,17 +88,17 @@ const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWa
 const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:10000});}),[]);
 return{pos,err,on,start,stop,once};
 };
-const F="'Outfit',sans-serif",M="'JetBrains Mono',monospace";
-const dark={bg:"#09090b",card:"#111114",bdr:"rgba(255,255,255,0.05)",g:"#34d399",gd:"rgba(52,211,153,0.07)",gb:"rgba(52,211,153,0.12)",tx:"#e4e4e7",tm:"#71717a",td:"#3f3f46",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
-const light={bg:"#f4f4f5",card:"#ffffff",bdr:"rgba(0,0,0,0.06)",g:"#059669",gd:"rgba(5,150,105,0.06)",gb:"rgba(5,150,105,0.12)",tx:"#18181b",tm:"#71717a",td:"#a1a1aa",r:"#dc2626",o:"#ea580c",b:"#2563eb",y:"#d97706",rd:"rgba(220,38,38,0.06)",od:"rgba(234,88,12,0.06)",bd:"rgba(37,99,235,0.06)",mapBg:"#e8f5e9",mapGreen:"#2e7d32",mapShot:"#e65100",mapLine:"rgba(230,81,0,0.4)"};
+const F="'DM Sans',sans-serif",M="'Space Mono',monospace";
+const dark={bg:"#0a0a0c",card:"#131316",bdr:"rgba(255,255,255,0.06)",g:"#10b981",gd:"rgba(16,185,129,0.08)",gb:"rgba(16,185,129,0.15)",tx:"#f0f0f2",tm:"#8b8b96",td:"#4a4a55",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
+const light={bg:"#f8f8fa",card:"#ffffff",bdr:"rgba(0,0,0,0.07)",g:"#059669",gd:"rgba(5,150,105,0.06)",gb:"rgba(5,150,105,0.14)",tx:"#111114",tm:"#6b6b78",td:"#9b9ba8",r:"#dc2626",o:"#ea580c",b:"#2563eb",y:"#d97706",rd:"rgba(220,38,38,0.06)",od:"rgba(234,88,12,0.06)",bd:"rgba(37,99,235,0.06)",mapBg:"#e8f5e9",mapGreen:"#2e7d32",mapShot:"#e65100",mapLine:"rgba(230,81,0,0.4)"};
 // ==================== AUTH SCREENS ====================
 const Spinner=({T,size=20})=><div style={{width:size,height:size,border:"2px solid "+T.bdr,borderTop:"2px solid "+T.g,borderRadius:"50%",animation:"spin 0.6s linear infinite",margin:"0 auto"}}/>;
 
 const LOGO=()=><svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:160,height:"auto"}}>
-<defs><linearGradient id="gflag" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#34d399"/><stop offset="100%" stopColor="#059669"/></linearGradient></defs>
+<defs><linearGradient id="gflag" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#059669"/></linearGradient></defs>
 <line x1="8" y1="4" x2="8" y2="38" stroke="url(#gflag)" strokeWidth="2.5" strokeLinecap="round"/>
 <path d="M10 4 L26 10.5 L10 17Z" fill="url(#gflag)" opacity="0.9"/>
-<circle cx="8" cy="40" r="2.5" fill="#34d399" opacity="0.35"/>
+<circle cx="8" cy="40" r="2.5" fill="#10b981" opacity="0.35"/>
 <text x="36" y="32" fontFamily="'Outfit',sans-serif" fontWeight="800" fontSize="30" letterSpacing="-1.5" fill="white">STICKS</text>
 </svg>;
 
@@ -137,23 +137,23 @@ const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset
 const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border-color 0.15s"};
 
 if(mode==="landing"){
-return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
 <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 32px"}}>
 <div style={{marginBottom:40}}><LOGO/></div>
 <h1 style={{fontSize:32,fontWeight:800,color:"#fff",margin:"0 0 12px",fontFamily:F,lineHeight:1.1,letterSpacing:"-0.03em"}}>Track your game.<br/>Know your numbers.</h1>
 <p style={{fontSize:15,color:"rgba(255,255,255,0.35)",fontFamily:F,margin:0,lineHeight:1.6,maxWidth:320}}>GPS shot tracking, handicap index, club distances, and scoring stats. Free forever.</p>
 </div>
 <div style={{padding:"0 32px 48px"}}>
-<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"#34d399",color:"#050507",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Create Free Account</button>
+<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"#10b981",color:"#0a0a0c",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em"}}>Create Free Account</button>
 <button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"transparent",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>Sign In</button>
 <div style={{display:"flex",justifyContent:"center",gap:28,marginTop:28}}>
-{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#34d399",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
+{[{n:"30K+",l:"Courses"},{n:"FREE",l:"Handicap"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
 </div>
 </div>;
 }
 
-return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column"}}>
+return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column"}}>
 <div style={{padding:"52px 28px 0",flex:"0 0 auto"}}>
 <button onClick={()=>{setMode("landing");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190 Back"}</button>
 </div>
@@ -164,16 +164,16 @@ return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDi
 <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" style={inputS} autoComplete="email"/>
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
 {error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(248,113,113,0.06)",borderRadius:10,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
-{msg&&<div style={{color:"#34d399",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(52,211,153,0.06)",borderRadius:10,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"#34d399",color:"#050507",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
-{loading?<Spinner T={{...T,g:"#050507",bdr:"#050507"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
+{msg&&<div style={{color:"#10b981",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(52,211,153,0.06)",borderRadius:10,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"#10b981",color:"#0a0a0c",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
+{loading?<Spinner T={{...T,g:"#0a0a0c",bdr:"#0a0a0c"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
 {mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:18}}>
-<button onClick={()=>{setMode("signup");setError("");}} style={{background:"none",border:"none",color:"#34d399",fontSize:12,fontFamily:F,cursor:"pointer",fontWeight:600}}>Create account</button>
+<button onClick={()=>{setMode("signup");setError("");}} style={{background:"none",border:"none",color:"#10b981",fontSize:12,fontFamily:F,cursor:"pointer",fontWeight:600}}>Create account</button>
 <button onClick={()=>{setMode("reset");setError("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Forgot password?</button>
 </div>}
 {mode==="signup"&&<div style={{textAlign:"center",marginTop:18}}>
-<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#34d399",fontWeight:600}}>Sign in</span></button>
+<button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Already have an account? <span style={{color:"#10b981",fontWeight:600}}>Sign in</span></button>
 </div>}
 {mode==="reset"&&<div style={{textAlign:"center",marginTop:18}}>
 <button onClick={()=>{setMode("login");setError("");setMsg("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:12,fontFamily:F,cursor:"pointer"}}>Back to sign in</button>
@@ -244,7 +244,7 @@ return <div onClick={onUpgrade} style={{cursor:"pointer",padding:"12px 16px",mar
 </div>;
 };
 // ==================== UI COMPONENTS ====================
-const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#34d399",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
+const Avatar=({name,color,size=40})=>{const i=(name||"?")[0].toUpperCase();return <div style={{width:size,height:size,borderRadius:size/2,background:color||"#10b981",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:size*0.42,fontWeight:700,color:"#fff",fontFamily:F}}>{i}</span></div>;};
 const HOLE_DESIGNS=[
 {fw:"M50,385 Q50,300 48,240 Q46,180 52,130 Q56,90 58,55",bunkers:[{x:68,y:78,rx:8,ry:5},{x:32,y:195,rx:6,ry:4}],green:{x:58,y:42,rx:14,ry:12},trees:[{x:22,y:150,s:8},{x:78,y:165,s:7},{x:82,y:115,s:9},{x:18,y:95,s:6},{x:80,y:245,s:7}],water:[],dogleg:"right",elev:""},
 {fw:"M50,385 Q50,300 50,200 Q50,140 50,80",bunkers:[{x:36,y:72,rx:7,ry:5},{x:64,y:68,rx:6,ry:5}],green:{x:50,y:52,rx:13,ry:11},trees:[{x:20,y:175,s:8},{x:80,y:195,s:7},{x:18,y:115,s:6},{x:82,y:125,s:7}],water:[],dogleg:"",elev:"uphill"},
@@ -345,12 +345,24 @@ const row=(x,i)=>{const d=x.sc-x.par,cl=d<0?T.g:d===0?T.b:T.o;return <tr key={i}
 const sub=(label,arr)=><tr style={{background:T.gd,fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>{label}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:11}}>{sum(arr,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(arr,"pt")}</td><td style={{padding:"5px"}}></td></tr>;
 return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontFamily:F,fontSize:11}}><thead><tr>{["H","Par","Scr","Ptt","Club"].map(x=><th key={x} style={thS}>{x}</th>)}</tr></thead><tbody>{f9.map((x,i)=>row(x,i))}{f9.length===9&&sub("OUT",f9)}{b9.map((x,i)=>row(x,i+9))}{b9.length===9&&sub("IN",b9)}{holes.length===18&&<tr style={{background:T.g+"11",fontWeight:700}}><td style={{padding:"5px",textAlign:"center",color:T.g,fontFamily:F,fontSize:10,fontWeight:700}}>TOT</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"par")}</td><td style={{padding:"5px",textAlign:"center",color:T.tx,fontWeight:700,fontFamily:M,fontSize:12}}>{sum(holes,"sc")}</td><td style={{padding:"5px",textAlign:"center",color:T.tm,fontSize:11}}>{sum(holes,"pt")}</td><td style={{padding:"5px"}}></td></tr>}</tbody></table></div>;
 }
-const TabBar=({active:a,onChange:o,T})=>(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:T.bg+"ee",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:"1px solid "+T.bdr,display:"flex",justifyContent:"space-around",padding:"10px 0 env(safe-area-inset-bottom, 14px)"}}>{["Stats","Play","Rounds","Bag","Me"].map((t,i)=>{const id=["dashboard","play","rounds","bag","profile"][i];return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 12px",color:a===id?T.g:T.td,fontFamily:F,fontSize:10,fontWeight:a===id?700:500,letterSpacing:"0.06em",textTransform:"uppercase",transition:"color 0.15s"}}>{t}</button>;})}</div>);
-const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={30}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:22,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.02em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:13,margin:"3px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:8,padding:"6px 10px",cursor:"pointer",color:T.g,fontSize:11,fontFamily:F,fontWeight:600}}>{T===dark?"\u2600":"Moon"}</button>}{right}</div></div>);
-const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:12,padding:14,cursor:o?"pointer":"default",...s}}>{children}</div>;
+const TabBar=({active:a,onChange:o,T})=>{
+const icons={dashboard:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+play:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16"/></svg>,
+rounds:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+bag:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+profile:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>};
+return(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:T.bg+"f0",backdropFilter:"blur(24px) saturate(1.4)",WebkitBackdropFilter:"blur(24px) saturate(1.4)",borderTop:"1px solid "+T.bdr,display:"flex",justifyContent:"space-around",padding:"8px 0 env(safe-area-inset-bottom, 12px)"}}>
+{["dashboard","play","rounds","bag","profile"].map(id=>{const act=a===id;return <button key={id} onClick={()=>o(id)} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 16px",color:act?T.g:T.td,display:"flex",flexDirection:"column",alignItems:"center",gap:3,transition:"color 0.2s"}}>
+{icons[id]}
+{act&&<div style={{width:4,height:4,borderRadius:2,background:T.g}}/>}
+</button>;})}
+</div>);
+};
+const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 14px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={28}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:20,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.025em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:12,margin:"2px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:"none",border:"1px solid "+T.bdr,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.tm,fontSize:14,lineHeight:1}}>{T===dark?"\u2600\uFE0F":"\uD83C\uDF19"}</button>}{right}</div></div>);
+const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.card,border:"1px solid "+T.bdr,borderRadius:14,padding:16,cursor:o?"pointer":"default",boxShadow:T.bg==="#0a0a0c"?"none":"0 1px 3px rgba(0,0,0,0.04)",...s}}>{children}</div>;
 const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{children}</div>;
-const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:T.bg,fontWeight:700,border:"none"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb},ghost:{background:"transparent",color:T.tm,border:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:10,padding:"12px 18px",fontSize:13,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.15s",...s}}>{children}</button>;};
-const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} style={{padding:"10px 0",borderRadius:8,flex:1,cursor:"pointer",background:a?(bg||T.gd):"rgba(128,128,128,0.04)",color:a?(cl||T.g):T.td,border:a?"1px solid "+(cl||T.g)+"18":"1px solid "+T.bdr,fontSize:14,fontWeight:600,fontFamily:F,transition:"all 0.12s"}}>{children}</button>;
+const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:"#fff",fontWeight:700,border:"none",boxShadow:"0 2px 8px "+T.g+"33"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb,boxShadow:"none"},ghost:{background:"transparent",color:T.tm,border:"none",boxShadow:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18",boxShadow:"none"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:12,padding:"14px 18px",fontSize:14,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.2s",letterSpacing:"-0.01em",...s}}>{children}</button>;};
+const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} style={{padding:"10px 0",borderRadius:10,flex:1,cursor:"pointer",background:a?(bg||T.gd):"transparent",color:a?(cl||T.g):T.tm,border:a?"1px solid "+(cl||T.g)+"22":"1px solid "+T.bdr,fontSize:14,fontWeight:a?700:500,fontFamily:F,transition:"all 0.15s"}}>{children}</button>;
 const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:"center"}}><div style={{fontSize:sm?18:26,fontWeight:700,color:cl||T.g,fontFamily:M,lineHeight:1}}>{v}{u&&<span style={{fontSize:sm?10:12,fontWeight:400,color:T.td,marginLeft:2}}>{u}</span>}</div><div style={{fontSize:9,color:T.td,marginTop:4,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{l}</div></div>;
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
@@ -464,7 +476,7 @@ useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].sho
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
-const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#34d399",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
+const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q);setSearchResults(r);setSearching(false);},400);};
 const selectApiCourse=(c)=>{setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
@@ -640,7 +652,7 @@ await sb.from("rounds").delete().eq("id",id);
 setRounds(p=>p.filter(r=>r.id!==id));
 },[]);
 
-if(loading)return <div style={{minHeight:"100vh",background:"#050507",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
+if(loading)return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user)return <AuthScreen onAuth={handleAuth} T={T}/>;
 if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 
