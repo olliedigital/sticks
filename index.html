@@ -405,7 +405,6 @@ return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggl
 {hcp!=null&&profile.goal&&<div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:hcp<=profile.goal?T.gd:T.od,border:"1px solid "+(hcp<=profile.goal?T.gb:T.o+"22")}}>
 <div style={{fontSize:12,fontWeight:600,color:hcp<=profile.goal?T.g:T.o,fontFamily:F}}>{hcp<=profile.goal?"\u2705 Goal reached! Handicap "+hcp+" vs goal "+profile.goal:"\u{1F3AF} "+Math.round((hcp-profile.goal)*10)/10+" strokes to go"}</div></div>}
 </Crd>
-<Crd T={T} style={{marginBottom:8}}><div style={{display:"flex",flexDirection:"column",gap:8}}>
 <Btn v="secondary" T={T} onClick={()=>setEditing(true)}>Edit Profile</Btn>
 <Crd T={T} style={{marginBottom:10}}>
 <Lbl T={T}>Subscription</Lbl>
