@@ -667,6 +667,11 @@ return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",backgr
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=10').catch(()=>{});}</script>
+<script>
+if('serviceWorker' in navigator){
+  caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
+  navigator.serviceWorker.getRegistrations().then(rs=>{rs.forEach(r=>r.unregister());setTimeout(()=>navigator.serviceWorker.register('sw.js?v=11').catch(()=>{}),1500);});
+}
+</script>
 </body>
 </html>
