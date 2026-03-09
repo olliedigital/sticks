@@ -764,6 +764,181 @@ return(<div style={{marginBottom:10}}>
 </div>}
 </div>);
 }
+function RoundReplay({round,onClose,T}){
+const mapRef=useRef(null);const mapInst=useRef(null);const overlays=useRef({markers:[],polys:[],circles:[]});
+const[curHole,setCurHole]=useState(0);const[curShot,setCurShot]=useState(-1);const[playing,setPlaying]=useState(false);
+const[speed,setSpeed]=useState(1);const timerRef=useRef(null);
+const course=getCourse(round.course_id);const isDk=T.bg==="#09090b";
+const gmReady=typeof google!=="undefined"&&google.maps;
+const F2="'DM Sans',sans-serif",M2="'Space Mono',monospace";
+const hole=round.holes[curHole];const allShots=hole?hole.shots||[]:[];
+const totalScore=round.holes.reduce((s,h)=>s+(h.sc||0),0);
+const totalPar=round.holes.reduce((s,h)=>s+(h.par||0),0);
+const scoreThru=round.holes.slice(0,curHole+1).reduce((s,h)=>s+(h.sc||0),0);
+const parThru=round.holes.slice(0,curHole+1).reduce((s,h)=>s+(h.par||0),0);
+const clearMap=()=>{const o=overlays.current;o.markers.forEach(m=>m.setMap(null));o.polys.forEach(p=>p.setMap(null));o.circles.forEach(c=>c.setMap(null));o.markers=[];o.polys=[];o.circles=[];};
+// Init / update map
+useEffect(()=>{
+if(!mapRef.current||!gmReady)return;
+clearMap();
+const green=course.greens[curHole];const tee=course.teeBoxes?course.teeBoxes[curHole]:null;
+if(!green)return;
+const o=overlays.current;
+if(!mapInst.current){
+mapInst.current=new google.maps.Map(mapRef.current,{
+center:green,zoom:18,mapTypeId:"satellite",tilt:45,heading:0,
+disableDefaultUI:true,gestureHandling:"greedy",backgroundColor:"#000",
+styles:[{featureType:"all",elementType:"labels",stylers:[{visibility:"off"}]},{featureType:"poi",stylers:[{visibility:"off"}]}]
+});}else{mapInst.current.setCenter(green);mapInst.current.setTilt(45);}
+const map=mapInst.current;
+// Auto-orient tee to green
+if(tee){
+const heading=google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(tee.lat,tee.lng),new google.maps.LatLng(green.lat,green.lng));
+map.setHeading(heading);
+}
+// Green
+const gc=new google.maps.Circle({center:green,radius:14,map,fillColor:"#10b981",fillOpacity:0.15,strokeColor:"#10b981",strokeWeight:1.5,strokeOpacity:0.4,clickable:false});
+o.circles.push(gc);
+// Pin
+const pin=new google.maps.Marker({position:green,map,zIndex:20,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="30" viewBox="0 0 20 30"><line x1="10" y1="3" x2="10" y2="26" stroke="white" stroke-width="1.5"/><polygon points="10,2 18,7 10,12" fill="#ef4444"/><circle cx="10" cy="27" r="2" fill="white"/></svg>'),scaledSize:new google.maps.Size(20,30),anchor:new google.maps.Point(10,27)}});
+o.markers.push(pin);
+// Tee
+if(tee){
+const tm=new google.maps.Marker({position:tee,map,zIndex:10,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="11" y="15" text-anchor="middle" fill="white" font-size="9" font-weight="800" font-family="monospace">T</text></svg>'),scaledSize:new google.maps.Size(22,22),anchor:new google.maps.Point(11,11)}});
+o.markers.push(tm);
+const bounds=new google.maps.LatLngBounds();bounds.extend(tee);bounds.extend(green);
+allShots.forEach(s=>{if(s.lat)bounds.extend(s);});
+map.fitBounds(bounds,{top:60,bottom:100,left:20,right:20});
+}
+// Draw shots up to curShot
+const shotsToShow=allShots.slice(0,curShot+1);
+if(shotsToShow.length>0){
+const path=shotsToShow.filter(s=>s.lat).map(s=>({lat:s.lat,lng:s.lng}));
+if(path.length>1){
+// Trail glow
+const glow=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:6,strokeOpacity:0.2,geodesic:true});
+const solid=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:2.5,strokeOpacity:0.9,geodesic:true});
+o.polys.push(glow,solid);
+}
+// Dashed to green from last shot
+const lastPos=path[path.length-1];
+if(lastPos){
+const dash=new google.maps.Polyline({path:[lastPos,green],map,strokeOpacity:0,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:0.4,strokeColor:"#10b981",scale:2},offset:"0",repeat:"8px"}]});
+o.polys.push(dash);
+}
+// Shot markers - all previous are small, current is big with animation
+shotsToShow.forEach((s,i)=>{
+if(!s.lat)return;
+const isCurrent=i===curShot;
+const size=isCurrent?32:22;
+const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'"><circle cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+(size/2-2)+'" fill="'+(isCurrent?"#f59e0b":"#f59e0b")+'" fill-opacity="'+(isCurrent?1:0.7)+'" stroke="'+(isCurrent?"#fff":"#333")+'" stroke-width="'+(isCurrent?3:1.5)+'"/><text x="'+(size/2)+'" y="'+(size/2+4)+'" text-anchor="middle" fill="'+(isCurrent?"#111":"#111")+'" font-size="'+(isCurrent?14:10)+'" font-weight="800" font-family="monospace">'+(i+1)+'</text></svg>';
+const sm=new google.maps.Marker({position:s,map,zIndex:15+i,icon:{url:"data:image/svg+xml,"+encodeURIComponent(svg),scaledSize:new google.maps.Size(size,size),anchor:new google.maps.Point(size/2,size/2)}});
+o.markers.push(sm);
+// Distance chip for current shot
+if(isCurrent&&s.dist){
+const chipW=s.dist.toString().length*8+30;
+const chip=new google.maps.Marker({position:s,map,zIndex:30,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="'+chipW+'" height="24" viewBox="0 0 '+chipW+' 24"><rect width="'+chipW+'" height="24" rx="8" fill="rgba(0,0,0,0.85)" stroke="rgba(245,158,11,0.4)" stroke-width="1"/><text x="'+(chipW/2)+'" y="16" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700" font-family="monospace">'+s.dist+' yd</text></svg>'),scaledSize:new google.maps.Size(chipW,24),anchor:new google.maps.Point(chipW/2,-8)}});
+o.markers.push(chip);
+}
+});
+// Pan to current shot
+if(curShot>=0&&allShots[curShot]&&allShots[curShot].lat){
+map.panTo(allShots[curShot]);
+}
+}
+return ()=>clearMap();
+},[curHole,curShot,gmReady]);
+// Playback engine
+useEffect(()=>{
+if(!playing)return;
+timerRef.current=setInterval(()=>{
+setCurShot(prev=>{
+const maxShot=allShots.length-1;
+if(prev>=maxShot){
+// Move to next hole
+setCurHole(h=>{
+if(h>=round.holes.length-1){setPlaying(false);return h;}
+setCurShot(-1);return h+1;
+});
+return prev;
+}
+return prev+1;
+});
+},2000/speed);
+return ()=>clearInterval(timerRef.current);
+},[playing,speed,curHole,allShots.length]);
+// Stop playback on unmount
+useEffect(()=>()=>{if(timerRef.current)clearInterval(timerRef.current);},[]);
+const diff=scoreThru-parThru;const diffStr=diff>0?"+"+diff:diff===0?"E":""+diff;
+return(<div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,display:"flex",flexDirection:"column"}}>
+{/* Header */}
+<div style={{padding:"16px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid "+T.bdr}}>
+<div>
+<div style={{fontSize:14,fontWeight:700,color:T.tx,fontFamily:F2}}>{round.course_name}</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F2}}>{new Date(round.date).toLocaleDateString()+" \u00b7 Hole "+(curHole+1)+"/"+round.holes.length}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:12}}>
+<div style={{textAlign:"right"}}>
+<div style={{fontSize:18,fontWeight:800,color:T.tx,fontFamily:M2,lineHeight:1}}>{scoreThru}</div>
+<div style={{fontSize:11,fontWeight:700,color:diff<0?T.g:diff===0?T.b:T.o,fontFamily:M2}}>{diffStr}</div>
+</div>
+<button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:"rgba(128,128,128,0.1)",border:"1px solid "+T.bdr,color:T.td,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2715"}</button>
+</div>
+</div>
+{/* Map */}
+<div style={{flex:1,position:"relative"}}>
+{gmReady?<div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+:<div style={{width:"100%",height:"100%",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",color:T.td,fontFamily:F2}}>Map loading...</div>}
+{/* Hole info overlay */}
+{hole&&<div style={{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(255,255,255,0.08)"}}>
+<div style={{fontSize:16,fontWeight:800,color:"#fff",fontFamily:M2}}>{"Hole "+(curHole+1)}</div>
+<div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F2}}>{"Par "+hole.par+" \u00b7 "+hole.yd+" yd"}</div>
+<div style={{marginTop:4,fontSize:14,fontWeight:700,color:hole.sc-hole.par<0?"#10b981":hole.sc-hole.par===0?"#60a5fa":"#fb923c",fontFamily:M2}}>
+{hole.sc}{" ("+(hole.sc-hole.par>0?"+":"")+(hole.sc-hole.par)+")"}
+</div>
+</div>}
+{/* Shot info overlay */}
+{curShot>=0&&allShots[curShot]&&<div style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(245,158,11,0.2)"}}>
+<div style={{fontSize:11,color:"#f59e0b",fontWeight:700,fontFamily:F2}}>{"Shot "+(curShot+1)}</div>
+{allShots[curShot].dist&&<div style={{fontSize:18,fontWeight:800,color:"#fff",fontFamily:M2}}>{allShots[curShot].dist+" yd"}</div>}
+{allShots[curShot].cl&&<div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F2}}>{allShots[curShot].cl}</div>}
+{allShots[curShot].toGreen&&<div style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontFamily:F2}}>{allShots[curShot].toGreen+" to pin"}</div>}
+</div>}
+</div>
+{/* Controls */}
+<div style={{padding:"12px 16px",borderTop:"1px solid "+T.bdr,background:isDk?"#111114":"#fff"}}>
+{/* Hole progress dots */}
+<div style={{display:"flex",gap:2,marginBottom:10,justifyContent:"center",flexWrap:"wrap"}}>
+{round.holes.map((h,i)=>{const d=h.sc-h.par;const active=i===curHole;
+return <button key={i} onClick={()=>{setCurHole(i);setCurShot(-1);setPlaying(false);}} style={{width:active?28:20,height:20,borderRadius:4,border:"none",cursor:"pointer",fontSize:9,fontWeight:700,fontFamily:M2,
+background:active?T.g:d<0?"rgba(16,185,129,0.15)":d===0?"rgba(96,165,250,0.1)":"rgba(251,146,60,0.1)",
+color:active?"#fff":d<0?T.g:d===0?T.b:T.o,transition:"all 0.2s"}}>{active?(i+1):h.sc}</button>;})}
+</div>
+{/* Shot timeline */}
+<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+<span style={{fontSize:9,color:T.td,fontFamily:M2,width:20}}>T</span>
+<div style={{flex:1,height:4,background:"rgba(128,128,128,0.1)",borderRadius:2,position:"relative",display:"flex",gap:2}}>
+{allShots.map((_,i)=><div key={i} onClick={()=>{setCurShot(i);setPlaying(false);}} style={{flex:1,height:4,borderRadius:2,cursor:"pointer",background:i<=curShot?"#f59e0b":i===curShot+1?"rgba(245,158,11,0.3)":"rgba(128,128,128,0.1)",transition:"background 0.3s"}}/>)}
+</div>
+<span style={{fontSize:9,color:T.td,fontFamily:M2,width:20,textAlign:"right"}}>{allShots.length}</span>
+</div>
+{/* Playback buttons */}
+<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
+<button onClick={()=>{setCurHole(h=>Math.max(0,h-1));setCurShot(-1);setPlaying(false);}} style={{width:36,height:36,borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+<button onClick={()=>{if(!playing&&curShot<0)setCurShot(0);setPlaying(p=>!p);}} style={{width:48,height:48,borderRadius:12,background:playing?"rgba(245,158,11,0.12)":T.g,border:playing?"1px solid rgba(245,158,11,0.3)":"none",color:playing?"#f59e0b":"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:playing?"none":"0 2px 8px rgba(16,185,129,0.3)"}}>
+{playing?<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+:<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>}
+</button>
+<button onClick={()=>{setCurHole(h=>Math.min(round.holes.length-1,h+1));setCurShot(-1);setPlaying(false);}} style={{width:36,height:36,borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+<div style={{marginLeft:12,display:"flex",gap:4}}>
+{[1,2,4].map(s=><button key={s} onClick={()=>setSpeed(s)} style={{padding:"4px 8px",borderRadius:6,fontSize:10,fontWeight:700,fontFamily:M2,cursor:"pointer",border:"none",background:speed===s?"rgba(16,185,129,0.12)":"rgba(128,128,128,0.04)",color:speed===s?T.g:T.td}}>{s+"x"}</button>)}
+</div>
+</div>
+</div>
+</div>);
+}
 function Scorecard({holes,onTap,T}){
 const f9=holes.filter((_,i)=>i<9),b9=holes.filter((_,i)=>i>=9);const sum=(arr,k)=>arr.reduce((s,h)=>s+(h[k]||0),0);
 const thS={color:T.td,padding:"3px 5px",textAlign:"center",fontWeight:600,fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em"};
@@ -1214,18 +1389,188 @@ return <Crd T={T} style={{marginBottom:10,background:T.bg==="#09090b"?"linear-gr
 </div></div>;
 }
 // ==================== ROUNDS & BAG ====================
+function ShotReplay({round,course,T,onClose}){
+const mapRef=useRef(null);const mapInst=useRef(null);const markersRef=useRef([]);const polysRef=useRef([]);
+const[curHole,setCurHole]=useState(0);const[curShot,setCurShot]=useState(-1);const[playing,setPlaying]=useState(false);const[speed,setSpeed]=useState(1);
+const timerRef=useRef(null);
+const gmReady=typeof google!=="undefined"&&google.maps;
+// Get all holes that have shot data
+const holesWithShots=round.holes.map((h,i)=>({...h,idx:i,hasGPS:h.shots&&h.shots.length>0}));
+const currentHoleData=round.holes[curHole];
+const currentShots=currentHoleData&&currentHoleData.shots?currentHoleData.shots:[];
+const green=course.greens[curHole];
+const tee=course.teeBoxes?course.teeBoxes[curHole]:null;
+const totalShots=round.holes.reduce((s,h)=>s+(h.shots?h.shots.length:0),0);
+// Clear map overlays
+const clearMap=()=>{markersRef.current.forEach(m=>m.setMap(null));polysRef.current.forEach(p=>p.setMap(null));markersRef.current=[];polysRef.current=[];};
+// Init map
+useEffect(()=>{
+if(!mapRef.current||!gmReady)return;
+if(!mapInst.current){
+mapInst.current=new google.maps.Map(mapRef.current,{
+center:green||{lat:33.197,lng:-117.358},zoom:18,mapTypeId:"satellite",
+tilt:45,disableDefaultUI:true,gestureHandling:"greedy",
+keyboardShortcuts:false,clickableIcons:false,backgroundColor:"#000",
+styles:[{featureType:"all",elementType:"labels",stylers:[{visibility:"off"}]},{featureType:"poi",stylers:[{visibility:"off"}]}]
+});}
+return ()=>clearMap();
+},[gmReady]);
+// Render current state
+useEffect(()=>{
+const map=mapInst.current;if(!map||!gmReady||!green)return;
+clearMap();
+// Orient map tee-to-green
+if(tee&&green){
+const heading=google.maps.geometry.spherical.computeHeading(
+new google.maps.LatLng(tee.lat,tee.lng),new google.maps.LatLng(green.lat,green.lng));
+map.setHeading(heading);
+}
+// Green
+const gc=new google.maps.Circle({center:green,radius:12,map,fillColor:"#10b981",fillOpacity:0.15,strokeColor:"#10b981",strokeWeight:1.5,strokeOpacity:0.5,clickable:false});
+polysRef.current.push(gc);
+// Pin
+const pin=new google.maps.Marker({position:green,map,zIndex:20,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36"><line x1="12" y1="4" x2="12" y2="30" stroke="white" stroke-width="1.5"/><polygon points="12,2 22,8 12,14" fill="#ef4444"/><circle cx="12" cy="32" r="2" fill="white"/></svg>'),scaledSize:new google.maps.Size(24,36),anchor:new google.maps.Point(12,32)}});
+markersRef.current.push(pin);
+// Tee
+if(tee){
+const tm=new google.maps.Marker({position:tee,map,zIndex:5,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#3b82f6" stroke="white" stroke-width="2" opacity="0.8"/><text x="11" y="15" text-anchor="middle" fill="white" font-size="9" font-weight="800" font-family="monospace">T</text></svg>'),scaledSize:new google.maps.Size(22,22),anchor:new google.maps.Point(11,11)}});
+markersRef.current.push(tm);}
+// Draw shots up to curShot
+const visible=currentShots.slice(0,curShot+1);
+if(visible.length>0){
+// Trail with animation feel - earlier shots are dimmer
+visible.forEach((s,i)=>{
+const isActive=i===curShot;
+const opacity=isActive?1:0.5+0.3*(i/visible.length);
+const size=isActive?34:24;
+const color=isActive?"#f59e0b":"#f59e0b";
+const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'"><circle cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+(size/2-2)+'" fill="'+color+'" fill-opacity="'+opacity+'" stroke="'+(isActive?"#fff":"#333")+'" stroke-width="'+(isActive?3:1.5)+'"/><text x="'+(size/2)+'" y="'+(size/2+4)+'" text-anchor="middle" fill="'+(isActive?"#000":"#111")+'" font-size="'+(isActive?14:10)+'" font-weight="800" font-family="monospace">'+(i+1)+'</text></svg>';
+const sm=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,zIndex:10+i,icon:{url:"data:image/svg+xml,"+encodeURIComponent(svg),scaledSize:new google.maps.Size(size,size),anchor:new google.maps.Point(size/2,size/2)}});
+markersRef.current.push(sm);
+// Distance chip on active shot
+if(isActive&&s.dist){
+const chip=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,zIndex:30,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="24" viewBox="0 0 60 24"><rect width="60" height="24" rx="8" fill="rgba(0,0,0,0.85)" stroke="rgba(245,158,11,0.4)" stroke-width="1"/><text x="30" y="16" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700" font-family="monospace">'+s.dist+'yd</text></svg>'),scaledSize:new google.maps.Size(60,24),anchor:new google.maps.Point(30,-8)}});
+markersRef.current.push(chip);}
+});
+// Shot lines - animated path
+const path=visible.map(s=>({lat:s.lat,lng:s.lng}));
+if(path.length>1){
+const glow=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:6,strokeOpacity:0.2,geodesic:true});
+const solid=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:2.5,strokeOpacity:0.9,geodesic:true});
+polysRef.current.push(glow,solid);}
+// Dashed to green from last visible shot
+const lastV=visible[visible.length-1];
+const dash=new google.maps.Polyline({path:[{lat:lastV.lat,lng:lastV.lng},green],map,strokeOpacity:0,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:0.4,strokeColor:"#10b981",scale:2},offset:"0",repeat:"8px"}]});
+polysRef.current.push(dash);
+}
+// Fit bounds
+const bounds=new google.maps.LatLngBounds();
+if(tee)bounds.extend(tee);bounds.extend(green);
+visible.forEach(s=>bounds.extend({lat:s.lat,lng:s.lng}));
+if(bounds.getNorthEast().equals(bounds.getSouthWest())){map.setCenter(green);map.setZoom(18);}
+else map.fitBounds(bounds,{top:80,bottom:120,left:20,right:20});
+},[curHole,curShot,gmReady]);
+// Playback engine
+useEffect(()=>{
+if(!playing)return;
+timerRef.current=setInterval(()=>{
+setCurShot(prev=>{
+const next=prev+1;
+if(next>=currentShots.length){
+// Move to next hole
+setCurHole(h=>{
+const nextH=h+1;
+if(nextH>=round.holes.length){setPlaying(false);return h;}
+return nextH;
+});
+return -1; // reset shot counter, will trigger hole change
+}
+return next;
+});
+},2000/speed);
+return()=>clearInterval(timerRef.current);
+},[playing,speed,currentShots.length,curHole]);
+// Score for display
+const sc=currentHoleData?currentHoleData.sc:0;const par=currentHoleData?currentHoleData.par:0;
+const diff=sc-par;const diffStr=diff>0?"+"+diff:diff===0?"E":""+diff;
+const diffColor=diff<0?"#10b981":diff===0?"#60a5fa":"#fb923c";
+const totalScore=round.holes.reduce((s,h)=>s+(h.sc||0),0);const totalPar=round.holes.reduce((s,h)=>s+(h.par||0),0);
+return <div style={{position:"fixed",inset:0,zIndex:200,background:"#000",display:"flex",flexDirection:"column"}}>
+{/* Map */}
+<div ref={mapRef} style={{flex:1,width:"100%"}}/>
+{/* Top bar */}
+<div style={{position:"absolute",top:0,left:0,right:0,padding:"env(safe-area-inset-top, 12px) 16px 10px",background:"linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%)",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+<div>
+<div style={{fontSize:16,fontWeight:800,color:"#fff",fontFamily:F}}>{round.course_name||round.courseName}</div>
+<div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontFamily:F}}>{new Date(round.date).toLocaleDateString()+" \u00b7 Score: "+totalScore+" ("+(totalScore-totalPar>=0?"+":"")+(totalScore-totalPar)+")"}</div>
+</div>
+<button onClick={onClose} style={{padding:"8px 14px",borderRadius:8,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F,backdropFilter:"blur(8px)"}}>Close</button>
+</div>
+{/* Bottom controls */}
+<div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%)",padding:"20px 16px env(safe-area-inset-bottom, 16px)"}}>
+{/* Hole info */}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div>
+<div style={{fontSize:20,fontWeight:800,color:"#fff",fontFamily:F}}>{"Hole "+(curHole+1)}</div>
+<div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontFamily:F}}>{"Par "+par+" \u00b7 "+currentShots.length+" shots"}</div>
+</div>
+<div style={{textAlign:"right"}}>
+<div style={{fontSize:28,fontWeight:800,color:diffColor,fontFamily:M}}>{sc||"-"}</div>
+<div style={{fontSize:11,color:diffColor,fontFamily:F,fontWeight:600}}>{sc?diffStr:""}</div>
+</div>
+</div>
+{/* Shot scrubber */}
+{currentShots.length>0&&<div style={{display:"flex",gap:4,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
+{currentShots.map((s,i)=>{
+const isActive=i===curShot;const isPast=i<curShot;
+return <button key={i} onClick={()=>{setCurShot(i);setPlaying(false);}} style={{minWidth:36,height:36,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",
+background:isActive?"#f59e0b":isPast?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.06)",
+border:isActive?"2px solid #fff":"1px solid "+(isPast?"rgba(245,158,11,0.3)":"rgba(255,255,255,0.1)"),
+color:isActive?"#000":isPast?"#f59e0b":"rgba(255,255,255,0.3)",fontSize:12,fontWeight:700,fontFamily:M,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>{i+1}</button>;
+})}</div>}
+{/* Playback controls */}
+<div style={{display:"flex",alignItems:"center",gap:10}}>
+{/* Prev hole */}
+<button onClick={()=>{if(curHole>0){setCurHole(curHole-1);setCurShot(-1);setPlaying(false);}}} disabled={curHole===0} style={{width:36,height:36,borderRadius:8,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:curHole===0?"rgba(255,255,255,0.15)":"#fff",fontSize:16,cursor:curHole===0?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u25C0"}</button>
+{/* Play/Pause */}
+<button onClick={()=>{if(!playing&&curShot>=currentShots.length-1){setCurShot(-1);}setPlaying(p=>!p);}} style={{flex:1,height:44,borderRadius:10,background:playing?"rgba(245,158,11,0.15)":"#f59e0b",border:playing?"1px solid rgba(245,158,11,0.3)":"none",color:playing?"#f59e0b":"#000",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+{playing?<><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Pause</>:<><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>Play</>}
+</button>
+{/* Next hole */}
+<button onClick={()=>{if(curHole<round.holes.length-1){setCurHole(curHole+1);setCurShot(-1);setPlaying(false);}}} disabled={curHole>=round.holes.length-1} style={{width:36,height:36,borderRadius:8,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:curHole>=round.holes.length-1?"rgba(255,255,255,0.15)":"#fff",fontSize:16,cursor:curHole>=round.holes.length-1?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u25B6"}</button>
+{/* Speed */}
+<button onClick={()=>setSpeed(s=>s>=3?0.5:s+0.5)} style={{width:44,height:36,borderRadius:8,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:M}}>{speed+"x"}</button>
+</div>
+{/* Hole dots */}
+<div style={{display:"flex",gap:3,marginTop:10,justifyContent:"center"}}>
+{round.holes.map((h,i)=>{
+const isActive=i===curHole;const isPast=i<curHole;const d=h.sc-h.par;
+const bg=isActive?"#f59e0b":isPast?(d<0?"#10b981":d===0?"#60a5fa":"#fb923c"):"rgba(255,255,255,0.1)";
+return <button key={i} onClick={()=>{setCurHole(i);setCurShot(-1);setPlaying(false);}} style={{width:isActive?24:16,height:6,borderRadius:3,background:bg,border:"none",cursor:"pointer",transition:"all 0.2s",opacity:isActive?1:isPast?0.7:0.3}}/>;
+})}
+</div>
+</div>
+</div>;
+}
+
 function Rounds({rounds,onDel,T,onToggle,profile}){
+const[replayRound,setReplayRound]=useState(null);
+const[replayRound,setReplayRound]=useState(null);
 if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px"}}>
 <Crd T={T} style={{textAlign:"center",padding:"32px 20px"}}>
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{margin:"0 auto 10px",display:"block"}}><rect x="10" y="6" width="28" height="36" rx="4" stroke={T.td} strokeWidth="1.5" fill="none" opacity="0.3"/><line x1="16" y1="16" x2="32" y2="16" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/><line x1="16" y1="22" x2="28" y2="22" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/><line x1="16" y1="28" x2="24" y2="28" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/></svg>
 <div style={{color:T.tx,fontSize:16,fontWeight:700,fontFamily:F}}>No rounds yet</div>
 <div style={{color:T.td,fontSize:12,fontFamily:F,marginTop:4}}>Your round history will appear here</div>
 </Crd></div></div>;
+if(replayRound)return <RoundReplay round={replayRound} onClose={()=>setReplayRound(null)} T={T}/>;
+if(replayRound){const rc=COURSES.find(x=>x.id===replayRound.course_id)||getCourse(replayRound.course_id);
+return <ShotReplay round={replayRound} course={rc} T={T} onClose={()=>setReplayRound(null)}/>;}
 return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{rounds.slice().reverse().map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0),pt=r.holes.reduce((s,h)=>s+(h.pt||0),0);return <Crd key={r.id} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{new Date(r.date).toLocaleDateString()+" \u00b7 "+r.holes.length+"h"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.tx,fontFamily:M,lineHeight:1}}>{t}</div><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div><div style={{display:"flex",gap:8,marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr,flexWrap:"wrap"}}>
 <span style={{fontSize:10,color:T.td,fontFamily:M,background:"rgba(128,128,128,0.06)",padding:"2px 6px",borderRadius:4}}>{"F9: "+r.holes.slice(0,9).reduce((s,h)=>s+(h.sc||0),0)}</span>
 <span style={{fontSize:10,color:T.td,fontFamily:M,background:"rgba(128,128,128,0.06)",padding:"2px 6px",borderRadius:4}}>{"B9: "+r.holes.slice(9).reduce((s,h)=>s+(h.sc||0),0)}</span>
-<span style={{fontSize:10,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>{
+<span style={{fontSize:10,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>setReplayRound(r)} style={{background:"none",border:"none",color:T.b,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600}}>Replay</button>
+<button onClick={()=>{
 const txt=r.course_name+" | "+new Date(r.date).toLocaleDateString()+"\n"+
 "Score: "+t+" ("+(t-p>=0?"+":"")+(t-p)+") | Putts: "+pt+"\n"+
 (r.cr?"Rating: "+r.cr+" | Slope: "+r.sr+"\n":"")+
@@ -1233,6 +1578,8 @@ const txt=r.course_name+" | "+new Date(r.date).toLocaleDateString()+"\n"+
 if(navigator.share)navigator.share({title:"STICKS Round",text:txt}).catch(()=>{});
 else{navigator.clipboard.writeText(txt);alert("Round copied to clipboard!");}
 }} style={{background:"none",border:"none",color:T.g,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600}}>Share</button>
+{r.holes.some(h=>h.shots&&h.shots.length>0)&&<button onClick={()=>setReplayRound(r)} style={{background:"none",border:"none",color:T.b,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600,display:"flex",alignItems:"center",gap:3}}>
+<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>Replay</button>}
 <button onClick={()=>onDel(r.id)} style={{marginLeft:"auto",background:"none",border:"none",color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>Delete</button></div></Crd>;})}</div></div>;
 }
 function Bag({rounds,T,onToggle,profile,isPro,onUpgrade}){
