@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>STICKS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBkfLnJVxk-jE1gMRXCfVlHNqCdTSbUKYI&libraries=geometry&callback=Function.prototype" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBkfLnJVxk-jE1gMRXCfVlHNqCdTSbUKYI&libraries=geometry,places&callback=Function.prototype" async defer></script>
 <!-- Maps replaced with custom SVG hole illustrations -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -73,10 +73,29 @@ if(!Object.keys(tees).length)return null;
 const firstTee=teeData[gender][0];
 return{id:"api_"+c.id,name:c.club_name+(c.course_name&&c.course_name!==c.club_name?" - "+c.course_name:""),loc:c.location.city+", "+c.location.state,par:firstTee.par_total,holes:firstTee.number_of_holes,greens:firstTee.holes.map(()=>({lat:c.location.latitude,lng:c.location.longitude})),tees,pars:firstTee.holes.map(h=>h.par),tips:[],apiCourse:true};
 };
-const searchCourses=async(q)=>{
+const searchCourses=async(q,gpsPos)=>{
 if(!q||q.length<2)return[];
+const results=[];
+// 1. Try GolfCourseAPI for structured tee/par data
 try{const r=await fetch("https://api.golfcourseapi.com/v1/search?search_query="+encodeURIComponent(q),{headers:{"Authorization":"Key "+GOLF_API}});
-const d=await r.json();return(d.courses||[]).slice(0,8).map(c=>{const conv=apiToLocal(c,c.tees||{});return conv?{...conv,_raw:c}:null;}).filter(Boolean);}catch(e){console.error(e);return[];}
+const d=await r.json();(d.courses||[]).forEach(c=>{const conv=apiToLocal(c,c.tees||{});if(conv)results.push({...conv,_raw:c,_src:"golf"});});}catch(e){console.error("GolfCourseAPI:",e);}
+// 2. Google Places text search for broader coverage
+if(window.google&&window.google.maps&&window.google.maps.places){
+try{const placesResults=await new Promise((res)=>{
+const svc=new google.maps.places.PlacesService(document.createElement("div"));
+const req={query:q+" golf course",type:"establishment"};
+if(gpsPos)req.location=new google.maps.LatLng(gpsPos.lat,gpsPos.lng);
+svc.textSearch(req,(r,status)=>{if(status===google.maps.places.PlacesServiceStatus.OK)res(r||[]);else res([]);});});
+placesResults.forEach(p=>{
+const exists=results.find(r=>r.name&&p.name&&(r.name.toLowerCase().includes(p.name.toLowerCase().split(" ")[0])||p.name.toLowerCase().includes(r.name.toLowerCase().split(" ")[0])));
+if(!exists&&p.types&&(p.types.includes("point_of_interest")||p.types.includes("establishment"))){
+const loc=p.geometry.location;
+results.push({id:"gp_"+p.place_id,name:p.name,loc:p.formatted_address?p.formatted_address.split(",").slice(0,2).join(","):"",
+par:72,holes:18,greens:Array(18).fill({lat:loc.lat(),lng:loc.lng()}),
+tees:{white:{r:72,s:125,y:Array(18).fill(350)},blue:{r:74,s:130,y:Array(18).fill(370)}},
+pars:[4,4,3,5,4,3,4,4,5,4,4,3,5,4,3,4,4,5],tips:[],apiCourse:true,
+_src:"google",_placeId:p.place_id,_rating:p.rating,_photos:p.photos,_needsData:true});}});}catch(e){console.error("Places:",e);}}
+return results.slice(0,12);
 };
 const genId=()=>Math.random().toString(36).substr(2,9);
 const gpsDist=(a,b,c,d)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(c-a),dn=tr(d-b),s=Math.sin(dl/2)**2+Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dn/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))*1.09361);};
@@ -220,7 +239,7 @@ const features=[
 {f:"Custom hole maps",free:false,pro:true},
 {f:"Club distance analytics",free:false,pro:true},
 {f:"Full stats dashboard",free:"Basic",pro:true},
-{f:"30K+ course search",free:false,pro:true},
+{f:"43K+ course search",free:false,pro:true},
 {f:"Cloud sync",free:false,pro:true},
 {f:"Handicap index",free:true,pro:true}
 ];
@@ -643,7 +662,7 @@ useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];set
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
-const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q);setSearchResults(r);setSearching(false);},400);};
+const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},500);};
 const selectApiCourse=(c)=>{setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
 // Course images removed - using clean list design
@@ -656,13 +675,22 @@ return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTh
 {COURSES.map((c,ci)=>{const a=!apiCourse&&courseId===c.id;return <button key={c.id} onClick={()=>selectBuiltIn(c.id)} style={{width:"100%",padding:"14px 16px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:a?"1px solid "+T.gb:"1px solid "+T.bdr,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:700,color:a?T.g:T.tx,fontFamily:F}}>{c.name}</div><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{c.loc+" \u00b7 Par "+c.par}</div></div>{a&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2.5" strokeLinecap="round"><path d="M5 12l5 5L20 7"/></svg>}</button>;})}
 <button onClick={()=>setShowSearch(true)} style={{padding:"14px",borderRadius:12,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px dashed "+T.gb,color:T.g,fontFamily:F,fontSize:13,fontWeight:600,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-Search 30,000+ Courses</button>
+Search 43,000+ Courses</button>
 </div>
 :<div>
-<div style={{display:"flex",gap:6,marginBottom:8}}><input type="text" value={searchQ} onChange={e=>doSearch(e.target.value)} placeholder="Search course name..." autoFocus style={{flex:1,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.gb,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/><button onClick={()=>{setShowSearch(false);setSearchQ("");setSearchResults([]);}} style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"none",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Cancel</button></div>
+<div style={{display:"flex",gap:6,marginBottom:8}}><input type="text" value={searchQ} onChange={e=>doSearch(e.target.value)} placeholder="Course name, city, or state..." autoFocus style={{flex:1,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.gb,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/><button onClick={()=>{setShowSearch(false);setSearchQ("");setSearchResults([]);}} style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"none",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Cancel</button></div>
+<button onClick={async()=>{if(!navigator.geolocation)return;setSearching(true);setSearchQ("Nearby courses...");
+navigator.geolocation.getCurrentPosition(async(p)=>{const pos={lat:p.coords.latitude,lng:p.coords.longitude};
+const r=await searchCourses("golf course",pos);setSearchResults(r);setSearching(false);setSearchQ("");
+},()=>{setSearching(false);setSearchQ("");},{enableHighAccuracy:true,timeout:8000});
+}} style={{width:"100%",padding:"10px 14px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z"/></svg>
+Find Nearby Courses</button>
 {searching&&<div style={{textAlign:"center",padding:"16px 0"}}><Spinner T={T} size={18}/><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:6}}>Searching courses...</div></div>}
 {!searching&&searchQ.length>=2&&searchResults.length===0&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>No courses found for "{searchQ}"</div>}
-{searchResults.map(c=><button key={c.id} onClick={()=>selectApiCourse(c)} style={{width:"100%",padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px solid "+T.bdr,color:T.td,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><div><div style={{fontSize:13,fontWeight:700,color:T.tx}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2}}>{c.loc}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{Object.keys(c.tees).length} tees</div></div></button>)}
+{searchResults.map(c=><button key={c.id} onClick={()=>selectApiCourse(c)} style={{width:"100%",padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px solid "+T.bdr,color:T.td,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><div><div style={{fontSize:13,fontWeight:700,color:T.tx}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2}}>{c.loc}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
+{c._rating&&<div style={{fontSize:10,color:T.y,fontFamily:F}}>{"\u2605 "+c._rating}</div>}
+<div style={{fontSize:9,color:T.td,fontFamily:F}}>{c._needsData?"GPS Only":Object.keys(c.tees).length+" tees"}</div></div></button>)}
 </div>}
 </Crd>
 <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}</div>
