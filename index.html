@@ -99,7 +99,7 @@ const LOGO=()=><svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/20
 <line x1="8" y1="4" x2="8" y2="38" stroke="url(#gflag)" strokeWidth="2.5" strokeLinecap="round"/>
 <path d="M10 4 L26 10.5 L10 17Z" fill="url(#gflag)" opacity="0.9"/>
 <circle cx="8" cy="40" r="2.5" fill="#10b981" opacity="0.35"/>
-<text x="36" y="32" fontFamily="'Outfit',sans-serif" fontWeight="800" fontSize="30" letterSpacing="-1.5" fill="white">STICKS</text>
+<text x="36" y="32" fontFamily="'DM Sans',sans-serif" fontWeight="800" fontSize="30" letterSpacing="-1.5" fill="white">STICKS</text>
 </svg>;
 
 function AuthScreen({onAuth,T}){
@@ -681,7 +681,7 @@ if(loading)return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"f
 if(!user)return <AuthScreen onAuth={handleAuth} T={T}/>;
 if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 
-return <><div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.bg=="#09090b"?"radial-gradient(ellipse at 50% 0%, #0f1a14 0%, #09090b 50%)":"#f0f0f2",zIndex:0}}/><div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s",zIndex:1,boxShadow:T.bg==="#09090b"?"0 0 80px rgba(0,0,0,0.5)":"0 0 40px rgba(0,0,0,0.08)"}}>
+return <div style={{minHeight:"100vh",background:T.bg}}><div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.bg=="#09090b"?"radial-gradient(ellipse at 50% 0%, #0f1a14 0%, #09090b 50%)":"#f0f0f2",zIndex:0}}/><div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s",zIndex:1,boxShadow:T.bg==="#09090b"?"0 0 80px rgba(0,0,0,0.5)":"0 0 40px rgba(0,0,0,0.08)"}}>
 {showUpgrade&&<UpgradeScreen user={user} T={T} onClose={()=>setShowUpgrade(false)}/>}
 {tab==="dashboard"&&<Dashboard rounds={rounds} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)}/>}
 {tab==="play"&&<Play active={active} onStart={startRound} onUpdate={updateRound} onFinish={finishRound} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)} roundCount={rounds.length}/>}
@@ -689,14 +689,14 @@ return <><div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:
 {tab==="bag"&&<Bag rounds={rounds} T={T} onToggle={toggle} profile={profile} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)}/>}
 {tab==="profile"&&<ProfileScreen profile={profile} rounds={rounds} onUpdateProfile={updateProfile} onLogout={handleLogout} T={T} onToggle={toggle} isPro={isPro} onUpgrade={()=>setShowUpgrade(true)} user={user}/>}
 <TabBar active={tab} onChange={setTab} T={T}/>
-</div></>;
+</div></div>;
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 <script>
 if('serviceWorker' in navigator){
   caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
-  navigator.serviceWorker.getRegistrations().then(rs=>{rs.forEach(r=>r.unregister());setTimeout(()=>navigator.serviceWorker.register('sw.js?v=14').catch(()=>{}),1500);});
+  navigator.serviceWorker.getRegistrations().then(rs=>{rs.forEach(r=>r.unregister());setTimeout(()=>navigator.serviceWorker.register('sw.js?v=15').catch(()=>{}),1500);});
 }
 </script>
 </body>
