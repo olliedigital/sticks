@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>STICKS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<!-- Google Maps loaded dynamically -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBkfLnJVxk-jE1gMRXCfVlHNqCdTSbUKYI&libraries=geometry&callback=Function.prototype" async defer></script>
 <!-- Maps replaced with custom SVG hole illustrations -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -82,10 +82,17 @@ const genId=()=>Math.random().toString(36).substr(2,9);
 const gpsDist=(a,b,c,d)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(c-a),dn=tr(d-b),s=Math.sin(dl/2)**2+Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dn/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))*1.09361);};
 const calcHcp=(rounds)=>{const v=rounds.filter(r=>r.holes&&r.holes.length===18&&r.cr&&r.sr);if(v.length<5)return null;const d=v.map(r=>((r.holes.reduce((s,h)=>s+(h.sc||0),0)-r.cr)*113)/r.sr).sort((a,b)=>a-b);const n=Math.max(1,Math.floor(d.length*0.4));return Math.round(d.slice(0,n).reduce((s,x)=>s+x,0)/n*10)/10;};
 const useGPS=()=>{
-const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);
-const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);ref.current=navigator.geolocation.watchPosition(p=>setPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:10000});},[]);
-const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}setOn(false);},[]);
-const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:10000});}),[]);
+const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);const hist=useRef([]);
+const smooth=(p)=>{hist.current.push(p);if(hist.current.length>5)hist.current.shift();
+if(hist.current.length<2)return p;
+const w=hist.current.map((h,i)=>{const age=(Date.now()-(h.ts||Date.now()))/1000;const accW=1/Math.max(1,h.acc);const recW=1/(1+age*0.5);return{...h,w:accW*recW};});
+const tw=w.reduce((s,h)=>s+h.w,0);
+return{lat:w.reduce((s,h)=>s+h.lat*h.w,0)/tw,lng:w.reduce((s,h)=>s+h.lng*h.w,0)/tw,acc:Math.min(...hist.current.map(h=>h.acc)),ts:Date.now(),speed:p.speed,heading:p.heading};};
+const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);hist.current=[];
+ref.current=navigator.geolocation.watchPosition(p=>{const raw={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,heading:p.coords.heading,ts:Date.now()};
+setPos(smooth(raw));},e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:1000,timeout:8000});},[]);
+const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}setOn(false);hist.current=[];},[]);
+const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:8000});}),[]);
 return{pos,err,on,start,stop,once};
 };
 const F="'DM Sans',sans-serif",M="'Space Mono',monospace";
@@ -288,76 +295,153 @@ const HOLE_DESIGNS=[
 {fw:"M50,385 Q50,315 50,240 Q50,170 50,110 Q50,80 50,50",bunkers:[{x:34,y:108,rx:6,ry:4},{x:66,y:58,rx:7,ry:5}],green:{x:50,y:38,rx:13,ry:11},trees:[{x:20,y:198,s:8},{x:80,y:215,s:9},{x:18,y:128,s:7},{x:82,y:98,s:7}],water:[],dogleg:"",elev:""}
 ];
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
-const course=getCourse(courseId);const hasShots=shots&&shots.length>0;
+const mapRef=useRef(null);const mapInst=useRef(null);const markersRef=useRef([]);const liveMarkerRef=useRef(null);const polyRef=useRef([]);const circleRef=useRef([]);const pulseRef=useRef(null);
+const[mapView,setMapView]=useState("sat");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
+const course=getCourse(courseId);const green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
+const tee=teeCoords||(course.teeBoxes?course.teeBoxes[holeIdx]:null);
+const hp=course.pars[holeIdx]||4;const teeKey=Object.keys(course.tees)[0];const hy=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
 const hole=HOLE_DESIGNS[holeIdx]||HOLE_DESIGNS[0];
-const hp=course.pars[holeIdx]||4;
-const teeKey=Object.keys(course.tees)[0];const hy=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
-const isDk=T.bg==="#09090b";
-const tip=course.tips?course.tips[holeIdx]:"";
-const rough=isDk?"#1a3a1a":"#2d5a2d";const fairway=isDk?"#245a30":"#3a8a4a";const greenC=isDk?"#2a7a3a":"#4aaa5a";
-const sandC=isDk?"#8a7a5a":"#d4c090";const waterC=isDk?"#1a4a6a":"#4a9adf";
-const treeC=isDk?"#0d2a10":"#1a4a20";const treeLt=isDk?"#1a4020":"#2a6a35";
-const groundC=isDk?"#0f1a0f":"#1a3a1a";
-const yardMarks=[];
-if(hy>=200)yardMarks.push({yd:100,y:385-((100/hy)*345)});
-if(hy>=280)yardMarks.push({yd:150,y:385-((150/hy)*345)});
-if(hy>=350)yardMarks.push({yd:200,y:385-((200/hy)*345)});
-if(hy>=420)yardMarks.push({yd:250,y:385-((250/hy)*345)});
-return(<div style={{marginBottom:10}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{"Hole "+(holeIdx+1)+" \u00b7 Par "+hp}</div>
-<div style={{fontSize:10,color:T.g,fontWeight:700,fontFamily:M}}>{hy+" yd"}</div>
-</div>
-<div style={{position:"relative",width:"100%",background:groundC,borderRadius:12,border:"1px solid "+T.bdr,overflow:"hidden"}}>
-<svg viewBox="0 0 100 420" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
-<defs>
-<radialGradient id={"rg"+holeIdx} cx="50%" cy="40%" r="55%"><stop offset="0%" stopColor={rough} stopOpacity="0.95"/><stop offset="100%" stopColor={groundC}/></radialGradient>
-<filter id="gblur"><feGaussianBlur stdDeviation="1.8"/></filter>
-<filter id="sblur"><feGaussianBlur stdDeviation="0.6"/></filter>
-<linearGradient id="fwgrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={fairway} stopOpacity="0.6"/><stop offset="30%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="70%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="100%" stopColor={fairway} stopOpacity="0.6"/></linearGradient>
-</defs>
+const gDist=(a,b)=>{if(!window.google||!window.google.maps)return gpsDist(a.lat,a.lng,b.lat,b.lng);return Math.round(window.google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(a.lat,a.lng),new google.maps.LatLng(b.lat,b.lng))*1.09361);};
+const gmReady=typeof google!=="undefined"&&google.maps;
+// Update live distance on every GPS tick
+useEffect(()=>{if(livePos&&green){setLiveDistToGreen(gDist(livePos,green));};},[livePos?livePos.lat:0,livePos?livePos.lng:0]);
+// GOOGLE MAPS INIT
+useEffect(()=>{
+if(!mapRef.current||!gmReady||mapView!=="sat")return;
+const cleanup=()=>{markersRef.current.forEach(m=>m.setMap(null));polyRef.current.forEach(p=>{if(p.setMap)p.setMap(null);if(p.close)p.close();});circleRef.current.forEach(c=>c.setMap(null));if(liveMarkerRef.current){liveMarkerRef.current.setMap(null);liveMarkerRef.current=null;}if(pulseRef.current){pulseRef.current.setMap(null);pulseRef.current=null;}markersRef.current=[];polyRef.current=[];circleRef.current=[];};
+cleanup();
+if(!mapInst.current){mapInst.current=new google.maps.Map(mapRef.current,{center:{lat:green.lat,lng:green.lng},zoom:18,mapTypeId:"satellite",tilt:0,heading:0,disableDefaultUI:true,gestureHandling:"greedy",zoomControl:false,mapTypeControl:false,streetViewControl:false,fullscreenControl:false,keyboardShortcuts:false,clickableIcons:false,backgroundColor:"#09090b"});}
+else{mapInst.current.setCenter({lat:green.lat,lng:green.lng});mapInst.current.setZoom(18);}
+const map=mapInst.current;
+// Pin marker
+const pin=new google.maps.Marker({position:{lat:green.lat,lng:green.lng},map,icon:{path:"M0,-8 C-4,-8 -7,-4 -7,0 C-7,5 0,14 0,14 C0,14 7,5 7,0 C7,-4 4,-8 0,-8 Z",fillColor:"#ef4444",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:1.4,anchor:new google.maps.Point(0,14)},zIndex:10});
+markersRef.current.push(pin);
+// Green circle
+const gc=new google.maps.Circle({center:{lat:green.lat,lng:green.lng},radius:15,map,fillColor:"#22c55e",fillOpacity:0.2,strokeColor:"#22c55e",strokeWeight:1.5,strokeOpacity:0.5,clickable:false});
+circleRef.current.push(gc);
+// Tee marker
+if(tee){
+const tm=new google.maps.Marker({position:{lat:tee.lat,lng:tee.lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:"#60a5fa",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:7},zIndex:5});
+const tl=new google.maps.Marker({position:{lat:tee.lat,lng:tee.lng},map,icon:{path:"M0,0",scale:0},label:{text:"TEE",color:"#fff",fontSize:"7px",fontWeight:"700",fontFamily:"monospace"},zIndex:6});
+markersRef.current.push(tm,tl);
+const hd=gDist(tee,green);
+setDistInfo({total:hd,front:Math.max(0,hd-15),back:hd+15});
+// Distance arcs from green
+[100,150,200].forEach(yd=>{if(yd<hd+30){const arc=new google.maps.Circle({center:{lat:green.lat,lng:green.lng},radius:yd*0.9144,map,fillColor:"transparent",fillOpacity:0,strokeColor:"rgba(255,255,255,0.12)",strokeWeight:0.8,clickable:false});
+circleRef.current.push(arc);
+// Arc label
+const bearing=google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(green.lat,green.lng),new google.maps.LatLng(tee.lat,tee.lng));
+const labelPos=google.maps.geometry.spherical.computeOffset(new google.maps.LatLng(green.lat,green.lng),yd*0.9144,bearing+90);
+const lm=new google.maps.Marker({position:labelPos,map,icon:{path:"M0,0",scale:0},label:{text:yd+"",color:"rgba(255,255,255,0.4)",fontSize:"8px",fontWeight:"600",fontFamily:"monospace"},zIndex:3});
+markersRef.current.push(lm);
+}});
+const bounds=new google.maps.LatLngBounds();bounds.extend({lat:tee.lat,lng:tee.lng});bounds.extend({lat:green.lat,lng:green.lng});
+if(livePos)bounds.extend({lat:livePos.lat,lng:livePos.lng});
+map.fitBounds(bounds,{top:25,bottom:25,left:15,right:15});
+}
+return cleanup;
+},[holeIdx,courseId,mapView,gmReady?1:0]);
+// SHOT MARKERS
+useEffect(()=>{const map=mapInst.current;if(!map||!gmReady||mapView!=="sat")return;
+polyRef.current.forEach(p=>{if(p.setMap)p.setMap(null);if(p.close)p.close();});polyRef.current=[];
+const old=markersRef.current.filter(m=>m._shot);old.forEach(m=>m.setMap(null));markersRef.current=markersRef.current.filter(m=>!m._shot);
+if(!hasShots)return;
+const path=shots.map(s=>({lat:s.lat,lng:s.lng}));
+// Shot line with glow
+const bg=new google.maps.Polyline({path,map,strokeColor:"#000",strokeWeight:5,strokeOpacity:0.4,geodesic:true});
+const ln=new google.maps.Polyline({path,map,strokeColor:"#f59e0b",strokeWeight:3,strokeOpacity:0.9,geodesic:true});
+polyRef.current.push(bg,ln);
+// Dashed line to green from last shot
+if(shots.length>0){const last=shots[shots.length-1];
+const dash=new google.maps.Polyline({path:[{lat:last.lat,lng:last.lng},{lat:green.lat,lng:green.lng}],map,strokeOpacity:0,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:0.7,strokeColor:"#f59e0b",scale:2},offset:"0",repeat:"10px"}]});
+polyRef.current.push(dash);}
+// Shot dots with distance labels
+shots.forEach((s,i)=>{
+const sm=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:"#f59e0b",fillOpacity:1,strokeColor:"#111",strokeWeight:2,scale:10},zIndex:8});
+sm._shot=true;
+const sl=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map,icon:{path:"M0,0",scale:0},label:{text:""+(i+1),color:"#111",fontSize:"10px",fontWeight:"800",fontFamily:"monospace"},zIndex:9});
+sl._shot=true;
+markersRef.current.push(sm,sl);
+// Distance info window
+const dText=s.dist?(s.dist+" yd"):(s.toGreen?(s.toGreen+" to pin"):"");
+if(dText){const iw=new google.maps.InfoWindow({content:'<div style="background:#111;color:#f59e0b;padding:3px 8px;border-radius:6px;font:700 11px monospace;border:1px solid #f59e0b33;white-space:nowrap">'+dText+'</div>',disableAutoPan:true,pixelOffset:new google.maps.Size(0,-20)});
+iw.open(map,sm);polyRef.current.push({setMap:()=>iw.close(),close:()=>iw.close()});}
+});
+const bounds=new google.maps.LatLngBounds();shots.forEach(s=>bounds.extend({lat:s.lat,lng:s.lng}));bounds.extend({lat:green.lat,lng:green.lng});if(tee)bounds.extend({lat:tee.lat,lng:tee.lng});
+map.fitBounds(bounds,{top:25,bottom:25,left:15,right:15});
+},[shots?shots.length:0,mapView]);
+// LIVE POSITION
+useEffect(()=>{const map=mapInst.current;if(!map||!gmReady||!livePos||mapView!=="sat")return;
+if(liveMarkerRef.current){liveMarkerRef.current.setPosition({lat:livePos.lat,lng:livePos.lng});
+if(pulseRef.current){pulseRef.current.setCenter({lat:livePos.lat,lng:livePos.lng});pulseRef.current.setRadius(Math.min(livePos.acc||5,15));}return;}
+const dot=new google.maps.Marker({position:{lat:livePos.lat,lng:livePos.lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:"#3b82f6",fillOpacity:1,strokeColor:"#fff",strokeWeight:3,scale:8},zIndex:12});
+liveMarkerRef.current=dot;
+const pulse=new google.maps.Circle({center:{lat:livePos.lat,lng:livePos.lng},radius:Math.min(livePos.acc||5,15),map,fillColor:"#3b82f6",fillOpacity:0.12,strokeColor:"#3b82f6",strokeWeight:1,strokeOpacity:0.3});
+pulseRef.current=pulse;circleRef.current.push(pulse);
+if(!hasShots){const bounds=new google.maps.LatLngBounds();bounds.extend({lat:green.lat,lng:green.lng});bounds.extend({lat:livePos.lat,lng:livePos.lng});map.fitBounds(bounds,{top:25,bottom:25,left:15,right:15});}
+},[livePos?livePos.lat:0,livePos?livePos.lng:0,mapView]);
+// SVG FALLBACK VIEW
+const renderSVG=()=>{
+const isDk=T.bg==="#09090b";const rough=isDk?"#1a3a1a":"#2d5a2d";const fairway=isDk?"#245a30":"#3a8a4a";const greenC=isDk?"#2a7a3a":"#4aaa5a";
+const sandC=isDk?"#8a7a5a":"#d4c090";const treeC=isDk?"#0d2a10":"#1a4a20";const treeLt=isDk?"#1a4020":"#2a6a35";const groundC=isDk?"#0f1a0f":"#1a3a1a";const waterC=isDk?"#1a4a6a":"#4a9adf";
+const yardMarks=[];if(hy>=200)yardMarks.push({yd:100,y:385-((100/hy)*345)});if(hy>=280)yardMarks.push({yd:150,y:385-((150/hy)*345)});if(hy>=350)yardMarks.push({yd:200,y:385-((200/hy)*345)});if(hy>=420)yardMarks.push({yd:250,y:385-((250/hy)*345)});
+return <svg viewBox="0 0 100 420" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
+<defs><radialGradient id={"rg"+holeIdx} cx="50%" cy="40%" r="55%"><stop offset="0%" stopColor={rough} stopOpacity="0.95"/><stop offset="100%" stopColor={groundC}/></radialGradient><filter id="gblur"><feGaussianBlur stdDeviation="1.8"/></filter><filter id="sblur"><feGaussianBlur stdDeviation="0.6"/></filter><linearGradient id="fwgrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={fairway} stopOpacity="0.6"/><stop offset="30%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="70%" stopColor={isDk?"#2a6a3a":"#4a9a55"} stopOpacity="1"/><stop offset="100%" stopColor={fairway} stopOpacity="0.6"/></linearGradient></defs>
 <rect x="0" y="0" width="100" height="420" fill={"url(#rg"+holeIdx+")"}/>
-{hole.trees.map((t,i)=><g key={"t"+i} opacity="0.85"><circle cx={t.x} cy={t.y} r={t.s+4} fill={treeC} opacity="0.4" filter="url(#gblur)"/><circle cx={t.x} cy={t.y} r={t.s} fill={treeLt}/><circle cx={t.x-1.5} cy={t.y-1.5} r={t.s*0.55} fill={isDk?"#2a5530":"#3a7a45"} opacity="0.6"/><circle cx={t.x+1} cy={t.y+1} r={t.s*0.35} fill={treeC} opacity="0.4"/></g>)}
-<path d={hole.fw} stroke={fairway} strokeWidth="34" fill="none" strokeLinecap="round" filter="url(#gblur)" opacity="0.5"/>
+{hole.trees.map((t,i)=><g key={"t"+i} opacity="0.85"><circle cx={t.x} cy={t.y} r={t.s+4} fill={treeC} opacity="0.4" filter="url(#gblur)"/><circle cx={t.x} cy={t.y} r={t.s} fill={treeLt}/></g>)}
 <path d={hole.fw} stroke="url(#fwgrad)" strokeWidth="28" fill="none" strokeLinecap="round"/>
 <path d={hole.fw} stroke={isDk?"#2e7e42":"#55b565"} strokeWidth="18" fill="none" strokeLinecap="round" opacity="0.35"/>
-<path d={hole.fw} stroke={isDk?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.06)"} strokeWidth="1" fill="none" strokeLinecap="round" strokeDasharray="2,8"/>
-{hole.water.map((w,i)=><g key={"w"+i}><path d={w.path} stroke={isDk?"#0a3a5a":"#3a8acc"} strokeWidth={(w.w||10)+4} fill="none" strokeLinecap="round" opacity="0.3" filter="url(#gblur)"/><path d={w.path} stroke={waterC} strokeWidth={w.w||10} fill="none" strokeLinecap="round" opacity="0.75"/><path d={w.path} stroke={isDk?"#3a7aaa":"#6abaee"} strokeWidth={Math.max(1,(w.w||10)-6)} fill="none" strokeLinecap="round" opacity="0.3"/></g>)}
-{hole.bunkers.map((b,i)=><g key={"b"+i}><ellipse cx={b.x} cy={b.y} rx={b.rx+2} ry={b.ry+2} fill={isDk?"#3a2a0a":"#8a6a30"} opacity="0.3" filter="url(#sblur)"/><ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill={sandC} opacity="0.9"/><ellipse cx={b.x-0.8} cy={b.y-0.5} rx={b.rx*0.55} ry={b.ry*0.55} fill={isDk?"#a09070":"#e8d8b0"} opacity="0.45"/><ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill="none" stroke={isDk?"#6a5a2a":"#b09060"} strokeWidth="0.4" opacity="0.5"/></g>)}
-<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx+3} ry={hole.green.ry+3} fill={isDk?"#0a3a15":"#1a5a25"} opacity="0.4" filter="url(#sblur)"/>
+{hole.water.map((w,i)=><path key={"w"+i} d={w.path} stroke={waterC} strokeWidth={w.w||10} fill="none" strokeLinecap="round" opacity="0.75"/>)}
+{hole.bunkers.map((b,i)=><ellipse key={"b"+i} cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill={sandC} opacity="0.9"/>)}
 <ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill={greenC}/>
-<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx*0.65} ry={hole.green.ry*0.65} fill={isDk?"#35954a":"#5ec06a"} opacity="0.3"/>
-<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5"/>
 <circle cx={hole.green.x} cy={hole.green.y-2} r="1.3" fill="#fff" opacity="0.9"/>
 <line x1={hole.green.x} y1={hole.green.y-2} x2={hole.green.x} y2={hole.green.y-10} stroke="#fff" strokeWidth="0.7" opacity="0.9"/>
 <polygon points={(hole.green.x)+","+(hole.green.y-12)+" "+(hole.green.x+5.5)+","+(hole.green.y-10)+" "+(hole.green.x)+","+(hole.green.y-8)} fill="#ef4444"/>
-{yardMarks.map(m=><g key={m.yd}>
-<line x1="18" y1={m.y} x2="82" y2={m.y} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.5,3"/>
-<rect x="1" y={m.y-5.5} width="15" height="11" rx="2.5" fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3"/>
-<text x="8.5" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="5.5" fontFamily="monospace" fontWeight="700">{m.yd}</text>
-</g>)}
+{yardMarks.map(m=><g key={m.yd}><line x1="18" y1={m.y} x2="82" y2={m.y} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.5,3"/><rect x="1" y={m.y-5.5} width="15" height="11" rx="2.5" fill="rgba(0,0,0,0.55)"/><text x="8.5" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="5.5" fontFamily="monospace" fontWeight="700">{m.yd}</text></g>)}
 <rect x="44" y="378" width="12" height="7" rx="1.5" fill={isDk?"#2a6aaa":"#4a8add"} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5"/>
 <text x="50" y="383.5" textAnchor="middle" fill="#fff" fontSize="4" fontFamily="monospace" fontWeight="800">TEE</text>
-<rect x="68" y="372" width="30" height="42" rx="4" fill="rgba(0,0,0,0.65)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3"/>
+<rect x="68" y="372" width="30" height="42" rx="4" fill="rgba(0,0,0,0.65)"/>
 <text x="83" y="385" textAnchor="middle" fill={T.g} fontSize="5.5" fontFamily="monospace" fontWeight="700">{"PAR "+hp}</text>
 <text x="83" y="396" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="800">{hy}</text>
 <text x="83" y="405" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="4.5" fontFamily="monospace" fontWeight="600">YDS</text>
-{hole.elev&&<g>
-<rect x="2" y="372" width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/>
-<text x="12" y="381.5" textAnchor="middle" fill={hole.elev==="uphill"?"#f59e0b":"#60a5fa"} fontSize="4.5" fontFamily="monospace" fontWeight="700">{hole.elev==="uphill"?"\u25B2 UP":"\u25BC DN"}</text>
-</g>}
-{hole.dogleg&&<g>
-<rect x="2" y={hole.elev?"355":"372"} width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/>
-<text x="12" y={hole.elev?"364.5":"381.5"} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="4" fontFamily="monospace" fontWeight="700">{hole.dogleg==="left"?"\u21B0 DGL":"\u21B1 DGR"}</text>
-</g>}
-</svg>
+{hole.elev&&<g><rect x="2" y="372" width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/><text x="12" y="381.5" textAnchor="middle" fill={hole.elev==="uphill"?"#f59e0b":"#60a5fa"} fontSize="4.5" fontFamily="monospace" fontWeight="700">{hole.elev==="uphill"?"\u25B2 UP":"\u25BC DN"}</text></g>}
+</svg>;};
+return(<div style={{marginBottom:10}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>{"Hole "+(holeIdx+1)+" \u00b7 Par "+hp}</div>
+<div style={{display:"flex",gap:4}}>
+{gmReady&&<button onClick={()=>setMapView("sat")} style={{background:mapView==="sat"?T.gd:"rgba(128,128,128,0.06)",border:"1px solid "+(mapView==="sat"?T.gb:T.bdr),borderRadius:6,padding:"3px 10px",fontSize:9,fontWeight:700,color:mapView==="sat"?T.g:T.td,cursor:"pointer",fontFamily:F}}>Satellite</button>}
+<button onClick={()=>setMapView("svg")} style={{background:mapView==="svg"?T.gd:"rgba(128,128,128,0.06)",border:"1px solid "+(mapView==="svg"?T.gb:T.bdr),borderRadius:6,padding:"3px 10px",fontSize:9,fontWeight:700,color:mapView==="svg"?T.g:T.td,cursor:"pointer",fontFamily:F}}>Yardage</button>
+</div></div>
+{mapView==="sat"&&gmReady?
+<div ref={mapRef} style={{width:"100%",height:280,borderRadius:12,border:"1px solid "+T.bdr,overflow:"hidden"}}/>
+:<div style={{position:"relative",width:"100%",background:T.bg==="#09090b"?"#0f1a0f":"#1a3a1a",borderRadius:12,border:"1px solid "+T.bdr,overflow:"hidden"}}>{renderSVG()}</div>}
+{/* Live distance to green - big prominent display */}
+{liveDistToGreen&&<div style={{marginTop:6,padding:"10px 14px",background:"linear-gradient(135deg, "+T.gd+", rgba(16,185,129,0.02))",borderRadius:10,border:"1px solid "+T.gb,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,fontFamily:F}}>Live to Pin</div>
+<div style={{display:"flex",alignItems:"baseline",gap:4}}>
+<span style={{fontSize:28,fontWeight:800,color:T.g,fontFamily:M}}>{liveDistToGreen}</span>
+<span style={{fontSize:11,color:T.td,fontFamily:F}}>yds</span>
+{livePos&&livePos.acc&&<span style={{fontSize:9,color:T.td,fontFamily:M,marginLeft:6}}>{"\u00b1"+Math.round(livePos.acc)+"m"}</span>}
+</div></div>}
+{/* Front / Middle / Back */}
+<div style={{display:"flex",justifyContent:"space-around",marginTop:6,padding:"8px 0",background:T.card,borderRadius:8,border:"1px solid "+T.bdr}}>
+<div style={{textAlign:"center"}}><div style={{fontSize:12,fontWeight:800,fontFamily:M,color:T.g}}>{distInfo?distInfo.front:Math.max(0,hy-15)}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Front</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,fontFamily:M,color:T.tx}}>{distInfo?distInfo.total:hy}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Middle</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:12,fontWeight:800,fontFamily:M,color:T.r}}>{distInfo?distInfo.back:hy+15}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Back</div></div>
 </div>
-{tip&&<div style={{marginTop:6,padding:"8px 10px",background:T.card,borderRadius:8,border:"1px solid "+T.bdr,fontSize:11,color:T.tm,fontFamily:F,lineHeight:"1.5"}}>{"\uD83C\uDFCC\uFE0F "+tip}</div>}
-<div style={{display:"flex",justifyContent:"space-around",marginTop:6,padding:"6px 0",background:T.card,borderRadius:8,border:"1px solid "+T.bdr}}>
-<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.g}}>{Math.max(0,hy-15)}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Front</div></div>
-<div style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:800,fontFamily:M,color:T.tx}}>{hy}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Middle</div></div>
-<div style={{textAlign:"center"}}><div style={{fontSize:11,fontWeight:800,fontFamily:M,color:T.r}}>{hy+15}</div><div style={{fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Back</div></div>
-</div>
+{/* Hazard distances */}
+{(hole.bunkers.length>0||hole.water.length>0)&&distInfo&&<div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
+{hole.bunkers.length>0&&<div style={{flex:1,padding:"6px 10px",background:"rgba(196,160,80,0.06)",borderRadius:8,border:"1px solid rgba(196,160,80,0.15)",textAlign:"center"}}>
+<div style={{fontSize:8,color:"#c8a050",textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>Bunkers</div>
+<div style={{fontSize:11,fontWeight:700,color:"#c8a050",fontFamily:M}}>{hole.bunkers.length}</div></div>}
+{hole.water.length>0&&<div style={{flex:1,padding:"6px 10px",background:"rgba(96,165,250,0.06)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)",textAlign:"center"}}>
+<div style={{fontSize:8,color:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>Water</div>
+<div style={{fontSize:11,fontWeight:700,color:T.b,fontFamily:M}}>In Play</div></div>}
+{hole.elev&&<div style={{flex:1,padding:"6px 10px",background:hole.elev==="uphill"?"rgba(245,158,11,0.06)":"rgba(96,165,250,0.06)",borderRadius:8,border:"1px solid "+(hole.elev==="uphill"?"rgba(245,158,11,0.15)":"rgba(96,165,250,0.15)"),textAlign:"center"}}>
+<div style={{fontSize:8,color:hole.elev==="uphill"?T.o:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:600}}>Elevation</div>
+<div style={{fontSize:11,fontWeight:700,color:hole.elev==="uphill"?T.o:T.b,fontFamily:M}}>{hole.elev==="uphill"?"\u25B2 Uphill":"\u25BC Downhill"}</div></div>}
+</div>}
 </div>);
 }
 function Scorecard({holes,onTap,T}){
@@ -595,9 +679,8 @@ return <div>
 <Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
-<div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:"1px solid "+T.bdr}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&course.greens&&course.greens[cur]&&!course.apiCourse&&<St label="To Green" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}
-{hy>0&&<St label="Plays Like" value={Math.round(hy*(1+(HOLE_DESIGNS[cur]&&HOLE_DESIGNS[cur].elev==="uphill"?0.05:HOLE_DESIGNS[cur]&&HOLE_DESIGNS[cur].elev==="downhill"?-0.05:0)))} color={T.b} small T={T}/>}</div>
-{!course.apiCourse&&<ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>}
+<div style={{display:"flex",justifyContent:"center",gap:18,marginBottom:10,padding:"10px 0",background:T.card,borderRadius:10,border:"1px solid "+T.bdr}}><St label="Par" value={hp} small T={T}/><St label="Yards" value={hy} small T={T}/>{gps.pos&&course.greens&&course.greens[cur]&&!course.apiCourse&&<St label="To Pin" value={gpsDist(gps.pos.lat,gps.pos.lng,course.greens[cur].lat,course.greens[cur].lng)} color={T.g} small T={T}/>}</div>
+<ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>
 <Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
 {!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
