@@ -137,11 +137,10 @@ const submit=mode==="login"?handleLogin:mode==="signup"?handleSignup:handleReset
 const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 16px",color:"#fff",fontSize:15,fontFamily:F,outline:"none",boxSizing:"border-box",marginBottom:10,transition:"border-color 0.15s"};
 
 if(mode==="landing"){
-return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",justifyContent:"space-between",overflow:"hidden",position:"relative"}}>
+return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",justifyContent:"space-between",overflow:"hidden",position:"relative"}}>
 {/* Real golf course photo background */}
-<div style={{position:"absolute",top:0,left:0,right:0,bottom:0}}>
-<img src="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80" alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 40%"}}/>
-<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(180deg, rgba(10,10,12,0.3) 0%, rgba(10,10,12,0.5) 30%, rgba(10,10,12,0.85) 60%, rgba(10,10,12,0.98) 80%, #0a0a0c 100%)"}}/>
+<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundImage:"url(https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80)",backgroundSize:"cover",backgroundPosition:"center 40%"}}>
+<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(180deg, rgba(10,10,12,0.2) 0%, rgba(10,10,12,0.5) 30%, rgba(10,10,12,0.85) 60%, rgba(10,10,12,0.97) 80%, #09090b 100%)"}}/>
 </div>
 {/* Content */}
 <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 28px",position:"relative",zIndex:1,paddingBottom:16}}>
@@ -154,7 +153,7 @@ return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDi
 <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
 {["\u{1F4CD} GPS Tracking","\u{1F3CC}\uFE0F 30K+ Courses","\u{1F4CA} Live Handicap","\u{1F3AF} Club Analytics"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.15)",fontSize:11,color:"rgba(255,255,255,0.6)",fontFamily:F,fontWeight:500}}>{f}</div>)}
 </div>
-<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg, #10b981 0%, #059669 100%)",color:"#0a0a0c",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em",boxShadow:"0 4px 24px rgba(16,185,129,0.3)"}}>Get Started Free</button>
+<button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg, #10b981 0%, #059669 100%)",color:"#09090b",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em",boxShadow:"0 4px 24px rgba(16,185,129,0.3)"}}>Get Started Free</button>
 <button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>Sign In</button>
 <div style={{display:"flex",justifyContent:"center",gap:32,marginTop:24}}>
 {[{n:"30K+",l:"Courses"},{n:"FREE",l:"Forever"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
@@ -162,11 +161,11 @@ return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDi
 </div>
 </div>;
 }
-return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
+return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
 {/* Photo bg for forms */}
 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none"}}>
-<img src="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80" alt="" style={{width:"100%",height:"100%",objectFit:"cover",filter:"blur(8px) brightness(0.3)",transform:"scale(1.1)"}}/>
-<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(180deg, rgba(10,10,12,0.7) 0%, rgba(10,10,12,0.9) 50%, #0a0a0c 100%)"}}/>
+<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundImage:"url(https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80)",backgroundSize:"cover",backgroundPosition:"center",filter:"blur(8px) brightness(0.3)",transform:"scale(1.1)"}}/>
+<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(180deg, rgba(10,10,12,0.7) 0%, rgba(10,10,12,0.9) 50%, #09090b 100%)"}}/>
 </div>
 <div style={{padding:"52px 28px 0",flex:"0 0 auto",position:"relative",zIndex:1}}>
 <button onClick={()=>{setMode("landing");setError("");setMsg("");}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"8px 14px",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:13,fontFamily:F,fontWeight:600}}>{"\u2190 Back"}</button>
@@ -188,8 +187,8 @@ return <div style={{minHeight:"100vh",background:"#0a0a0c",display:"flex",flexDi
 {mode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={inputS} autoComplete={mode==="signup"?"new-password":"current-password"} onKeyDown={e=>{if(e.key==="Enter"&&!loading)submit();}}/>}
 {error&&<div style={{color:"#f87171",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(248,113,113,0.06)",borderRadius:10,border:"1px solid rgba(248,113,113,0.1)"}}>{error}</div>}
 {msg&&<div style={{color:"#10b981",fontSize:12,fontFamily:F,marginBottom:10,padding:"10px 14px",background:"rgba(52,211,153,0.06)",borderRadius:10,border:"1px solid rgba(52,211,153,0.1)"}}>{msg}</div>}
-<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"#10b981",color:"#0a0a0c",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
-{loading?<Spinner T={{...T,g:"#0a0a0c",bdr:"#0a0a0c"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
+<button disabled={loading} onClick={submit} style={{width:"100%",padding:"16px",borderRadius:14,background:"#10b981",color:"#09090b",fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,marginTop:4}}>
+{loading?<Spinner T={{...T,g:"#09090b",bdr:"#09090b"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
 {mode==="login"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:18}}>
 <button onClick={()=>{setMode("signup");setError("");}} style={{background:"none",border:"none",color:"#10b981",fontSize:12,fontFamily:F,cursor:"pointer",fontWeight:600}}>Create account</button>
