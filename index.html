@@ -914,6 +914,7 @@ return <div style={{overflowX:"auto"}}>
 function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile,isPro,onUpgrade,roundCount,rounds=[]}){
 const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
 const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
+const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);const greenDwellTime=useRef(0);const awayFromGreen=useRef(false);
 const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
 const searchTimer=useRef(null);
 const gps=useGPS();const course=active?(apiCourse&&active.course_id===apiCourse.id?apiCourse:getCourse(active.course_id||active.courseId)):(apiCourse||getCourse(courseId));
@@ -924,6 +925,40 @@ useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].sho
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
+// === AUTO HOLE DETECTION ===
+useEffect(()=>{
+if(!active||!gps.pos||!gps.on)return;
+const curGreen=course.greens[cur];const nextTee=course.teeBoxes?course.teeBoxes[Math.min(cur+1,17)]:null;
+const nextGreen=course.greens[Math.min(cur+1,17)];
+if(!curGreen)return;
+const distToGreen=gpsDist(gps.pos.lat,gps.pos.lng,curGreen.lat,curGreen.lng);
+const distToNextTee=nextTee?gpsDist(gps.pos.lat,gps.pos.lng,nextTee.lat,nextTee.lng):999;
+const isOnGreen=distToGreen<30;
+const isNearNextTee=distToNextTee<50;
+const hasPlayedShots=shots.length>0;
+const isEditingPrevHole=cur<active.holes.length;
+const isLastHole=cur>=17;
+// Reset prompt when hole changes
+if(autoPrompt&&autoPrompt.hole!==cur){setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;}
+// Track if player reached the green
+if(isOnGreen&&hasPlayedShots&&!isEditingPrevHole){
+greenDwellTime.current++;
+if(greenDwellTime.current>=3&&!autoPrompt){
+setAutoPrompt({type:"on_green",hole:cur,msg:"Looks like you're on the green"});
+}
+}
+// Track if player walked away from green toward next tee
+if(!isOnGreen&&greenDwellTime.current>=2&&hasPlayedShots&&!isEditingPrevHole&&!isLastHole){
+awayFromGreen.current=true;
+}
+// If near next tee box and we haven't saved this hole yet
+if(isNearNextTee&&awayFromGreen.current&&!isEditingPrevHole&&!isLastHole&&cur<active.holes.length===false){
+if(!autoPrompt||autoPrompt.type!=="next_tee"){
+setAutoPrompt({type:"next_tee",hole:cur,msg:"Moving to Hole "+(cur+2)+"?"});
+}
+}
+lastGreenDist.current=distToGreen;
+},[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,cur,shots.length,active?active.holes.length:0]);
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},500);};
@@ -965,12 +1000,28 @@ Find Nearby Courses</button>
 const cid=active.course_id||active.courseId;const ed=cur<active.holes.length,hn=cur+1;
 const ts=active.holes.reduce((s,x)=>s+(x.sc||0),0),tp=active.holes.reduce((s,x)=>s+(x.par||0),0);
 const teeKey=active.tee||Object.keys(course.tees)[0];const teeD=course.tees[teeKey];const ty=teeD?teeD.y:course.pars.map(()=>0),hy=ty[cur]||0,hp=course.pars[cur]||4,ht=course.tips?course.tips[cur]:null;
-const svHole=()=>{const d={hole:hn,par:h.par||hp,sc:h.sc||(h.par||hp),pt:h.pt,cl:h.cl,yd:h.yd?parseInt(h.yd):hy,fw:h.fw,gir:h.gir,shots:shots};const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
+const svHole=()=>{const d={hole:hn,par:h.par||hp,sc:h.sc||(h.par||hp),pt:h.pt,cl:h.cl,yd:h.yd?parseInt(h.yd):hy,fw:h.fw,gir:h.gir,shots:shots};const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
 const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
 return <div>
 <Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
+{/* Auto-advance prompt */}
+{autoPrompt&&!ed&&<div style={{marginBottom:10,padding:"12px 14px",background:"linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))",borderRadius:12,border:"1px solid rgba(16,185,129,0.2)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+<div style={{display:"flex",alignItems:"center",gap:10}}>
+<div style={{width:32,height:32,borderRadius:8,background:"rgba(16,185,129,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.g} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z"/></svg>
+</div>
+<div>
+<div style={{fontSize:12,fontWeight:700,color:T.tx,fontFamily:F}}>{autoPrompt.msg}</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:1}}>{autoPrompt.type==="on_green"?"Save your score and move on":"Save Hole "+(cur+1)+" and advance"}</div>
+</div>
+</div>
+<div style={{display:"flex",gap:6}}>
+<button onClick={()=>{svHole();setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;}} style={{padding:"7px 14px",borderRadius:8,background:T.g,border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F,whiteSpace:"nowrap"}}>{autoPrompt.type==="next_tee"?"Save & Next":"Save Hole"}</button>
+<button onClick={()=>{setAutoPrompt(null);greenDwellTime.current=0;}} style={{padding:"7px 8px",borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>{"✕"}</button>
+</div>
+</div>}
 
 <ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>
 <Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
