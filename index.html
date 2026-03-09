@@ -952,6 +952,8 @@ function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile,isPro,onUpgra
 const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
 const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
 const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);const greenDwellTime=useRef(0);const awayFromGreen=useRef(false);
+const[autoTrack,setAutoTrack]=useState(false);const[autoStatus,setAutoStatus]=useState("");
+const gpsLog=useRef([]);const moveState=useRef("idle");const stationaryPos=useRef(null);const stationaryStart=useRef(0);const lastShotTime=useRef(0);const autoShotCount=useRef(0);
 const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
 const searchTimer=useRef(null);
 const gps=useGPS();const course=active?(apiCourse&&active.course_id===apiCourse.id?apiCourse:getCourse(active.course_id||active.courseId)):(apiCourse||getCourse(courseId));
@@ -961,6 +963,80 @@ useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[a
 useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?active.id:null]);
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
+// === AUTO SHOT DETECTION ENGINE ===
+useEffect(()=>{
+if(!active||!gps.pos||!gps.on||!autoTrack)return;
+const now=Date.now();
+const p={lat:gps.pos.lat,lng:gps.pos.lng,acc:gps.pos.acc,speed:gps.pos.speed,ts:now};
+gpsLog.current.push(p);if(gpsLog.current.length>30)gpsLog.current.shift();
+if(gpsLog.current.length<3)return;
+// Calculate movement over last few readings
+const recent=gpsLog.current.slice(-5);
+const totalDist=recent.reduce((sum,pt,i)=>{
+if(i===0)return 0;const prev=recent[i-1];
+return sum+gpsDist(prev.lat,prev.lng,pt.lat,pt.lng)*0.9144; // meters
+},0);
+const elapsed=(recent[recent.length-1].ts-recent[0].ts)/1000;
+const speedMps=elapsed>0?totalDist/elapsed:0;
+const isMoving=speedMps>0.4||totalDist>3; // >0.4 m/s or >3m in window
+const curGreen=course.greens[cur];
+const distToGreen=curGreen?gpsDist(p.lat,p.lng,curGreen.lat,curGreen.lng):999;
+const isOnGreen=distToGreen<35;
+const timeSinceLastShot=now-lastShotTime.current;
+if(isMoving){
+// Player is walking
+if(moveState.current==="stationary"&&stationaryPos.current&&timeSinceLastShot>15000){
+// Was stationary, now moving = SHOT DETECTED
+const shotPos=stationaryPos.current;
+const stationaryDuration=(now-stationaryStart.current)/1000;
+// Only register if stationary for >6 sec (addressing ball, not just pausing)
+if(stationaryDuration>6){
+const newShot={lat:shotPos.lat,lng:shotPos.lng,acc:shotPos.acc,ts:now,auto:true};
+// Calculate distance from previous shot
+if(shots.length>0){
+const prev=shots[shots.length-1];
+newShot.dist=gpsDist(prev.lat,prev.lng,shotPos.lat,shotPos.lng);
+}
+if(curGreen)newShot.toGreen=gpsDist(shotPos.lat,shotPos.lng,curGreen.lat,curGreen.lng);
+setShots(prev=>[...prev,newShot]);
+autoShotCount.current++;
+lastShotTime.current=now;
+setAutoStatus("Shot "+(shots.length+1)+" detected");
+// Haptic feedback
+if(navigator.vibrate)navigator.vibrate([100,50,100]);
+// Auto-increment score
+setH(prev=>({...prev,sc:(prev.sc||prev.par)+1}));
+// Clear after 3 sec
+setTimeout(()=>setAutoStatus(""),3000);
+}
+}
+moveState.current="moving";
+stationaryPos.current=null;
+stationaryStart.current=0;
+if(!autoStatus)setAutoStatus(isOnGreen?"On green · detecting putts":"Tracking · "+distToGreen+"yd to pin");
+} else {
+// Player is stationary
+if(moveState.current==="moving"||moveState.current==="idle"){
+// Just stopped
+stationaryPos.current=p;
+stationaryStart.current=now;
+moveState.current="stationary";
+}
+// Update stationary position with better accuracy reading
+if(stationaryPos.current&&p.acc<stationaryPos.current.acc){
+stationaryPos.current=p;
+}
+const dwellSec=Math.round((now-stationaryStart.current)/1000);
+if(dwellSec>3&&dwellSec<30){
+setAutoStatus("Addressing ball... ("+dwellSec+"s)");
+}
+}
+},[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,autoTrack,active?active.id:null]);
+// Reset auto-detect state on hole change
+useEffect(()=>{
+gpsLog.current=[];moveState.current="idle";stationaryPos.current=null;
+stationaryStart.current=0;autoShotCount.current=0;setAutoStatus("");
+},[cur]);
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
 // === AUTO HOLE DETECTION ===
 useEffect(()=>{
@@ -1099,8 +1175,8 @@ return <div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
 {!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
 {gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>Enable location services</div>}
-<button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}if(course.greens&&course.greens[cur]&&!course.apiCourse)s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":"Mark Shot "+(shots.length+1)}</button>
-{shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen?s.toGreen+" yd to green":"\u00b1"+Math.round(s.acc)+"m acc"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
+<button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}if(course.greens&&course.greens[cur])s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);lastShotTime.current=Date.now();}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:autoTrack?"rgba(128,128,128,0.04)":T.gd,border:"1px solid "+(autoTrack?T.bdr:T.gb),color:autoTrack?T.td:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":(autoTrack?"Manual Override · Shot "+(shots.length+1):"Mark Shot "+(shots.length+1))}</button>
+{shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.auto&&<span style={{color:T.b,fontFamily:F,marginLeft:4,fontSize:8,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",background:T.bd,padding:"1px 4px",borderRadius:3}}>auto</span>}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen?s.toGreen+" yd to green":"\u00b1"+Math.round(s.acc)+"m acc"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
 </Crd>
 {ht&&<div style={{background:"rgba(128,128,128,0.03)",borderRadius:8,padding:"10px 12px",marginBottom:10,borderLeft:"2px solid "+T.gb}}><div style={{fontSize:11,color:T.tm,fontFamily:F,lineHeight:1.6}}>{ht}</div></div>}
 
