@@ -627,8 +627,16 @@ return()=>{try{if(sub)sub.unsubscribe();}catch(e){}};
 },[]);
 
 const loadProfile=async(uid)=>{
-const{data}=await sb.from("profiles").select("*").eq("id",uid).single();
+const{data,error}=await sb.from("profiles").select("*").eq("id",uid).single();
 if(data){setProfile(data);if(data.is_pro)setIsPro(true);}
+else{
+// No profile found - create default
+const u=await sb.auth.getUser();
+const name=u?.data?.user?.user_metadata?.name||"Golfer";
+const def={id:uid,name:name,color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()};
+try{await sb.from("profiles").upsert(def);}catch(e){console.log("Profile create error:",e);}
+setProfile(def);
+}
 // Check URL for upgrade success
 const params=new URLSearchParams(window.location.search);
 if(params.get("upgraded")==="true"){setIsPro(true);window.history.replaceState({},"",window.location.pathname);
@@ -679,7 +687,13 @@ setRounds(p=>p.filter(r=>r.id!==id));
 console.log("RENDER STATE:",{loading,user:!!user,profile:!!profile});
 if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user){console.log("Rendering AuthScreen");return <AuthScreen onAuth={handleAuth} T={T}/>;}
-if(!profile){console.log("Rendering profile spinner");return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;}
+if(!profile&&user){
+const name=user.user_metadata?.name||"Golfer";
+const def={id:user.id,name:name,color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()};
+setProfile(def);
+return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
+}
+if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 
 return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
 {showUpgrade&&<UpgradeScreen user={user} T={T} onClose={()=>setShowUpgrade(false)}/>}
