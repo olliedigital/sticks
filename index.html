@@ -313,6 +313,226 @@ const HOLE_DESIGNS=[
 {fw:"M50,385 Q50,310 50,230 Q50,158 50,108",bunkers:[{x:64,y:95,rx:6,ry:5},{x:36,y:98,rx:5,ry:4}],green:{x:50,y:68,rx:13,ry:11},trees:[{x:20,y:198,s:8},{x:80,y:208,s:7},{x:18,y:128,s:7},{x:84,y:128,s:6}],water:[],dogleg:"",elev:"uphill"},
 {fw:"M50,385 Q50,315 50,240 Q50,170 50,110 Q50,80 50,50",bunkers:[{x:34,y:108,rx:6,ry:4},{x:66,y:58,rx:7,ry:5}],green:{x:50,y:38,rx:13,ry:11},trees:[{x:20,y:198,s:8},{x:80,y:215,s:9},{x:18,y:128,s:7},{x:82,y:98,s:7}],water:[],dogleg:"",elev:""}
 ];
+// ==================== 3D GREEN MAPS ====================
+// Green contour data: slope direction (degrees, 0=N), grade (%), tiers, pin offset, shape
+const GREEN_CONTOURS=[
+// Goat Hill Park (18 holes) - short executive course, smaller greens
+{slope:135,grade:3.5,tiers:1,pin:{x:0.1,y:-0.15},shape:"oval",ridges:[]},
+{slope:180,grade:4,tiers:2,pin:{x:-0.1,y:0.1},shape:"round",ridges:[{pos:0.45,dir:90,h:0.3}]},
+{slope:225,grade:2.5,tiers:1,pin:{x:0.2,y:-0.1},shape:"wide",ridges:[]},
+{slope:90,grade:3,tiers:2,pin:{x:-0.15,y:0.15},shape:"kidney",ridges:[{pos:0.5,dir:45,h:0.25}]},
+{slope:315,grade:4.5,tiers:1,pin:{x:0,y:-0.2},shape:"round",ridges:[]},
+{slope:200,grade:3,tiers:1,pin:{x:0.15,y:0.1},shape:"oval",ridges:[]},
+{slope:160,grade:2,tiers:1,pin:{x:-0.1,y:-0.1},shape:"round",ridges:[]},
+{slope:270,grade:3.5,tiers:2,pin:{x:0.2,y:0},shape:"wide",ridges:[{pos:0.55,dir:180,h:0.35}]},
+{slope:180,grade:5,tiers:1,pin:{x:0,y:0.15},shape:"round",ridges:[]},
+{slope:45,grade:4,tiers:1,pin:{x:-0.2,y:-0.1},shape:"oval",ridges:[]},
+{slope:225,grade:3,tiers:2,pin:{x:0.1,y:0.1},shape:"round",ridges:[{pos:0.4,dir:135,h:0.2}]},
+{slope:135,grade:2.5,tiers:2,pin:{x:-0.15,y:-0.15},shape:"kidney",ridges:[{pos:0.5,dir:90,h:0.3}]},
+{slope:0,grade:3.5,tiers:1,pin:{x:0.1,y:0.2},shape:"round",ridges:[]},
+{slope:90,grade:4,tiers:1,pin:{x:-0.1,y:-0.1},shape:"oval",ridges:[]},
+{slope:180,grade:2,tiers:1,pin:{x:0,y:0},shape:"wide",ridges:[]},
+{slope:315,grade:3,tiers:2,pin:{x:0.15,y:-0.1},shape:"round",ridges:[{pos:0.45,dir:270,h:0.25}]},
+{slope:200,grade:4.5,tiers:1,pin:{x:-0.2,y:0.15},shape:"oval",ridges:[]},
+{slope:160,grade:3,tiers:1,pin:{x:0.1,y:-0.05},shape:"round",ridges:[]}
+];
+function GreenMap3D({holeIdx,theme:T,onClose}){
+const canvasRef=useRef(null);const frameRef=useRef(null);const[ballPos,setBallPos]=useState(null);const[readLine,setReadLine]=useState(null);
+const contour=GREEN_CONTOURS[holeIdx%GREEN_CONTOURS.length];
+const isDk=T.bg==="#09090b";
+const hp=holeIdx+1;
+// Generate elevation at any point
+const getElev=(nx,ny)=>{
+const slopeRad=contour.slope*Math.PI/180;
+const slopeX=Math.sin(slopeRad)*contour.grade/100;
+const slopeY=-Math.cos(slopeRad)*contour.grade/100;
+let h=nx*slopeX+ny*slopeY;
+// Add tier
+if(contour.tiers>1){
+contour.ridges.forEach(r=>{
+const rRad=r.dir*Math.PI/180;
+const proj=nx*Math.cos(rRad)+ny*Math.sin(rRad);
+const dist=Math.abs(proj-r.pos+0.5);
+h+=r.h*Math.max(0,1-dist*4)*Math.exp(-dist*dist*8);
+});
+}
+// Bowl effect (edges higher)
+const edgeDist=Math.sqrt(nx*nx+ny*ny);
+h+=edgeDist*edgeDist*0.015;
+return h;
+};
+// Calculate break from ball to pin
+const calcRead=(bx,by)=>{
+const px=contour.pin.x,py=contour.pin.y;
+const steps=20;const dx=(px-bx)/steps,dy=(py-by)/steps;
+let totalBreakX=0,totalBreakY=0;
+const path=[{x:bx,y:by}];
+for(let i=0;i<steps;i++){
+const cx=bx+dx*i,cy=by+dy*i;
+const e0=getElev(cx,cy);
+const gx=(getElev(cx+0.01,cy)-getElev(cx-0.01,cy))/0.02;
+const gy=(getElev(cx,cy+0.01)-getElev(cx,cy-0.01))/0.02;
+totalBreakX+=gx;totalBreakY+=gy;
+path.push({x:cx+dx-gx*0.08,y:cy+dy-gy*0.08});
+}
+path.push({x:px,y:py});
+const breakAmt=Math.sqrt(totalBreakX*totalBreakX+totalBreakY*totalBreakY);
+const breakDir=Math.atan2(totalBreakX,totalBreakY)*180/Math.PI;
+const dist=Math.sqrt((px-bx)*(px-bx)+(py-by)*(py-by));
+return{path,breakAmt:Math.round(breakAmt*100)/10,breakDir:Math.round(breakDir),dist:Math.round(dist*30),slopePct:Math.round(contour.grade*10)/10};
+};
+useEffect(()=>{
+const canvas=canvasRef.current;if(!canvas)return;
+const ctx=canvas.getContext("2d");
+const W=canvas.width,H=canvas.height;
+const cx=W/2,cy=H/2,scale=Math.min(W,H)*0.38;
+const draw=()=>{
+ctx.clearRect(0,0,W,H);
+// Background
+ctx.fillStyle=isDk?"#0a0f0a":"#f0f8f0";
+ctx.fillRect(0,0,W,H);
+// Draw green surface with elevation coloring
+const res=3;
+for(let px=0;px<W;px+=res){for(let py=0;py<H;py+=res){
+const nx=(px-cx)/scale,ny=(py-cy)/scale;
+const dist=Math.sqrt(nx*nx+ny*ny);
+// Green shape mask
+let inGreen=false;
+if(contour.shape==="round")inGreen=dist<1;
+else if(contour.shape==="oval")inGreen=Math.sqrt((nx*0.8)**2+(ny*1.2)**2)<1;
+else if(contour.shape==="wide")inGreen=Math.sqrt((nx*1.2)**2+(ny*0.8)**2)<1;
+else if(contour.shape==="kidney"){const kd=Math.sqrt((nx+0.15)**2+ny*ny);const kd2=Math.sqrt((nx-0.15)**2+ny*ny);inGreen=Math.min(kd,kd2)<0.9||dist<0.75;}
+else inGreen=dist<1;
+if(!inGreen){
+// Fringe/collar
+const fringeDist=contour.shape==="round"?dist:
+contour.shape==="oval"?Math.sqrt((nx*0.8)**2+(ny*1.2)**2):
+contour.shape==="wide"?Math.sqrt((nx*1.2)**2+(ny*0.8)**2):dist;
+if(fringeDist<1.12){ctx.fillStyle=isDk?"#1a3a1a":"#3a7a3a";ctx.fillRect(px,py,res,res);}
+continue;
+}
+const elev=getElev(nx,ny);
+// Map elevation to color (low=dark green -> high=light green/yellow)
+const norm=Math.max(0,Math.min(1,(elev+0.06)/0.12));
+const r=isDk?Math.round(20+norm*60):Math.round(40+norm*80);
+const g=isDk?Math.round(80+norm*80):Math.round(140+norm*60);
+const b=isDk?Math.round(30+norm*20):Math.round(50+norm*30);
+ctx.fillStyle="rgb("+r+","+g+","+b+")";
+ctx.fillRect(px,py,res,res);
+}}
+// Contour lines
+ctx.strokeStyle=isDk?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)";
+ctx.lineWidth=0.8;
+for(let lev=-0.08;lev<0.08;lev+=0.015){
+ctx.beginPath();
+let started=false;
+for(let a=0;a<Math.PI*2;a+=0.05){
+for(let r=0;r<1;r+=0.01){
+const nx=Math.cos(a)*r,ny=Math.sin(a)*r;
+if(Math.abs(getElev(nx,ny)-lev)<0.003){
+const px=cx+nx*scale,py=cy+ny*scale;
+if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);
+break;}}}
+ctx.stroke();}
+// Slope arrows grid
+const arrowSpacing=0.35;
+for(let ax=-0.8;ax<=0.8;ax+=arrowSpacing){for(let ay=-0.8;ay<=0.8;ay+=arrowSpacing){
+const dist2=Math.sqrt(ax*ax+ay*ay);if(dist2>0.85)continue;
+const gx=(getElev(ax+0.02,ay)-getElev(ax-0.02,ay))/0.04;
+const gy=(getElev(ax,ay+0.02)-getElev(ax,ay-0.02))/0.04;
+const mag=Math.sqrt(gx*gx+gy*gy);if(mag<0.001)continue;
+const px=cx+ax*scale,py=cy+ay*scale;
+const len=Math.min(18,mag*800);
+const angle=Math.atan2(gy,gx);
+ctx.save();ctx.translate(px,py);ctx.rotate(angle);
+ctx.strokeStyle=isDk?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.15)";
+ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(len,0);ctx.stroke();
+ctx.fillStyle=isDk?"rgba(255,255,255,0.25)":"rgba(0,0,0,0.2)";
+ctx.beginPath();ctx.moveTo(len,0);ctx.lineTo(len-4,-3);ctx.lineTo(len-4,3);ctx.closePath();ctx.fill();
+ctx.restore();
+}}
+// Pin
+const pinPx=cx+contour.pin.x*scale,pinPy=cy+contour.pin.y*scale;
+ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(pinPx,pinPy,3,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pinPx,pinPy);ctx.lineTo(pinPx,pinPy-22);ctx.stroke();
+ctx.fillStyle="#ef4444";ctx.beginPath();ctx.moveTo(pinPx,pinPy-22);ctx.lineTo(pinPx+12,pinPy-18);ctx.lineTo(pinPx,pinPy-14);ctx.closePath();ctx.fill();
+// Ball position & read line
+if(ballPos){
+const bpx=cx+ballPos.x*scale,bpy=cy+ballPos.y*scale;
+ctx.fillStyle="#fff";ctx.strokeStyle="#222";ctx.lineWidth=2;
+ctx.beginPath();ctx.arc(bpx,bpy,5,0,Math.PI*2);ctx.fill();ctx.stroke();
+}
+if(readLine&&readLine.path){
+ctx.strokeStyle="rgba(255,200,0,0.6)";ctx.lineWidth=2.5;ctx.setLineDash([6,4]);
+ctx.beginPath();
+readLine.path.forEach((p,i)=>{
+const px=cx+p.x*scale,py=cy+p.y*scale;
+if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+});ctx.stroke();ctx.setLineDash([]);
+}
+};
+draw();
+},[holeIdx,ballPos,readLine,T.bg]);
+// Handle tap to place ball
+const handleTap=(e)=>{
+const canvas=canvasRef.current;if(!canvas)return;
+const rect=canvas.getBoundingClientRect();
+const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+const px=(e.clientX-rect.left)*scaleX,py=(e.clientY-rect.top)*scaleY;
+const cx=canvas.width/2,cy=canvas.height/2,scale=Math.min(canvas.width,canvas.height)*0.38;
+const nx=(px-cx)/scale,ny=(py-cy)/scale;
+const dist=Math.sqrt(nx*nx+ny*ny);
+if(dist>1.1)return;
+setBallPos({x:nx,y:ny});
+setReadLine(calcRead(nx,ny));
+};
+return(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:200,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(12px)",display:"flex",flexDirection:"column"}}>
+<div style={{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid "+T.bdr}}>
+<div><div style={{fontSize:16,fontWeight:700,color:T.tx,fontFamily:F}}>{"Green Map \u00b7 Hole "+hp}</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>Tap green to read putt break</div></div>
+<button onClick={onClose} style={{background:T.rd,border:"1px solid rgba(248,113,113,0.15)",borderRadius:10,padding:"8px 16px",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Close</button>
+</div>
+<div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16,gap:12}}>
+{/* Slope info badge */}
+<div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+<div style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:8,padding:"4px 12px",display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontSize:10,color:T.g,fontWeight:600,fontFamily:F}}>{contour.grade+"% slope"}</span></div>
+<div style={{background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:8,padding:"4px 12px"}}>
+<span style={{fontSize:10,color:T.b,fontWeight:600,fontFamily:F}}>{contour.tiers>1?contour.tiers+"-tier":"Single tier"}</span></div>
+<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:8,padding:"4px 12px"}}>
+<span style={{fontSize:10,color:T.y,fontWeight:600,fontFamily:F}}>{"Breaks "+["N","NE","E","SE","S","SW","W","NW"][Math.round(contour.slope/45)%8]}</span></div>
+</div>
+{/* Canvas */}
+<div style={{position:"relative",borderRadius:16,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+<canvas ref={canvasRef} width={360} height={360} onClick={handleTap} style={{width:340,height:340,cursor:"crosshair",display:"block"}}/>
+{/* Legend overlay */}
+<div style={{position:"absolute",top:8,left:8,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",borderRadius:8,padding:"6px 10px",display:"flex",gap:10,alignItems:"center"}}>
+<div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:isDk?"#1a6a2a":"#50a060"}}/><span style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontFamily:F}}>Low</span></div>
+<div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:isDk?"#50a050":"#a0d090"}}/><span style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontFamily:F}}>High</span></div>
+<div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:8,height:0,borderTop:"2px solid rgba(255,255,255,0.3)"}}/>
+<svg width="6" height="6" viewBox="0 0 6 6" fill="rgba(255,255,255,0.3)"><polygon points="6,3 0,0 0,6"/></svg>
+<span style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontFamily:F}}>Slope</span></div>
+</div>
+</div>
+{/* Read result */}
+{readLine&&<div style={{background:isDk?"linear-gradient(135deg, #16161a, #111114)":"#fff",border:"1px solid "+T.bdr,borderRadius:14,padding:"14px 20px",width:"100%",maxWidth:340,boxShadow:"0 4px 16px rgba(0,0,0,0.3)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,fontFamily:F}}>Putt Read</div>
+<div style={{fontSize:11,color:T.td,fontFamily:F}}>{"~"+readLine.dist+" ft"}</div>
+</div>
+<div style={{display:"flex",gap:12,justifyContent:"center"}}>
+<div style={{textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:T.y,fontFamily:M}}>{readLine.breakAmt}</div><div style={{fontSize:9,color:T.td,fontFamily:F}}>inches break</div></div>
+<div style={{width:1,background:T.bdr}}/>
+<div style={{textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:T.tx,fontFamily:M}}>{readLine.slopePct+"%"}</div><div style={{fontSize:9,color:T.td,fontFamily:F}}>grade</div></div>
+<div style={{width:1,background:T.bdr}}/>
+<div style={{textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:T.b,fontFamily:M}}>{(readLine.breakDir>0?readLine.breakDir:360+readLine.breakDir)+"\u00b0"}</div><div style={{fontSize:9,color:T.td,fontFamily:F}}>break dir</div></div>
+</div>
+</div>}
+{!readLine&&<div style={{color:T.td,fontSize:12,fontFamily:F,textAlign:"center",padding:"8px 0"}}>Tap anywhere on the green to see the putt read</div>}
+</div>
+</div>);
+}
+
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
 const mapRef=useRef(null);const mapInst=useRef(null);const overlayRef=useRef({markers:[],polys:[],circles:[],iws:[]});
 const liveRef=useRef({dot:null,pulse:null});
@@ -490,8 +710,12 @@ return(<div style={{marginBottom:10}}>
 <div style={{textAlign:"center"}}><div style={{fontSize:12,fontWeight:800,fontFamily:M,color:"#f87171"}}>{hy+15}</div><div style={{fontSize:7,color:"rgba(255,255,255,0.35)",fontFamily:F}}>Back</div></div>
 </div></div>
 </div>}
-{/* Hazard / Elevation chips */}
-{(hole.bunkers.length>0||hole.water.length>0||hole.elev)&&<div style={{display:"flex",gap:5,marginTop:6,flexWrap:"wrap"}}>
+{/* 3D Green button + Hazard / Elevation chips */}
+{mapView==="green"&&<GreenMap3D holeIdx={holeIdx} theme={T} onClose={()=>setMapView("sat")}/>}
+<div style={{display:"flex",gap:5,marginTop:6,flexWrap:"wrap"}}>
+<button onClick={()=>setMapView("green")} style={{padding:"5px 10px",background:"rgba(16,185,129,0.08)",borderRadius:8,border:"1px solid rgba(16,185,129,0.15)",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="10" rx="7" ry="5" fill="#10b981" opacity="0.5"/><circle cx="8" cy="6" r="1" fill="#fff"/><line x1="8" y1="6" x2="8" y2="1" stroke="#fff" strokeWidth="1"/><polygon points="8,0 12,2.5 8,5" fill="#ef4444" opacity="0.8"/></svg>
+<span style={{fontSize:10,color:T.g,fontWeight:600,fontFamily:F}}>3D Green</span></button>
 {hole.bunkers.length>0&&<div style={{padding:"5px 10px",background:"rgba(196,160,80,0.08)",borderRadius:8,border:"1px solid rgba(196,160,80,0.15)",display:"flex",alignItems:"center",gap:5}}>
 <svg width="10" height="10" viewBox="0 0 16 16"><ellipse cx="8" cy="10" rx="7" ry="5" fill="#c8a050" opacity="0.7"/></svg>
 <span style={{fontSize:10,color:"#c8a050",fontWeight:600,fontFamily:F}}>{hole.bunkers.length+" bunker"+(hole.bunkers.length>1?"s":"")}</span></div>}
