@@ -961,7 +961,7 @@ return(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,backgrou
 };
 const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 14px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={28}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:20,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.025em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:12,margin:"2px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:"none",border:"1px solid "+T.bdr,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.tm,fontSize:14,lineHeight:1}}>{T===dark?"\u2600\uFE0F":"\uD83C\uDF19"}</button>}{right}</div></div>);
 const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.bg==="#09090b"?"linear-gradient(145deg, #16161a 0%, #111114 100%)":T.card,border:"1px solid "+T.bdr,borderRadius:14,padding:16,cursor:o?"pointer":"default",boxShadow:T.bg==="#09090b"?"0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)":"0 1px 3px rgba(0,0,0,0.04)",...s}}>{children}</div>;
-const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{children}</div>;
+const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,paddingLeft:8,borderLeft:"2px solid "+T.g+"44"}}>{children}</div>;
 const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:"#fff",fontWeight:700,border:"none",boxShadow:"0 2px 8px "+T.g+"33"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb,boxShadow:"none"},ghost:{background:"transparent",color:T.tm,border:"none",boxShadow:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18",boxShadow:"none"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:12,padding:"14px 18px",fontSize:14,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.2s",letterSpacing:"-0.01em",...s}}>{children}</button>;};
 const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} style={{padding:"10px 0",borderRadius:10,flex:1,cursor:"pointer",background:a?(bg||T.gd):"transparent",color:a?(cl||T.g):T.tm,border:a?"1px solid "+(cl||T.g)+"22":"1px solid "+T.bdr,fontSize:14,fontWeight:a?700:500,fontFamily:F,transition:"all 0.15s"}}>{children}</button>;
 const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:"center"}}><div style={{fontSize:sm?18:26,fontWeight:700,color:cl||T.g,fontFamily:M,lineHeight:1}}>{v}{u&&<span style={{fontSize:sm?10:12,fontWeight:400,color:T.td,marginLeft:2}}>{u}</span>}</div><div style={{fontSize:9,color:T.td,marginTop:4,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{l}</div></div>;
@@ -1349,25 +1349,31 @@ const best=done.length?Math.min(...done.map(r=>r.holes.reduce((s,h)=>s+(h.sc||0)
 const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,worse:0};ah.forEach(h=>{if(!h.sc||!h.par)return;if(h.sc===1){d.ace++;return;}const x=h.sc-h.par;if(x<=-2)d.eagle++;else if(x===-1)d.birdie++;else if(x===0)d.par++;else if(x===1)d.bogey++;else if(x===2)d.double++;else d.worse++;});return d;},[done.length]);
 const totH=Object.values(dist).reduce((s,v)=>s+v,0);
 if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px 100px"}}>
-<Crd T={T} style={{marginBottom:12,padding:"32px 20px",textAlign:"center",background:T.bg==="#09090b"?"linear-gradient(160deg, #16161a 0%, #0f1f15 50%, #111114 100%)":"linear-gradient(160deg, #fff 0%, #f0fdf4 50%, #fff 100%)",border:"1px solid "+(T.bg==="#09090b"?"rgba(16,185,129,0.1)":"rgba(5,150,105,0.1)")}}>
-<svg width="56" height="56" viewBox="0 0 56 56" fill="none" style={{margin:"0 auto 14px"}}><circle cx="28" cy="28" r="26" fill={T.gd} stroke={T.gb} strokeWidth="1"/><path d="M28 12v28" stroke={T.g} strokeWidth="2" strokeLinecap="round"/><path d="M28 12l10 7H28" fill={T.g} opacity="0.6"/><ellipse cx="28" cy="44" rx="8" ry="3" fill={T.g} opacity="0.15"/></svg>
-<h2 style={{color:T.tx,fontSize:20,fontWeight:700,margin:"0 0 6px",fontFamily:F}}>Ready to play?</h2>
-<p style={{color:T.tm,fontSize:13,fontFamily:F,margin:0,lineHeight:1.5}}>Start your first round to see stats, handicap, and scoring trends.</p>
-</Crd>
+<div style={{marginBottom:12,borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+(T.bg==="#09090b"?"rgba(16,185,129,0.1)":"rgba(5,150,105,0.1)")}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&q=75)",backgroundSize:"cover",backgroundPosition:"center"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.3) 0%, rgba(9,9,11,0.85) 100%)"}}/>
+<div style={{position:"relative",padding:"48px 24px 28px",textAlign:"center"}}>
+<h2 style={{color:"#fff",fontSize:22,fontWeight:800,margin:"0 0 6px",fontFamily:F,letterSpacing:"-0.02em"}}>Ready to play?</h2>
+<p style={{color:"rgba(255,255,255,0.65)",fontSize:13,fontFamily:F,margin:0,lineHeight:1.5}}>Start your first round to see stats, handicap, and scoring trends.</p>
+</div></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
 {[{label:"GPS Tracking",desc:"Live distances",svg:<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="10" r="3" stroke={T.g} strokeWidth="1.5"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z" stroke={T.g} strokeWidth="1.5" fill={T.gd}/></svg>},{label:"Smart Stats",desc:"Every shot",svg:<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="4" height="10" rx="1" fill={T.g} opacity="0.3"/><rect x="10" y="6" width="4" height="14" rx="1" fill={T.g} opacity="0.5"/><rect x="17" y="3" width="4" height="17" rx="1" fill={T.g} opacity="0.7"/></svg>},{label:"Handicap",desc:"Free index",svg:<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke={T.g} strokeWidth="1.5" opacity="0.4"/><path d="M8 12.5l3 3 5-6" stroke={T.g} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}].map(f=><Crd key={f.label} T={T} style={{textAlign:"center",padding:"16px 8px"}}><div style={{marginBottom:6,display:"flex",justifyContent:"center"}}>{f.svg}</div><div style={{fontSize:11,fontWeight:700,color:T.tx,fontFamily:F}}>{f.label}</div><div style={{fontSize:9,color:T.td,fontFamily:F,marginTop:2}}>{f.desc}</div></Crd>)}
 </div>
 </div></div>;
 return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<Crd T={T} style={{marginBottom:10,padding:"18px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div style={{marginBottom:10,borderRadius:14,overflow:"hidden",position:"relative"}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1611374243147-44a702c2d44c?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center 30%"}}/>
+<div style={{position:"absolute",inset:0,background:T.bg==="#09090b"?"linear-gradient(135deg, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.75) 50%, rgba(9,9,11,0.92) 100%)":"linear-gradient(135deg, rgba(248,248,250,0.92) 0%, rgba(248,248,250,0.85) 100%)"}}/>
+<div style={{position:"relative",padding:"18px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <div>
-<div style={{fontSize:9,color:T.td,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F}}>Handicap Index</div>
-<div style={{fontSize:38,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1,marginTop:4}}>{hcp!=null?hcp:"\u2014"}</div>
+<div style={{fontSize:9,color:T.g,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.15em",fontFamily:F}}>Handicap Index</div>
+<div style={{fontSize:40,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1,marginTop:4}}>{hcp!=null?hcp:"\u2014"}</div>
 {hcp==null&&<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:4}}>Need 5+ full rounds</div>}
 </div>
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{opacity:0.15}}><path d="M16 4v24" stroke={T.tx} strokeWidth="2"/><path d="M16 4l8 5.5H16" fill={T.tx}/><ellipse cx="16" cy="30" rx="6" ry="2" fill={T.tx}/></svg>
-</Crd>
+<div style={{width:48,height:48,borderRadius:12,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path d="M16 4v24" stroke={T.g} strokeWidth="2" strokeLinecap="round"/><path d="M16 4l8 5.5H16" fill={T.g} opacity="0.6"/><ellipse cx="16" cy="30" rx="6" ry="2" fill={T.g} opacity="0.2"/></svg>
+</div></div></div>
 {!isPro&&<ProBanner T={T} onUpgrade={onUpgrade} rounds={done.length}/>}
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
@@ -1600,7 +1606,11 @@ c={...c,greens:updatedGreens,_crowdsourced:data.length};
 setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
 // Course images removed - using clean list design
-return <div><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/>
+return <div><div style={{position:"relative",margin:"0 0 0",overflow:"hidden"}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1600183952086-0a77e8f0edb2?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, "+T.bg+"cc 0%, "+T.bg+" 100%)"}}/>
+<div style={{position:"relative"}}><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/></div>
+</div>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <Crd T={T} style={{marginBottom:10}}>
 <Lbl T={T}>Course</Lbl>
@@ -2012,11 +2022,13 @@ return <button key={i} onClick={()=>{setCurHole(i);setCurShot(-1);setPlaying(fal
 function Rounds({rounds,onDel,T,onToggle,profile}){
 const[replayRound,setReplayRound]=useState(null);
 if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px"}}>
-<Crd T={T} style={{textAlign:"center",padding:"32px 20px"}}>
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{margin:"0 auto 10px",display:"block"}}><rect x="10" y="6" width="28" height="36" rx="4" stroke={T.td} strokeWidth="1.5" fill="none" opacity="0.3"/><line x1="16" y1="16" x2="32" y2="16" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/><line x1="16" y1="22" x2="28" y2="22" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/><line x1="16" y1="28" x2="24" y2="28" stroke={T.td} strokeWidth="1.5" strokeLinecap="round" opacity="0.2"/></svg>
-<div style={{color:T.tx,fontSize:16,fontWeight:700,fontFamily:F}}>No rounds yet</div>
-<div style={{color:T.td,fontSize:12,fontFamily:F,marginTop:4}}>Your round history will appear here</div>
-</Crd></div></div>;
+<div style={{borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+T.bdr}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.4) 0%, rgba(9,9,11,0.9) 100%)"}}/>
+<div style={{position:"relative",padding:"40px 24px",textAlign:"center"}}>
+<div style={{color:"#fff",fontSize:18,fontWeight:700,fontFamily:F}}>No rounds yet</div>
+<div style={{color:"rgba(255,255,255,0.55)",fontSize:12,fontFamily:F,marginTop:6}}>Play your first round and your history will appear here</div>
+</div></div></div></div>;
 if(replayRound)return <RoundReplay round={replayRound} onClose={()=>setReplayRound(null)} T={T}/>;
 if(replayRound){const rc=COURSES.find(x=>x.id===replayRound.course_id)||getCourse(replayRound.course_id);
 return <ShotReplay round={replayRound} course={rc} T={T} onClose={()=>setReplayRound(null)}/>;}
@@ -2041,11 +2053,13 @@ function Bag({rounds,T,onToggle,profile,isPro,onUpgrade}){
 const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.cl&&h.yd){if(!s[h.cl])s[h.cl]={d:[],n:0};s[h.cl].d.push(h.yd);s[h.cl].n++;}}));return Object.entries(s).map(([cl,d])=>({cl:cl,n:d.n,avg:Math.round(d.d.reduce((s,x)=>s+x,0)/d.d.length),max:Math.max(...d.d),min:Math.min(...d.d)})).sort((a,b)=>b.avg-a.avg);},[rounds]);
 return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"0"}}>
-<Crd T={T} style={{textAlign:"center",padding:"32px 20px"}}>
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{margin:"0 auto 10px",display:"block"}}><path d="M24 8v24" stroke={T.td} strokeWidth="2" strokeLinecap="round" opacity="0.3"/><path d="M20 32h8v6a4 4 0 01-8 0v-6z" stroke={T.td} strokeWidth="1.5" fill="none" opacity="0.3"/><circle cx="24" cy="8" r="3" stroke={T.td} strokeWidth="1.5" fill="none" opacity="0.3"/></svg>
-<div style={{color:T.tx,fontSize:16,fontWeight:700,fontFamily:F}}>Your Bag</div>
-<div style={{color:T.td,fontSize:12,fontFamily:F,marginTop:4}}>Track yardage to see club averages</div>
-</Crd></div>
+<div style={{borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+T.bdr}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1595429035839-c99c298ffdde?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.35) 0%, rgba(9,9,11,0.9) 100%)"}}/>
+<div style={{position:"relative",padding:"40px 24px",textAlign:"center"}}>
+<div style={{color:"#fff",fontSize:18,fontWeight:700,fontFamily:F}}>Your Bag</div>
+<div style={{color:"rgba(255,255,255,0.55)",fontSize:12,fontFamily:F,marginTop:6}}>Track yardage to see your real club averages</div>
+</div></div></div>
 :stats.map(s=><Crd key={s.cl} T={T} style={{marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{color:T.tx,fontSize:14,fontWeight:600,fontFamily:F}}>{s.cl}</div><div style={{color:T.td,fontSize:11,fontFamily:F,marginTop:2}}>{s.n+" shot"+(s.n!==1?"s":"")}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:700,color:T.g,fontFamily:M,lineHeight:1}}>{s.avg}<span style={{fontSize:10,fontWeight:400,color:T.td,marginLeft:2}}>yd</span></div><div style={{fontSize:10,color:T.td,fontFamily:M,marginTop:2}}>{s.min+"\u2013"+s.max}</div></div></div><div style={{marginTop:8,position:"relative",height:12,background:"rgba(128,128,128,0.04)",borderRadius:6}}>
 <div style={{position:"absolute",top:3,height:6,borderRadius:3,background:T.g+"33",left:Math.max(0,s.min/300*100)+"%",width:Math.max(2,(s.max-s.min)/300*100)+"%",transition:"all 0.4s"}}/>
 <div style={{position:"absolute",top:1,height:10,width:3,borderRadius:2,background:T.g,left:"calc("+Math.min(100,s.avg/300*100)+"% - 1.5px)",transition:"left 0.4s"}}/>
