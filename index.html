@@ -968,6 +968,154 @@ const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
 // ==================== PROFILE SCREEN ====================
+function GreenReader({T,onClose}){
+const[photo,setPhoto]=useState(null);const[photoUrl,setPhotoUrl]=useState(null);
+const[analyzing,setAnalyzing]=useState(false);const[result,setResult]=useState(null);const[error,setError]=useState(null);
+const canvasRef=useRef(null);
+const handlePhoto=(e)=>{
+const file=e.target.files[0];if(!file)return;
+setPhoto(file);setPhotoUrl(URL.createObjectURL(file));setResult(null);setError(null);
+};
+const analyzeGreen=async()=>{
+if(!photo)return;
+setAnalyzing(true);setError(null);
+try{
+// Convert photo to base64
+const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(photo);});
+const resp=await fetch("https://api.anthropic.com/v1/messages",{
+method:"POST",headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:[
+{type:"image",source:{type:"base64",media_type:photo.type||"image/jpeg",data:base64}},
+{type:"text",text:`You are an expert green reader and putting coach. Analyze this photo of a golf green.
+
+Look for: slope direction, tiers, ridges, grain direction (grass shine/color), pin position, any visible breaks, uphill vs downhill.
+
+Respond ONLY in this exact JSON format (no markdown, no backticks):
+{
+"read": "Short putting instruction, e.g. Aim 2 cups right, medium pace",
+"break_direction": "left/right/straight",
+"break_amount": "heavy/moderate/slight/straight",
+"slope": "uphill/downhill/flat/sidehill",
+"speed": "fast/medium/slow",
+"confidence": "high/medium/low",
+"details": "1-2 sentence explanation of what you see in the terrain",
+"tip": "One specific putting tip for this situation"
+}`}
+]}]})
+});
+const data=await resp.json();
+const text=data.content.map(b=>b.text||"").join("");
+const clean=text.replace(/```json|```/g,"").trim();
+const parsed=JSON.parse(clean);
+setResult(parsed);
+}catch(e){console.error(e);setError("Couldn't read the green. Try a clearer photo showing the slope and pin.");}
+setAnalyzing(false);
+};
+const breakColor=(dir)=>dir==="left"?"#60a5fa":dir==="right"?"#f59e0b":"#10b981";
+const arrowRotation=(dir,amt)=>{
+if(dir==="straight")return 0;
+const base=dir==="left"?-1:1;
+const mult=amt==="heavy"?35:amt==="moderate"?22:12;
+return base*mult;
+};
+return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,display:"flex",flexDirection:"column",overflow:"auto"}}>
+{/* Header */}
+<div style={{padding:"env(safe-area-inset-top, 12px) 16px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid "+T.bdr}}>
+<div style={{fontSize:16,fontWeight:700,color:T.tx,fontFamily:F}}>Green Reader</div>
+<button onClick={onClose} style={{padding:"6px 14px",borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>Close</button>
+</div>
+<div style={{flex:1,padding:"16px",overflowY:"auto"}}>
+{!photoUrl&&!result&&<div style={{textAlign:"center",padding:"40px 20px"}}>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" style={{margin:"0 auto 16px",display:"block"}}>
+<ellipse cx="32" cy="42" rx="24" ry="14" fill={T.g} opacity="0.1" stroke={T.g} strokeWidth="1.5" opacity="0.3"/>
+<circle cx="32" cy="36" r="2" fill="#fff" opacity="0.8"/>
+<line x1="32" y1="36" x2="32" y2="22" stroke="#fff" strokeWidth="1.5"/>
+<polygon points="32,20 38,24 32,28" fill="#ef4444" opacity="0.8"/>
+<path d="M20,46 Q32,34 44,46" stroke={T.g} strokeWidth="1" fill="none" strokeDasharray="3,2" opacity="0.4"/>
+<circle cx="22" cy="48" r="3" fill={T.g} opacity="0.15" stroke={T.g} strokeWidth="0.5"/>
+</svg>
+<div style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:F,marginBottom:6}}>Read the Green</div>
+<div style={{fontSize:12,color:T.td,fontFamily:F,lineHeight:1.6,marginBottom:24,maxWidth:280,margin:"0 auto 24px"}}>Take a photo of the green from behind your ball, looking toward the hole. AI will read the slope and tell you where to aim.</div>
+<label style={{display:"inline-flex",alignItems:"center",gap:8,padding:"14px 28px",borderRadius:12,background:T.g,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:F,boxShadow:"0 4px 16px rgba(16,185,129,0.3)"}}>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+Take Photo
+<input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{display:"none"}}/>
+</label>
+</div>}
+{photoUrl&&!result&&<div>
+<div style={{borderRadius:14,overflow:"hidden",border:"1px solid "+T.bdr,marginBottom:12}}>
+<img src={photoUrl} style={{width:"100%",maxHeight:300,objectFit:"cover",display:"block"}}/>
+</div>
+{error&&<div style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"1px solid "+T.r+"22",marginBottom:10,fontSize:11,color:T.r,fontFamily:F}}>{error}</div>}
+<div style={{display:"flex",gap:8}}>
+<Btn T={T} onClick={analyzeGreen} disabled={analyzing}>
+{analyzing?"Reading the green...":"Read This Green"}
+</Btn>
+<button onClick={()=>{setPhoto(null);setPhotoUrl(null);}} style={{padding:"14px",borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:16,cursor:"pointer"}}>{"✕"}</button>
+</div>
+</div>}
+{result&&<div>
+{/* Photo with arrow overlay */}
+<div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid "+T.bdr,marginBottom:12}}>
+<img src={photoUrl} style={{width:"100%",maxHeight:260,objectFit:"cover",display:"block"}}/>
+{/* Arrow overlay showing break direction */}
+<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+<svg width="120" height="120" viewBox="0 0 120 120" style={{transform:"rotate("+arrowRotation(result.break_direction,result.break_amount)+"deg)",filter:"drop-shadow(0 2px 8px rgba(0,0,0,0.5))"}}>
+<defs><marker id="ah" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill={breakColor(result.break_direction)}/></marker></defs>
+<line x1="60" y1="100" x2="60" y2="25" stroke={breakColor(result.break_direction)} strokeWidth="4" markerEnd="url(#ah)" strokeLinecap="round"/>
+<circle cx="60" cy="105" r="4" fill="#fff" opacity="0.9"/>
+</svg>
+</div>
+{/* Confidence badge */}
+<div style={{position:"absolute",top:10,right:10,padding:"4px 10px",borderRadius:6,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)"}}>
+<span style={{fontSize:9,fontWeight:700,color:result.confidence==="high"?T.g:result.confidence==="medium"?"#fbbf24":"#f87171",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}>{result.confidence} confidence</span>
+</div>
+</div>
+{/* The Read - big and clear */}
+<Crd T={T} style={{marginBottom:10,padding:"20px",textAlign:"center",background:T.bg==="#09090b"?"linear-gradient(135deg, #0f1f15 0%, #111114 100%)":T.card,border:"1px solid "+T.gb}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:8}}>Your Read</div>
+<div style={{fontSize:20,fontWeight:800,color:T.tx,fontFamily:F,lineHeight:1.3}}>{result.read}</div>
+</Crd>
+{/* Details grid */}
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+<Crd T={T} style={{textAlign:"center",padding:"12px 8px"}}>
+<div style={{fontSize:9,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Break</div>
+<div style={{fontSize:14,fontWeight:700,color:breakColor(result.break_direction),fontFamily:F,marginTop:2}}>
+{result.break_direction==="straight"?"Straight":result.break_amount+" "+result.break_direction}
+</div></Crd>
+<Crd T={T} style={{textAlign:"center",padding:"12px 8px"}}>
+<div style={{fontSize:9,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Slope</div>
+<div style={{fontSize:14,fontWeight:700,color:result.slope==="uphill"?T.o:result.slope==="downhill"?T.b:T.tx,fontFamily:F,marginTop:2}}>
+{result.slope==="uphill"?"\u25B2 Up":result.slope==="downhill"?"\u25BC Down":result.slope==="sidehill"?"\u2194 Side":"\u2501 Flat"}
+</div></Crd>
+<Crd T={T} style={{textAlign:"center",padding:"12px 8px"}}>
+<div style={{fontSize:9,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>Speed</div>
+<div style={{fontSize:14,fontWeight:700,color:result.speed==="fast"?T.r:result.speed==="slow"?T.b:T.g,fontFamily:F,marginTop:2}}>
+{result.speed==="fast"?"\u26A1 Fast":result.speed==="slow"?"\u{1F422} Slow":"\u2705 Medium"}
+</div></Crd>
+</div>
+{/* Explanation */}
+<Crd T={T} style={{marginBottom:10}}>
+<div style={{fontSize:12,color:T.tx,fontFamily:F,lineHeight:1.6}}>{result.details}</div>
+<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bdr,fontSize:11,color:T.g,fontFamily:F,fontWeight:500}}>
+<strong style={{fontWeight:700}}>Tip:</strong> {result.tip}
+</div>
+</Crd>
+{/* Actions */}
+<div style={{display:"flex",gap:8}}>
+<label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"12px",borderRadius:10,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+New Photo
+<input type="file" accept="image/*" capture="environment" onChange={(e)=>{handlePhoto(e);setResult(null);}} style={{display:"none"}}/>
+</label>
+<button onClick={onClose} style={{flex:1,padding:"12px",borderRadius:10,background:T.g,border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Back to Hole</button>
+</div>
+</div>}
+</div>
+<canvas ref={canvasRef} style={{display:"none"}}/>
+</div>;
+}
+
 function SwingAnalyzer({T,profile}){
 const[video,setVideo]=useState(null);const[videoUrl,setVideoUrl]=useState(null);
 const[analyzing,setAnalyzing]=useState(false);const[result,setResult]=useState(null);const[error,setError]=useState(null);
@@ -1305,7 +1453,7 @@ function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile,isPro,onUpgra
 const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
 const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
 const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);const greenDwellTime=useRef(0);const awayFromGreen=useRef(false);
-const[autoTrack,setAutoTrack]=useState(false);const[autoStatus,setAutoStatus]=useState("");
+const[autoTrack,setAutoTrack]=useState(false);const[autoStatus,setAutoStatus]=useState("");const[showGreenReader,setShowGreenReader]=useState(false);
 const gpsLog=useRef([]);const moveState=useRef("idle");const stationaryPos=useRef(null);const stationaryStart=useRef(0);const lastShotTime=useRef(0);const autoShotCount=useRef(0);
 const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
 const[gameMode,setGameMode]=useState("stroke");const[showGroup,setShowGroup]=useState(false);const[groupCode,setGroupCode]=useState("");const[joinCode,setJoinCode]=useState("");const[groupPlayers,setGroupPlayers]=useState([]);const[liveScores,setLiveScores]=useState({});
