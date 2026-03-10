@@ -1119,6 +1119,19 @@ return <div style={{overflowX:"auto"}}>
 </svg></div>;
 })()}
 </Crd>}
+{/* Personal Leaderboard */}
+{done.length>=3&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Best Rounds</Lbl>
+{done.slice().sort((a,b)=>{const as=a.holes.reduce((s,h)=>s+(h.sc||0),0)-a.holes.reduce((s,h)=>s+(h.par||0),0);const bs=b.holes.reduce((s,h)=>s+(h.sc||0),0)-b.holes.reduce((s,h)=>s+(h.par||0),0);return as-bs;}).slice(0,5).map((r,i)=>{
+const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);
+const medals=["#fbbf24","#a8a29e","#b87333"];
+return <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}>
+<div style={{width:22,height:22,borderRadius:6,background:i<3?(medals[i]+"15"):"rgba(128,128,128,0.04)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:i<3?medals[i]:T.td,fontFamily:M}}>{i+1}</div>
+<div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:T.tx,fontFamily:F}}>{r.course_name||r.courseName}</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div>
+<div style={{textAlign:"right"}}><span style={{fontSize:16,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span>
+<Diff d={t-p} style={{fontSize:11,marginLeft:4}} T={T}/></div>
+</div>;})}
+</Crd>}
 {rec.length>0&&<Crd T={T}><Lbl T={T}>Recent</Lbl>{rec.slice().reverse().slice(0,5).map(r=>{const t=r.holes.reduce((s,h)=>s+(h.sc||0),0),p=r.holes.reduce((s,h)=>s+(h.par||0),0);return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid "+T.bdr}}><div><div style={{color:T.tx,fontSize:13,fontWeight:600,fontFamily:F}}>{r.course_name||r.courseName}</div><div style={{color:T.td,fontSize:11,fontFamily:F}}>{new Date(r.date).toLocaleDateString()}</div></div><div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontSize:18,fontWeight:700,color:T.tx,fontFamily:M}}>{t}</span><Diff d={t-p} style={{fontSize:12}} T={T}/></div></div>;})}</Crd>}
 </div></div>;
 }
@@ -1130,6 +1143,7 @@ const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);c
 const[autoTrack,setAutoTrack]=useState(false);const[autoStatus,setAutoStatus]=useState("");
 const gpsLog=useRef([]);const moveState=useRef("idle");const stationaryPos=useRef(null);const stationaryStart=useRef(0);const lastShotTime=useRef(0);const autoShotCount=useRef(0);
 const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
+const[gameMode,setGameMode]=useState("stroke");const[showGroup,setShowGroup]=useState(false);const[groupCode,setGroupCode]=useState("");const[joinCode,setJoinCode]=useState("");const[groupPlayers,setGroupPlayers]=useState([]);const[liveScores,setLiveScores]=useState({});
 const searchTimer=useRef(null);
 const gps=useGPS();const course=active?(apiCourse&&active.course_id===apiCourse.id?apiCourse:getCourse(active.course_id||active.courseId)):(apiCourse||getCourse(courseId));
 const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];const selTee=tee||defaultTee;
@@ -1212,6 +1226,15 @@ useEffect(()=>{
 gpsLog.current=[];moveState.current="idle";stationaryPos.current=null;
 stationaryStart.current=0;autoShotCount.current=0;setAutoStatus("");
 },[cur]);
+// Subscribe to live group scores
+useEffect(()=>{
+if(!active||!active.groupCode)return;
+const fetchScores=async()=>{try{const{data}=await sb.from("live_scores").select("*").eq("group_code",active.groupCode);
+if(data){const map={};data.forEach(d=>{map[d.user_id]=d;});setLiveScores(map);}}catch(e){}};
+fetchScores();
+const interval=setInterval(fetchScores,8000);
+return()=>clearInterval(interval);
+},[active?active.groupCode:null,active?active.holes.length:0]);
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
 // === AUTO HOLE DETECTION ===
 useEffect(()=>{
@@ -1302,7 +1325,46 @@ Find Nearby Courses</button>
 <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Tees</Lbl><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{Object.entries(course.tees).map(([t,d])=>{const a=selTee===t;const tc=teeColors[t]||T.g;return <button key={t} onClick={()=>setTee(t)} style={{flex:1,minWidth:60,padding:"11px 6px",borderRadius:8,background:a?"rgba(128,128,128,0.08)":"rgba(128,128,128,0.02)",border:a?"1px solid "+tc+"33":"1px solid "+T.bdr,color:a?tc:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F,textTransform:"capitalize"}}><div>{t}</div><div style={{fontSize:11,fontWeight:400,marginTop:2,fontFamily:M,opacity:0.6}}>{d.y.reduce((s,y)=>s+y,0)}</div></button>;})}</div>
 <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,padding:"10px 0 2px",borderTop:"1px solid "+T.bdr}}><St label="Rating" value={td.r} small T={T}/><St label="Slope" value={td.s} small T={T}/><St label="Yards" value={ty} small T={T}/></div></Crd>
 {!isPro&&<ProBanner T={T} onUpgrade={onUpgrade} rounds={roundCount}/>}
-<Btn T={T} onClick={()=>onStart({id:genId(),course_name:course.name,course_id:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[]})}>Start Round</Btn>
+<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Game Mode</Lbl>
+<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+{[{id:"stroke",name:"Stroke",desc:"Standard scoring"},{id:"match",name:"Match Play",desc:"Hole-by-hole"},{id:"skins",name:"Skins",desc:"Win the hole, win the pot"},{id:"nassau",name:"Nassau",desc:"Front, back, overall"},{id:"stableford",name:"Stableford",desc:"Points per hole"}].map(g=>{
+const a=gameMode===g.id;return <button key={g.id} onClick={()=>setGameMode(g.id)} style={{flex:"1 1 calc(50% - 4px)",minWidth:90,padding:"10px 8px",borderRadius:10,cursor:"pointer",background:a?T.gd:"rgba(128,128,128,0.02)",border:"1px solid "+(a?T.gb:T.bdr),textAlign:"center"}}>
+<div style={{fontSize:12,fontWeight:700,color:a?T.g:T.tx,fontFamily:F}}>{g.name}</div>
+<div style={{fontSize:9,color:a?T.g:T.td,fontFamily:F,marginTop:2,opacity:0.7}}>{g.desc}</div>
+</button>;})}
+</div></Crd>
+{/* Live Group */}
+<Crd T={T} style={{marginBottom:10}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<Lbl T={T}>Play With Friends</Lbl>
+<button onClick={()=>setShowGroup(p=>!p)} style={{fontSize:10,color:T.g,background:"none",border:"none",cursor:"pointer",fontFamily:F,fontWeight:600}}>{showGroup?"Hide":"Set Up"}</button>
+</div>
+{showGroup&&<div>
+<div style={{display:"flex",gap:6,marginBottom:8}}>
+<button onClick={()=>{const code=Math.random().toString(36).substr(2,6).toUpperCase();setGroupCode(code);setGroupPlayers([{name:profile.name,id:user.id}]);
+sb.from("live_groups").upsert({code,host_id:user.id,course_id:course.id||courseId,course_name:course.name,created_at:new Date().toISOString(),players:[{name:profile.name,id:user.id}],game_mode:gameMode}).then(()=>{});
+}} style={{flex:1,padding:"10px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Create Group</button>
+<div style={{flex:1,display:"flex",gap:4}}>
+<input type="text" value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase())} placeholder="Code" maxLength={6} style={{flex:1,padding:"10px",borderRadius:8,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,color:T.tx,fontSize:13,fontFamily:M,textAlign:"center",letterSpacing:"0.2em",textTransform:"uppercase"}}/>
+<button onClick={async()=>{if(joinCode.length<4)return;try{const{data}=await sb.from("live_groups").select("*").eq("code",joinCode).single();
+if(data){const pl=[...(data.players||[]),{name:profile.name,id:user.id}];
+await sb.from("live_groups").update({players:pl}).eq("code",joinCode);
+setGroupCode(joinCode);setGroupPlayers(pl);setGameMode(data.game_mode||"stroke");}}catch(e){alert("Group not found");}
+}} style={{padding:"10px 14px",borderRadius:8,background:T.g,border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Join</button>
+</div></div>
+{groupCode&&<div style={{padding:"10px 12px",background:"rgba(16,185,129,0.06)",borderRadius:8,border:"1px solid rgba(16,185,129,0.12)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>Group Code</div>
+<button onClick={()=>{navigator.clipboard.writeText(groupCode);}} style={{fontSize:9,color:T.g,background:"none",border:"none",cursor:"pointer",fontFamily:F}}>Copy</button>
+</div>
+<div style={{fontSize:24,fontWeight:800,color:T.tx,fontFamily:M,textAlign:"center",letterSpacing:"0.3em"}}>{groupCode}</div>
+<div style={{marginTop:8,fontSize:10,color:T.td,fontFamily:F}}>{"Players: "+groupPlayers.map(p=>p.name).join(", ")}</div>
+</div>}
+</div>}
+</Crd>
+<Btn T={T} onClick={()=>onStart({id:genId(),course_name:course.name,course_id:course.id,cr:td.r,sr:td.s,tee:selTee,date:new Date().toISOString(),holes:[],gameMode,groupCode:groupCode||null,groupPlayers:groupPlayers||[]})}>
+{groupCode?"Start Group Round":"Start "+({stroke:"Round",match:"Match Play",skins:"Skins Game",nassau:"Nassau",stableford:"Stableford"}[gameMode]||"Round")}
+</Btn>
 </div></div>;}
 const cid=active.course_id||active.courseId;const ed=cur<active.holes.length,hn=cur+1;
 const ts=active.holes.reduce((s,x)=>s+(x.sc||0),0),tp=active.holes.reduce((s,x)=>s+(x.par||0),0);
@@ -1322,10 +1384,43 @@ lat:greenPos.lat,lng:greenPos.lng,
 updated_at:new Date().toISOString()
 },{onConflict:"course_id,hole_num"}).then(()=>{}).catch(()=>{});
 }}
-const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
+const nh=[...active.holes];if(ed)nh[cur]=d;else nh.push(d);onUpdate({...active,holes:nh});
+// Broadcast live score to group
+if(active.groupCode&&user){
+sb.from("live_scores").upsert({
+group_code:active.groupCode,user_id:user.id,player_name:profile.name,
+hole_num:hn,score:d.sc,par:d.par,total_score:nh.reduce((s,x)=>s+(x.sc||0),0),
+total_par:nh.reduce((s,x)=>s+(x.par||0),0),holes_played:nh.length,
+updated_at:new Date().toISOString()
+},{onConflict:"group_code,user_id"}).then(()=>{}).catch(()=>{});}setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
 const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
 return <div>
 <Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
+{/* Game mode banner */}
+{active.gameMode&&active.gameMode!=="stroke"&&<div style={{margin:"0 16px 8px",padding:"6px 12px",borderRadius:8,background:T.bd,border:"1px solid rgba(96,165,250,0.15)",display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontSize:10,fontWeight:700,color:T.b,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+{({match:"Match Play",skins:"Skins",nassau:"Nassau",stableford:"Stableford"})[active.gameMode]||active.gameMode}
+</span>
+{active.gameMode==="stableford"&&(()=>{const pts={"-3":8,"-2":6,"-1":4,"0":3,"1":2,"2":1};
+const stPts=active.holes.reduce((s,x)=>{const d=x.sc-x.par;return s+(pts[""+d]||0);},0);
+return <span style={{fontSize:10,color:T.b,fontFamily:M,marginLeft:"auto"}}>{stPts+" pts"}</span>;})()}
+{active.gameMode==="skins"&&(()=>{
+return <span style={{fontSize:10,color:T.b,fontFamily:M,marginLeft:"auto"}}>{active.holes.length+" holes played"}</span>;})()}
+</div>}
+{/* Live group scoreboard */}
+{active.groupCode&&Object.keys(liveScores).length>0&&<div style={{margin:"0 16px 8px",padding:"8px 12px",borderRadius:10,background:T.gd,border:"1px solid "+T.gb}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700,marginBottom:6}}>Live Group</div>
+{Object.values(liveScores).sort((a,b)=>(a.total_score-a.total_par)-(b.total_score-b.total_par)).map((p,i)=><div key={p.user_id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}>
+<div style={{display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontSize:10,fontWeight:700,color:i===0?T.g:T.tx,fontFamily:M}}>{i+1}</span>
+<span style={{fontSize:11,color:p.user_id===user.id?T.g:T.tx,fontWeight:p.user_id===user.id?700:500,fontFamily:F}}>{p.player_name}{p.user_id===user.id?" (you)":""}</span>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}>
+<span style={{fontSize:10,color:T.td,fontFamily:F}}>{"thru "+p.holes_played}</span>
+<span style={{fontSize:13,fontWeight:700,color:T.tx,fontFamily:M}}>{p.total_score}</span>
+<Diff d={p.total_score-p.total_par} style={{fontSize:11}} T={T}/>
+</div></div>)}
+</div>}
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
 {/* Auto-advance prompt */}
@@ -1385,7 +1480,55 @@ return <Crd T={T} style={{marginBottom:10,background:T.bg==="#09090b"?"linear-gr
 {(h.par||hp)>3&&<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Fairway</Lbl><div style={{display:"flex",gap:6}}>{[{v:"hit",l:"Hit"},{v:"left",l:"Left"},{v:"right",l:"Right"}].map(f=><Pill key={f.v} active={h.fw===f.v} color={f.v==="hit"?T.g:T.o} bg={f.v==="hit"?T.gd:T.od} T={T} onClick={()=>{pushUndo();setH(s=>({...s,fw:s.fw===f.v?"":f.v}));}}>{f.l}</Pill>)}</div></Crd>}
 <Crd T={T} style={{marginBottom:10}}><button onClick={()=>{pushUndo();setH(s=>({...s,gir:!s.gir}));}} style={{width:"100%",padding:"10px",borderRadius:8,background:h.gir?T.gd:"transparent",border:"1px solid "+(h.gir?T.gb:T.bdr),color:h.gir?T.g:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>{h.gir?"GIR \u2014 Yes":"Green in Regulation"}</button></Crd>
 <Btn T={T} onClick={svHole}>{ed?"Update Hole":hn===18?"Save Final Hole":"Save Hole "+hn}</Btn>
-{active.holes.length>0&&<Crd T={T} style={{marginTop:10}}><Lbl T={T}>Scorecard</Lbl><Scorecard holes={active.holes} onTap={setCur} T={T}/></Crd>}
+{active.holes.length>0&&<Crd T={T} style={{marginTop:10}}>
+<Lbl T={T}>Scorecard</Lbl>
+<Scorecard holes={active.holes} onTap={setCur} T={T}/>
+{/* Game mode overlay stats */}
+{active.gameMode==="skins"&&<div style={{marginTop:8,padding:"8px 10px",background:T.bd,borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
+<div style={{fontSize:9,color:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700,marginBottom:4}}>Skins</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+{active.holes.map((h,i)=>{
+const isWin=active.groupPlayers&&active.groupPlayers.length>1?false:true;
+const d=h.sc-h.par;
+return <div key={i} style={{width:28,height:28,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",
+background:d<0?"rgba(16,185,129,0.15)":d===0?"rgba(96,165,250,0.08)":"rgba(251,146,60,0.08)",
+border:"1px solid "+(d<0?"rgba(16,185,129,0.3)":"transparent"),
+fontSize:10,fontWeight:700,color:d<0?T.g:d===0?T.b:T.o,fontFamily:M}}>{h.sc}</div>;
+})}
+</div></div>}
+{active.gameMode==="stableford"&&<div style={{marginTop:8,padding:"8px 10px",background:T.bd,borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div style={{fontSize:9,color:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>Stableford Points</div>
+<div style={{fontSize:16,fontWeight:800,color:T.b,fontFamily:M}}>
+{active.holes.reduce((s,h)=>{const d=h.sc-h.par;return s+({"-3":8,"-2":6,"-1":4,"0":3,"1":2,"2":1}[""+d]||0);},0)}
+</div></div>
+<div style={{display:"flex",gap:3,marginTop:6}}>
+{active.holes.map((h,i)=>{const d=h.sc-h.par;const pts=({"-3":8,"-2":6,"-1":4,"0":3,"1":2,"2":1})[""+d]||0;
+return <div key={i} style={{flex:1,textAlign:"center",padding:"3px 0",borderRadius:4,
+background:pts>=4?"rgba(16,185,129,0.1)":pts>=3?"rgba(96,165,250,0.06)":"rgba(251,146,60,0.06)",
+fontSize:9,fontWeight:700,color:pts>=4?T.g:pts>=3?T.b:T.o,fontFamily:M}}>{pts}</div>;})}
+</div></div>}
+{active.gameMode==="nassau"&&<div style={{marginTop:8,padding:"8px 10px",background:T.bd,borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
+<div style={{fontSize:9,color:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700,marginBottom:4}}>Nassau</div>
+<div style={{display:"flex",gap:12}}>
+{[{label:"Front 9",holes:active.holes.slice(0,9)},{label:"Back 9",holes:active.holes.slice(9)},{label:"Overall",holes:active.holes}].map(n=>{
+const t=n.holes.reduce((s,h)=>s+(h.sc||0),0);const p=n.holes.reduce((s,h)=>s+(h.par||0),0);
+return <div key={n.label} style={{flex:1,textAlign:"center"}}>
+<div style={{fontSize:9,color:T.td,fontFamily:F}}>{n.label}</div>
+<div style={{fontSize:14,fontWeight:700,color:T.tx,fontFamily:M}}>{n.holes.length?t:"-"}</div>
+{n.holes.length>0&&<Diff d={t-p} style={{fontSize:10}} T={T}/>}
+</div>;})}
+</div></div>}
+{active.gameMode==="match"&&active.holes.length>0&&<div style={{marginTop:8,padding:"8px 10px",background:T.bd,borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
+<div style={{fontSize:9,color:T.b,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700,marginBottom:4}}>Match Play vs Par</div>
+{(()=>{let up=0;active.holes.forEach(h=>{const d=h.sc-h.par;if(d<0)up++;else if(d>0)up--;});
+const remaining=18-active.holes.length;
+return <div style={{textAlign:"center"}}>
+<div style={{fontSize:22,fontWeight:800,color:up>0?T.g:up<0?T.r:T.b,fontFamily:M}}>{up>0?up+" UP":up<0?Math.abs(up)+" DN":"ALL SQUARE"}</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>{remaining>0?remaining+" holes remaining":"Final"}</div>
+</div>;})()}
+</div>}
+</Crd>}
 </div></div>;
 }
 // ==================== ROUNDS & BAG ====================
