@@ -1350,7 +1350,7 @@ const dist=useMemo(()=>{const d={ace:0,eagle:0,birdie:0,par:0,bogey:0,double:0,w
 const totH=Object.values(dist).reduce((s,v)=>s+v,0);
 if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px 100px"}}>
 <div style={{marginBottom:12,borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+(T.bg==="#09090b"?"rgba(16,185,129,0.1)":"rgba(5,150,105,0.1)")}}>
-<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&q=75)",backgroundSize:"cover",backgroundPosition:"center"}}/>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&q=70&fit=crop)",backgroundSize:"cover",backgroundPosition:"center"}}/>
 <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.3) 0%, rgba(9,9,11,0.85) 100%)"}}/>
 <div style={{position:"relative",padding:"48px 24px 28px",textAlign:"center"}}>
 <h2 style={{color:"#fff",fontSize:22,fontWeight:800,margin:"0 0 6px",fontFamily:F,letterSpacing:"-0.02em"}}>Ready to play?</h2>
@@ -1363,7 +1363,7 @@ if(!done.length)return <div><Hdr title="STICKS" sub={profile.name+"'s stats"} T=
 return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"")} T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
 <div style={{marginBottom:10,borderRadius:14,overflow:"hidden",position:"relative"}}>
-<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1611374243147-44a702c2d44c?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center 30%"}}/>
+<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&q=70&fit=crop)",backgroundSize:"cover",backgroundPosition:"center 30%"}}/>
 <div style={{position:"absolute",inset:0,background:T.bg==="#09090b"?"linear-gradient(135deg, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.75) 50%, rgba(9,9,11,0.92) 100%)":"linear-gradient(135deg, rgba(248,248,250,0.92) 0%, rgba(248,248,250,0.85) 100%)"}}/>
 <div style={{position:"relative",padding:"18px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <div>
@@ -1607,8 +1607,7 @@ setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSea
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
 // Course images removed - using clean list design
 return <div><div style={{position:"relative",margin:"0 0 0",overflow:"hidden"}}>
-<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1600183952086-0a77e8f0edb2?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
-<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, "+T.bg+"cc 0%, "+T.bg+" 100%)"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, "+(T.bg==="#09090b"?"#0f1a12":"#f0fdf4")+" 0%, "+T.bg+" 100%)"}}/>
 <div style={{position:"relative"}}><Hdr title="New Round" sub="Select course and tees" T={T} onToggleTheme={onToggle} profile={profile}/></div>
 </div>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
@@ -2023,8 +2022,8 @@ function Rounds({rounds,onDel,T,onToggle,profile}){
 const[replayRound,setReplayRound]=useState(null);
 if(!rounds.length)return <div><Hdr title="Rounds" sub="History" T={T} onToggleTheme={onToggle} profile={profile}/><div style={{padding:"0 16px"}}>
 <div style={{borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+T.bdr}}>
-<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
-<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.4) 0%, rgba(9,9,11,0.9) 100%)"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(135deg, #0d1117 0%, #111114 50%, #0a1510 100%)"}}/>
+<div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",background:"radial-gradient(ellipse at top left, rgba(16,185,129,0.06) 0%, transparent 70%)"}}/>
 <div style={{position:"relative",padding:"40px 24px",textAlign:"center"}}>
 <div style={{color:"#fff",fontSize:18,fontWeight:700,fontFamily:F}}>No rounds yet</div>
 <div style={{color:"rgba(255,255,255,0.55)",fontSize:12,fontFamily:F,marginTop:6}}>Play your first round and your history will appear here</div>
@@ -2054,8 +2053,8 @@ const stats=useMemo(()=>{const s={};rounds.forEach(r=>r.holes.forEach(h=>{if(h.c
 return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onToggle} profile={profile}/>
 <div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>{!stats.length?<div style={{padding:"0"}}>
 <div style={{borderRadius:16,overflow:"hidden",position:"relative",border:"1px solid "+T.bdr}}>
-<div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1595429035839-c99c298ffdde?w=600&q=70)",backgroundSize:"cover",backgroundPosition:"center"}}/>
-<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0.35) 0%, rgba(9,9,11,0.9) 100%)"}}/>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(135deg, #0a1f12 0%, #111114 40%, #0d1a10 100%)"}}/>
+<div style={{position:"absolute",bottom:0,right:0,width:"60%",height:"60%",background:"radial-gradient(ellipse at bottom right, rgba(16,185,129,0.08) 0%, transparent 70%)"}}/>
 <div style={{position:"relative",padding:"40px 24px",textAlign:"center"}}>
 <div style={{color:"#fff",fontSize:18,fontWeight:700,fontFamily:F}}>Your Bag</div>
 <div style={{color:"rgba(255,255,255,0.55)",fontSize:12,fontFamily:F,marginTop:6}}>Track yardage to see your real club averages</div>
