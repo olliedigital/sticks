@@ -688,29 +688,101 @@ if(!hasShots){const bounds=new google.maps.LatLngBounds();bounds.extend(green);b
 },[livePos?livePos.lat:0,livePos?livePos.lng:0,mapView]);
 // === SVG YARDAGE BOOK ===
 const renderSVG=()=>{
-const rough=isDk?"#1a3a1a":"#2d5a2d";const fw=isDk?"#245a30":"#3a8a4a";const grnC=isDk?"#2a7a3a":"#4aaa5a";
-const sand=isDk?"#8a7a5a":"#d4c090";const treeC=isDk?"#0d2a10":"#1a4a20";const treeLt=isDk?"#1a4020":"#2a6a35";const ground=isDk?"#0f1a0f":"#1a3a1a";const water=isDk?"#1a4a6a":"#4a9adf";
+const R=isDk?"#132813":"#3a6a3a";const FW=isDk?"#1e5a2e":"#48a858";const GR=isDk?"#2a8a42":"#52c462";
+const S=isDk?"#9a8a5a":"#dac888";const SH=isDk?"#6a5a30":"#b09858";
+const TC=isDk?"#0a2210":"#1a5020";const TL=isDk?"#184828":"#2a7038";const TD=isDk?"#061408":"#0d3010";
+const G=isDk?"#0a1a0a":"#152815";const W=isDk?"#1a5578":"#5aafdf";const WD=isDk?"#0a3548":"#3888bb";
 const ym=[];if(hy>=200)ym.push({yd:100,y:385-((100/hy)*345)});if(hy>=280)ym.push({yd:150,y:385-((150/hy)*345)});if(hy>=350)ym.push({yd:200,y:385-((200/hy)*345)});if(hy>=420)ym.push({yd:250,y:385-((250/hy)*345)});
-return <svg viewBox="0 0 100 420" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
-<defs><radialGradient id={"rg"+holeIdx} cx="50%" cy="40%" r="55%"><stop offset="0%" stopColor={rough} stopOpacity="0.95"/><stop offset="100%" stopColor={ground}/></radialGradient><filter id="gb"><feGaussianBlur stdDeviation="1.8"/></filter><filter id="sb"><feGaussianBlur stdDeviation="0.6"/></filter><linearGradient id="fg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={fw} stopOpacity="0.6"/><stop offset="30%" stopColor={isDk?"#2a6a3a":"#4a9a55"}/><stop offset="70%" stopColor={isDk?"#2a6a3a":"#4a9a55"}/><stop offset="100%" stopColor={fw} stopOpacity="0.6"/></linearGradient></defs>
-<rect width="100" height="420" fill={"url(#rg"+holeIdx+")"}/>
-{hole.trees.map((t,i)=><g key={"t"+i} opacity="0.85"><circle cx={t.x} cy={t.y} r={t.s+4} fill={treeC} opacity="0.4" filter="url(#gb)"/><circle cx={t.x} cy={t.y} r={t.s} fill={treeLt}/></g>)}
-<path d={hole.fw} stroke="url(#fg)" strokeWidth="28" fill="none" strokeLinecap="round"/>
-<path d={hole.fw} stroke={isDk?"#2e7e42":"#55b565"} strokeWidth="18" fill="none" strokeLinecap="round" opacity="0.35"/>
-{hole.water.map((w,i)=><path key={"w"+i} d={w.path} stroke={water} strokeWidth={w.w||10} fill="none" strokeLinecap="round" opacity="0.75"/>)}
-{hole.bunkers.map((b,i)=><ellipse key={"b"+i} cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill={sand} opacity="0.9"/>)}
-<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill={grnC}/>
-<circle cx={hole.green.x} cy={hole.green.y-2} r="1.3" fill="#fff" opacity="0.9"/>
-<line x1={hole.green.x} y1={hole.green.y-2} x2={hole.green.x} y2={hole.green.y-10} stroke="#fff" strokeWidth="0.7"/>
-<polygon points={(hole.green.x)+","+(hole.green.y-12)+" "+(hole.green.x+5.5)+","+(hole.green.y-10)+" "+(hole.green.x)+","+(hole.green.y-8)} fill="#ef4444"/>
-{ym.map(m=><g key={m.yd}><line x1="18" y1={m.y} x2="82" y2={m.y} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.5,3"/><rect x="1" y={m.y-5.5} width="15" height="11" rx="2.5" fill="rgba(0,0,0,0.55)"/><text x="8.5" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="5.5" fontFamily="monospace" fontWeight="700">{m.yd}</text></g>)}
-<rect x="44" y="378" width="12" height="7" rx="1.5" fill={isDk?"#2a6aaa":"#4a8add"} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5"/>
-<text x="50" y="383.5" textAnchor="middle" fill="#fff" fontSize="4" fontFamily="monospace" fontWeight="800">TEE</text>
-<rect x="68" y="372" width="30" height="42" rx="4" fill="rgba(0,0,0,0.65)"/>
-<text x="83" y="385" textAnchor="middle" fill="#10b981" fontSize="5.5" fontFamily="monospace" fontWeight="700">{"PAR "+hp}</text>
-<text x="83" y="396" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="800">{hy}</text>
-<text x="83" y="405" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="4.5" fontFamily="monospace">YDS</text>
-{hole.elev&&<g><rect x="2" y="372" width="20" height="14" rx="2.5" fill="rgba(0,0,0,0.55)"/><text x="12" y="381.5" textAnchor="middle" fill={hole.elev==="uphill"?"#f59e0b":"#60a5fa"} fontSize="4.5" fontFamily="monospace" fontWeight="700">{hole.elev==="uphill"?"\u25B2 UP":"\u25BC DN"}</text></g>}
+const uid="h"+holeIdx;
+return <svg viewBox="0 0 100 440" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
+<defs>
+<radialGradient id={uid+"bg"} cx="50%" cy="35%" r="65%"><stop offset="0%" stopColor={R}/><stop offset="100%" stopColor={G}/></radialGradient>
+<linearGradient id={uid+"fw"} x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={FW} stopOpacity="0.4"/><stop offset="15%" stopColor={isDk?"#28783a":"#58b868"}/><stop offset="50%" stopColor={isDk?"#2e8844":"#62ca6e"}/><stop offset="85%" stopColor={isDk?"#28783a":"#58b868"}/><stop offset="100%" stopColor={FW} stopOpacity="0.4"/></linearGradient>
+<linearGradient id={uid+"fwl"} x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="transparent"/><stop offset="30%" stopColor="rgba(255,255,255,0.04)"/><stop offset="50%" stopColor="rgba(255,255,255,0.07)"/><stop offset="70%" stopColor="rgba(255,255,255,0.04)"/><stop offset="100%" stopColor="transparent"/></linearGradient>
+<radialGradient id={uid+"gr"} cx="45%" cy="40%" r="55%"><stop offset="0%" stopColor={isDk?"#38a852":"#6ade78"}/><stop offset="60%" stopColor={GR}/><stop offset="100%" stopColor={isDk?"#1e6830":"#3a9a48"}/></radialGradient>
+<radialGradient id={uid+"gsh"} cx="50%" cy="50%" r="60%"><stop offset="0%" stopColor="rgba(0,0,0,0.2)"/><stop offset="100%" stopColor="transparent"/></radialGradient>
+<filter id={uid+"blur"}><feGaussianBlur stdDeviation="2.2"/></filter>
+<filter id={uid+"sblur"}><feGaussianBlur stdDeviation="0.8"/></filter>
+<filter id={uid+"glow"}><feGaussianBlur stdDeviation="3"/></filter>
+<linearGradient id={uid+"wg"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={W}/><stop offset="100%" stopColor={WD}/></linearGradient>
+</defs>
+{/* Ground */}
+<rect width="100" height="440" fill={"url(#"+uid+"bg)"}/>
+{/* Subtle ground texture lines */}
+{[60,120,180,240,300,360].map(y=><line key={y} x1="0" y1={y} x2="100" y2={y+2} stroke="rgba(255,255,255,0.015)" strokeWidth="0.3"/>)}
+{/* Trees - layered with shadow + canopy + highlight */}
+{hole.trees.map((t,i)=><g key={"t"+i}>
+<ellipse cx={t.x+1} cy={t.y+2} rx={t.s+3} ry={t.s*0.7+2} fill="rgba(0,0,0,0.25)" filter={"url(#"+uid+"blur)"}/>
+<circle cx={t.x} cy={t.y} r={t.s+2} fill={TD} opacity="0.6"/>
+<circle cx={t.x} cy={t.y} r={t.s} fill={TC}/>
+<circle cx={t.x-0.5} cy={t.y-0.5} r={t.s*0.75} fill={TL} opacity="0.8"/>
+<circle cx={t.x-1.2} cy={t.y-1.5} r={t.s*0.4} fill={isDk?"#225a32":"#3a8a4a"} opacity="0.5"/>
+<circle cx={t.x+0.8} cy={t.y+0.8} r={t.s*0.3} fill={TD} opacity="0.35"/>
+</g>)}
+{/* Fairway - shadow, base, stripes, edge light */}
+<path d={hole.fw} stroke="rgba(0,0,0,0.2)" strokeWidth="32" fill="none" strokeLinecap="round" filter={"url(#"+uid+"blur)"}/>
+<path d={hole.fw} stroke={"url(#"+uid+"fw)"} strokeWidth="28" fill="none" strokeLinecap="round"/>
+<path d={hole.fw} stroke={"url(#"+uid+"fwl)"} strokeWidth="26" fill="none" strokeLinecap="round"/>
+{/* Mow stripes */}
+<path d={hole.fw} stroke={isDk?"rgba(255,255,255,0.025)":"rgba(255,255,255,0.04)"} strokeWidth="18" fill="none" strokeLinecap="round" strokeDasharray="8,12"/>
+{/* Fairway edge highlight */}
+<path d={hole.fw} stroke="rgba(255,255,255,0.03)" strokeWidth="29" fill="none" strokeLinecap="round"/>
+{/* Water - glow + reflection */}
+{hole.water.map((w,i)=><g key={"w"+i}>
+<path d={w.path} stroke={isDk?"#0a3a5a":"#4888bb"} strokeWidth={(w.w||10)+6} fill="none" strokeLinecap="round" opacity="0.25" filter={"url(#"+uid+"blur)"}/>
+<path d={w.path} stroke={"url(#"+uid+"wg)"} strokeWidth={w.w||10} fill="none" strokeLinecap="round" opacity="0.85"/>
+<path d={w.path} stroke={isDk?"#4a8aaa":"#7abade"} strokeWidth={Math.max(1,(w.w||10)-6)} fill="none" strokeLinecap="round" opacity="0.3"/>
+<path d={w.path} stroke="rgba(255,255,255,0.1)" strokeWidth={Math.max(0.5,(w.w||10)-8)} fill="none" strokeLinecap="round" strokeDasharray="3,6" opacity="0.4"/>
+</g>)}
+{/* Bunkers - shadow + sand + highlight + rim */}
+{hole.bunkers.map((b,i)=><g key={"b"+i}>
+<ellipse cx={b.x+1} cy={b.y+1.5} rx={b.rx+2} ry={b.ry+1.5} fill="rgba(0,0,0,0.3)" filter={"url(#"+uid+"sblur)"}/>
+<ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill={S}/>
+<ellipse cx={b.x-0.8} cy={b.y-0.5} rx={b.rx*0.6} ry={b.ry*0.55} fill={isDk?"#b8a870":"#eadaa0"} opacity="0.4"/>
+<ellipse cx={b.x+0.5} cy={b.y+0.5} rx={b.rx*0.35} ry={b.ry*0.4} fill={SH} opacity="0.3"/>
+<ellipse cx={b.x} cy={b.y} rx={b.rx} ry={b.ry} fill="none" stroke={isDk?"#7a6a30":"#c0a050"} strokeWidth="0.5" opacity="0.5"/>
+</g>)}
+{/* Green - shadow + base + inner glow + contour rings + collar */}
+<ellipse cx={hole.green.x+1} cy={hole.green.y+2} rx={hole.green.rx+4} ry={hole.green.ry+3} fill="rgba(0,0,0,0.2)" filter={"url(#"+uid+"blur)"}/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx+2} ry={hole.green.ry+1.5} fill={isDk?"#1a5828":"#389848"} opacity="0.7"/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill={"url(#"+uid+"gr)"}/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx*0.7} ry={hole.green.ry*0.7} fill="rgba(255,255,255,0.03)"/>
+<ellipse cx={hole.green.x} cy={hole.green.y} rx={hole.green.rx} ry={hole.green.ry} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5"/>
+{/* Pin shadow */}
+<ellipse cx={hole.green.x+1.5} cy={hole.green.y+1} rx="4" ry="1.5" fill="rgba(0,0,0,0.15)"/>
+{/* Pin + flag */}
+<circle cx={hole.green.x} cy={hole.green.y-1} r="1.5" fill="#fff"/>
+<line x1={hole.green.x} y1={hole.green.y-1} x2={hole.green.x} y2={hole.green.y-13} stroke="#fff" strokeWidth="0.8"/>
+<polygon points={(hole.green.x)+","+(hole.green.y-13)+" "+(hole.green.x+6)+","+(hole.green.y-10.5)+" "+(hole.green.x)+","+(hole.green.y-8)} fill="#ef4444"/>
+<polygon points={(hole.green.x)+","+(hole.green.y-13)+" "+(hole.green.x+6)+","+(hole.green.y-10.5)+" "+(hole.green.x)+","+(hole.green.y-8)} fill={"url(#"+uid+"gsh)"} opacity="0.3"/>
+{/* Yardage markers - glass pill style */}
+{ym.map(m=><g key={m.yd}>
+<line x1="15" y1={m.y} x2="85" y2={m.y} stroke="rgba(255,255,255,0.06)" strokeWidth="0.3" strokeDasharray="2,4"/>
+<rect x="0" y={m.y-6} width="18" height="12" rx="3" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.3"/>
+<text x="9" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="'Space Mono',monospace" fontWeight="700">{m.yd}</text>
+</g>)}
+{/* Tee box - premium styling */}
+<rect x="42" y="395" width="16" height="10" rx="3" fill={isDk?"#2a5aaa":"#4a8add"} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
+<rect x="42" y="395" width="16" height="5" rx="3" fill="rgba(255,255,255,0.08)"/>
+<text x="50" y="402.5" textAnchor="middle" fill="#fff" fontSize="5" fontFamily="'Space Mono',monospace" fontWeight="800">TEE</text>
+{/* Info panel - frosted glass */}
+<rect x="65" y="390" width="34" height="46" rx="5" fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.4"/>
+<rect x="65" y="390" width="34" height="14" rx="5" fill="rgba(16,185,129,0.08)"/>
+<text x="82" y="400" textAnchor="middle" fill="#10b981" fontSize="6" fontFamily="'Space Mono',monospace" fontWeight="700">{"PAR "+hp}</text>
+<text x="82" y="418" textAnchor="middle" fill="#fff" fontSize="12" fontFamily="'Space Mono',monospace" fontWeight="800">{hy}</text>
+<text x="82" y="428" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="5" fontFamily="'Space Mono',monospace" fontWeight="600">YARDS</text>
+{/* Elevation badge */}
+{hole.elev&&<g>
+<rect x="1" y="395" width="22" height="14" rx="3" fill="rgba(0,0,0,0.6)" stroke={hole.elev==="uphill"?"rgba(245,158,11,0.2)":"rgba(96,165,250,0.2)"} strokeWidth="0.4"/>
+<text x="12" y="404.5" textAnchor="middle" fill={hole.elev==="uphill"?"#f59e0b":"#60a5fa"} fontSize="5" fontFamily="'Space Mono',monospace" fontWeight="700">{hole.elev==="uphill"?"\u25B2 UP":"\u25BC DN"}</text>
+</g>}
+{/* Dogleg badge */}
+{hole.dogleg&&<g>
+<rect x="1" y={hole.elev?"380":"395"} width="22" height="14" rx="3" fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.4"/>
+<text x="12" y={hole.elev?"389.5":"404.5"} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="4.5" fontFamily="'Space Mono',monospace" fontWeight="700">{hole.dogleg==="left"?"\u21B0 DGL":"\u21B1 DGR"}</text>
+</g>}
+{/* Subtle vignette */}
+<rect width="100" height="440" fill={"url(#"+uid+"bg)"} opacity="0"/>
 </svg>;};
 // === RENDER ===
 return(<div style={{marginBottom:10}}>
