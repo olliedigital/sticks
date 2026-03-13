@@ -110,7 +110,7 @@ const layout=estimateLayout(c.location.latitude,c.location.longitude,yds,prs);
 return{id:"api_"+c.id,name:c.club_name+(c.course_name&&c.course_name!==c.club_name?" - "+c.course_name:""),loc:c.location.city+", "+c.location.state,par:firstTee.par_total,holes:firstTee.number_of_holes,greens:layout.greens,teeBoxes:layout.teeBoxes,tees,pars:prs,tips:[],apiCourse:true};
 };
 const searchCourses=async(q,gpsPos)=>{
-if(!q||q.length<2)return[];
+if(!q||q.length<3)return[];
 // Run both APIs in PARALLEL with timeouts
 const timeout=(ms)=>new Promise(r=>setTimeout(()=>r(null),ms));
 const golfApi=async()=>{try{const r=await Promise.race([fetch("https://api.golfcourseapi.com/v1/search?search_query="+encodeURIComponent(q),{headers:{"Authorization":"Key "+GOLF_API}}),timeout(4000)]);
@@ -1659,7 +1659,7 @@ lastGreenDist.current=distToGreen;
 },[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,cur,shots.length,active?active.holes.length:0]);
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
-const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},300);};
+const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<3){setSearchResults([]);return;}const delay=q.length<5?800:300;searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},delay);};
 const selectApiCourse=async(c)=>{
 // Generate layout if needed (Google Places courses arrive without layout)
 if(c._needsData&&c._lat){
@@ -1700,7 +1700,7 @@ return recent.length>0?<div style={{marginBottom:8}}><div style={{fontSize:9,col
 Search 43,000+ Courses</button>
 </div>
 :<div>
-<div style={{display:"flex",gap:6,marginBottom:8}}><input type="text" value={searchQ} onChange={e=>doSearch(e.target.value)} placeholder="Course name, city, or state..." autoFocus style={{flex:1,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.gb,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/><button onClick={()=>{setShowSearch(false);setSearchQ("");setSearchResults([]);}} style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"none",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Cancel</button></div>
+<div style={{display:"flex",gap:6,marginBottom:8}}><input type="text" value={searchQ} onChange={e=>doSearch(e.target.value)} placeholder="Type full course name..." autoFocus style={{flex:1,background:"rgba(128,128,128,0.04)",border:"1px solid "+T.gb,borderRadius:8,padding:"11px 14px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/><button onClick={()=>{setShowSearch(false);setSearchQ("");setSearchResults([]);}} style={{padding:"10px 14px",borderRadius:8,background:T.rd,border:"none",color:T.r,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F}}>Cancel</button></div>
 <button onClick={async()=>{if(!navigator.geolocation)return;setSearching(true);setSearchQ("Nearby courses...");
 navigator.geolocation.getCurrentPosition(async(p)=>{const pos={lat:p.coords.latitude,lng:p.coords.longitude};
 const r=await searchCourses("golf course",pos);setSearchResults(r);setSearching(false);setSearchQ("");
@@ -1709,7 +1709,8 @@ const r=await searchCourses("golf course",pos);setSearchResults(r);setSearching(
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z"/></svg>
 Find Nearby Courses</button>
 {searching&&<div style={{textAlign:"center",padding:"16px 0"}}><Spinner T={T} size={18}/><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:6}}>Searching courses...</div></div>}
-{!searching&&searchQ.length>=2&&searchResults.length===0&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>No courses found for "{searchQ}"</div>}
+{!searching&&searchQ.length>=1&&searchQ.length<3&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>Keep typing to search...</div>}
+{!searching&&searchQ.length>=3&&searchResults.length===0&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>No courses found. Try the full name (e.g. "pebble beach")</div>}
 {searchResults.map(c=><button key={c.id} onClick={()=>selectApiCourse(c)} style={{width:"100%",padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px solid "+T.bdr,color:T.td,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><div><div style={{fontSize:13,fontWeight:700,color:T.tx}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2}}>{c.loc}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
 {c._rating&&<div style={{fontSize:10,color:T.y,fontFamily:F}}>{"\u2605 "+c._rating}</div>}
 <div style={{fontSize:9,color:T.td,fontFamily:F}}>{c._needsData?"GPS Only":Object.keys(c.tees).length+" tees"}</div></div></button>)}
