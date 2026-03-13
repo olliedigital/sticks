@@ -111,29 +111,25 @@ return{id:"api_"+c.id,name:c.club_name+(c.course_name&&c.course_name!==c.club_na
 };
 const searchCourses=async(q,gpsPos)=>{
 if(!q||q.length<2)return[];
-const results=[];
-// 1. Try GolfCourseAPI for structured tee/par data
-try{const r=await fetch("https://api.golfcourseapi.com/v1/search?search_query="+encodeURIComponent(q),{headers:{"Authorization":"Key "+GOLF_API}});
-const d=await r.json();(d.courses||[]).forEach(c=>{const conv=apiToLocal(c,c.tees||{});if(conv)results.push({...conv,_raw:c,_src:"golf"});});}catch(e){console.error("GolfCourseAPI:",e);}
-// 2. Google Places text search for broader coverage
-if(window.google&&window.google.maps&&window.google.maps.places){
-try{const placesResults=await new Promise((res)=>{
-const svc=new google.maps.places.PlacesService(document.createElement("div"));
-const req={query:q+" golf course",type:"establishment"};
-if(gpsPos)req.location=new google.maps.LatLng(gpsPos.lat,gpsPos.lng);
-svc.textSearch(req,(r,status)=>{if(status===google.maps.places.PlacesServiceStatus.OK)res(r||[]);else res([]);});});
-placesResults.forEach(p=>{
-const exists=results.find(r=>r.name&&p.name&&(r.name.toLowerCase().includes(p.name.toLowerCase().split(" ")[0])||p.name.toLowerCase().includes(r.name.toLowerCase().split(" ")[0])));
-if(!exists&&p.types&&(p.types.includes("point_of_interest")||p.types.includes("establishment"))){
-const loc=p.geometry.location;
+// Run both APIs in PARALLEL with timeouts
+const timeout=(ms)=>new Promise(r=>setTimeout(()=>r(null),ms));
+const golfApi=async()=>{try{const r=await Promise.race([fetch("https://api.golfcourseapi.com/v1/search?search_query="+encodeURIComponent(q),{headers:{"Authorization":"Key "+GOLF_API}}),timeout(4000)]);
+if(!r)return[];const d=await r.json();return(d.courses||[]).map(c=>{const conv=apiToLocal(c,c.tees||{});return conv?{...conv,_raw:c,_src:"golf"}:null;}).filter(Boolean);}catch(e){return[];}};
+const placesApi=async()=>{if(!window.google||!window.google.maps||!window.google.maps.places)return[];
+try{return await Promise.race([new Promise(res=>{const svc=new google.maps.places.PlacesService(document.createElement("div"));
+const req={query:q+" golf course",type:"establishment"};if(gpsPos)req.location=new google.maps.LatLng(gpsPos.lat,gpsPos.lng);
+svc.textSearch(req,(r,st)=>res(st===google.maps.places.PlacesServiceStatus.OK?(r||[]):[]));}),timeout(4000)])||[];}catch(e){return[];}};
+const[golfResults,placesResults]=await Promise.all([golfApi(),placesApi()]);
+const results=[...golfResults];
+const names=new Set(results.map(r=>r.name.toLowerCase().split(" ")[0]));
+(placesResults||[]).forEach(p=>{
+if(!p.name||names.has(p.name.toLowerCase().split(" ")[0]))return;
+const loc=p.geometry.location;const lat=loc.lat(),lng=loc.lng();
 results.push({id:"gp_"+p.place_id,name:p.name,loc:p.formatted_address?p.formatted_address.split(",").slice(0,2).join(","):"",
-par:72,holes:18,
-...(()=>{const yds=[380,165,520,350,410,185,375,420,540,395,530,175,410,445,380,365,190,510];
-const layout=estimateLayout(loc.lat(),loc.lng(),yds,[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5]);
-return{greens:layout.greens,teeBoxes:layout.teeBoxes};})(),
-tees:{white:{r:72,s:125,y:[380,165,520,350,410,185,375,420,540,395,530,175,410,445,380,365,190,510]},blue:{r:74,s:130,y:[400,180,545,370,430,195,395,440,560,415,555,190,430,465,400,385,205,535]}},
-pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],tips:[],apiCourse:true,
-_src:"google",_placeId:p.place_id,_rating:p.rating,_photos:p.photos,_needsData:true});}});}catch(e){console.error("Places:",e);}}
+par:72,holes:18,greens:Array(18).fill({lat,lng}),teeBoxes:null,
+tees:{white:{r:72,s:125,y:Array(18).fill(350)}},pars:[4,3,5,4,4,3,4,4,5,4,5,3,4,4,4,4,3,5],
+tips:[],apiCourse:true,_src:"google",_placeId:p.place_id,_rating:p.rating,_needsData:true,_lat:lat,_lng:lng});
+});
 return results.slice(0,12);
 };
 const genId=()=>Math.random().toString(36).substr(2,9);
@@ -1663,18 +1659,21 @@ lastGreenDist.current=distToGreen;
 },[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,cur,shots.length,active?active.holes.length:0]);
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
-const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},500);};
+const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<2){setSearchResults([]);return;}searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},300);};
 const selectApiCourse=async(c)=>{
+// Generate layout if needed (Google Places courses arrive without layout)
+if(c._needsData&&c._lat){
+const yds=c.tees[Object.keys(c.tees)[0]].y;
+const layout=estimateLayout(c._lat,c._lng,yds,c.pars);
+c={...c,greens:layout.greens,teeBoxes:layout.teeBoxes};
+}
 // Try loading crowdsourced green positions from Supabase
 try{const{data}=await sb.from("course_greens").select("hole_num,lat,lng").eq("course_id",c.id).order("hole_num");
 if(data&&data.length>0){
-const updatedGreens=[...c.greens];const updatedTees=c.teeBoxes?[...c.teeBoxes]:[];
-data.forEach(g=>{
-const idx=g.hole_num-1;
-if(idx>=0&&idx<updatedGreens.length){updatedGreens[idx]={lat:g.lat,lng:g.lng};}
-});
+const updatedGreens=[...c.greens];
+data.forEach(g=>{const idx=g.hole_num-1;if(idx>=0&&idx<updatedGreens.length)updatedGreens[idx]={lat:g.lat,lng:g.lng};});
 c={...c,greens:updatedGreens,_crowdsourced:data.length};
-}}catch(e){console.log("No crowdsourced data yet");}
+}}catch(e){}
 setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
 // Course images removed - using clean list design
