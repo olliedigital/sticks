@@ -2247,7 +2247,14 @@ setRounds(p=>p.filter(r=>r.id!==id));
 
 console.log("RENDER STATE:",{loading,user:!!user,profile:!!profile});
 if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
-if(!user){console.log("Rendering AuthScreen");return <AuthScreen onAuth={handleAuth} T={T}/>;}
+if(!user){
+// Guest mode - skip auth
+const guestUser={id:"guest_"+Math.random().toString(36).substr(2,9),email:"guest@sticks.app",user_metadata:{name:"Golfer"}};
+setUser(guestUser);
+const guestProfile={id:guestUser.id,name:"Golfer",color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()};
+setProfile(guestProfile);
+return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
+}
 if(!profile&&user){
 const name=user.user_metadata?.name||"Golfer";
 const def={id:user.id,name:name,color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()};
