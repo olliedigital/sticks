@@ -31,6 +31,12 @@ canvas{image-rendering:auto;}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes pulse{0%,100%{opacity:0.4}50%{opacity:0.8}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{transform:scale(0.92);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes numberPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+.dist-num{transition:all 0.3s cubic-bezier(.4,0,.2,1);}.dist-num.pop{animation:numberPop 0.3s ease;}
+.hole-card{animation:slideInUp 0.25s ease-out;}
+.swipe-container{touch-action:pan-y;overflow:hidden;}
 </style>
 </head>
 <body>
@@ -96,6 +102,38 @@ curLng=greenLng+(Math.sin((heading+30)*Math.PI/180)*30*lngDeg);
 }
 return{greens,teeBoxes};
 };
+const fetchOverpassLayout=async(lat,lng,yardages)=>{
+const R=0.022;const bbox=`${lat-R},${lng-R},${lat+R},${lng+R}`;
+const q=`[out:json][timeout:10];(way[golf=green](${bbox});way[golf=tee](${bbox}););out center tags;`;
+try{
+const resp=await Promise.race([fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q)),new Promise((_,rej)=>setTimeout(()=>rej("timeout"),8000))]);
+const d=await resp.json();
+const osmG=d.elements.filter(e=>e.tags&&e.tags.golf==="green"&&e.center).map(e=>({lat:e.center.lat,lng:e.center.lon}));
+const osmT=d.elements.filter(e=>e.tags&&e.tags.golf==="tee"&&e.center).map(e=>({lat:e.center.lat,lng:e.center.lon}));
+const n=yardages.length;
+if(osmG.length<Math.min(n,6))return null;
+// Match greens via nearest-neighbor chain from course center
+const greens=[];const usedG=new Set();let pos={lat,lng};
+for(let i=0;i<n&&usedG.size<osmG.length;i++){
+let best=-1,bestD=Infinity;
+for(let j=0;j<osmG.length;j++){if(usedG.has(j))continue;const dd=gpsDist(pos.lat,pos.lng,osmG[j].lat,osmG[j].lng);if(dd<bestD){bestD=dd;best=j;}}
+if(best>=0){greens.push(osmG[best]);usedG.add(best);pos=osmG[best];}else break;
+}
+if(greens.length<n)return null;
+// Match tees: for each hole find OSM tee closest to expected yardage from green
+const mPY=0.9144;const latD=1/111111;const lngD=latD/Math.cos(lat*Math.PI/180);
+const teeBoxes=greens.map((g,i)=>{
+const yd=yardages[i];let best=null,bestErr=Infinity;
+osmT.forEach(t=>{const dd=gpsDist(t.lat,t.lng,g.lat,g.lng);const err=Math.abs(dd-yd);if(err<bestErr){bestErr=err;best=t;}});
+if(best&&bestErr<yd*0.35)return{lat:best.lat,lng:best.lng};
+// Fallback: estimate from previous green direction
+const ref=i>0?greens[i-1]:{lat,lng};const dLa=ref.lat-g.lat,dLo=ref.lng-g.lng;
+const dist=Math.sqrt(dLa*dLa+dLo*dLo)||0.001;const sc=yd*mPY*latD/dist;
+return{lat:g.lat+dLa*sc,lng:g.lng+dLo*sc};
+});
+return{greens,teeBoxes};
+}catch(e){return null;}
+};
 const apiToLocal=(c,teeData)=>{
 if(!c)return null;
 const tees={};const gender=teeData.male&&teeData.male.length?'male':'female';
@@ -107,7 +145,7 @@ if(!Object.keys(tees).length)return null;
 const firstTee=teeData[gender][0];
 const yds=firstTee.holes.map(h=>h.yardage);const prs=firstTee.holes.map(h=>h.par);
 const layout=estimateLayout(c.location.latitude,c.location.longitude,yds,prs);
-return{id:"api_"+c.id,name:c.club_name+(c.course_name&&c.course_name!==c.club_name?" - "+c.course_name:""),loc:c.location.city+", "+c.location.state,par:firstTee.par_total,holes:firstTee.number_of_holes,greens:layout.greens,teeBoxes:layout.teeBoxes,tees,pars:prs,tips:[],apiCourse:true};
+return{id:"api_"+c.id,name:c.club_name+(c.course_name&&c.course_name!==c.club_name?" - "+c.course_name:""),loc:c.location.city+", "+c.location.state,par:firstTee.par_total,holes:firstTee.number_of_holes,greens:layout.greens,teeBoxes:layout.teeBoxes,tees,pars:prs,tips:[],apiCourse:true,_lat:c.location.latitude,_lng:c.location.longitude};
 };
 const searchCourses=async(q,gpsPos)=>{
 if(!q||q.length<3)return[];
@@ -135,19 +173,169 @@ return results.slice(0,12);
 const genId=()=>Math.random().toString(36).substr(2,9);
 const gpsDist=(a,b,c,d)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(c-a),dn=tr(d-b),s=Math.sin(dl/2)**2+Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dn/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s))*1.09361);};
 const calcHcp=(rounds)=>{const v=rounds.filter(r=>r.holes&&r.holes.length===18&&r.cr&&r.sr);if(v.length<5)return null;const d=v.map(r=>((r.holes.reduce((s,h)=>s+(h.sc||0),0)-r.cr)*113)/r.sr).sort((a,b)=>a-b);const n=Math.max(1,Math.floor(d.length*0.4));return Math.round(d.slice(0,n).reduce((s,x)=>s+x,0)/n*10)/10;};
+// ==================== WEATHER HOOK (Open-Meteo — free, no API key) ====================
+const useWeather=()=>{
+const[weather,setWeather]=useState(null);const lastFetch=useRef(0);
+const fetch_=useCallback(async(lat,lng)=>{
+if(Date.now()-lastFetch.current<300000)return;// refresh max every 5 min
+lastFetch.current=Date.now();
+try{
+const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lng+"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto");
+const d=await r.json();if(!d.current)return;
+const c=d.current;
+const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const dirIdx=Math.round(c.wind_direction_10m/22.5)%16;
+const codes={0:"Clear",1:"Mostly Clear",2:"Partly Cloudy",3:"Overcast",45:"Foggy",48:"Fog",51:"Light Drizzle",53:"Drizzle",55:"Heavy Drizzle",61:"Light Rain",63:"Rain",65:"Heavy Rain",71:"Light Snow",73:"Snow",75:"Heavy Snow",80:"Light Showers",81:"Showers",82:"Heavy Showers",95:"Thunderstorm",96:"Hail Storm",99:"Severe Storm"};
+setWeather({temp:Math.round(c.temperature_2m),humidity:c.relative_humidity_2m,windSpeed:Math.round(c.wind_speed_10m),windDir:dirs[dirIdx],windDeg:c.wind_direction_10m,windGust:Math.round(c.wind_gusts_10m||0),condition:codes[c.weather_code]||"Unknown",code:c.weather_code});
+}catch(e){}
+},[]);
+return{weather,fetchWeather:fetch_};
+};
+// ==================== SCORECARD IMAGE GENERATOR ====================
+const generateScorecardImage=async(roundData,courseName,T)=>{
+const c=document.createElement("canvas");c.width=720;c.height=480;
+const ctx=c.getContext("2d");
+const isDk=T.bg==="#09090b";
+// Background
+ctx.fillStyle=isDk?"#0a0a0c":"#f8f8fa";ctx.fillRect(0,0,720,480);
+// Header
+ctx.fillStyle=isDk?"#10b981":"#059669";ctx.fillRect(0,0,720,80);
+ctx.fillStyle="#fff";ctx.font="bold 28px 'DM Sans', sans-serif";ctx.fillText("STICKS",24,52);
+ctx.font="16px 'DM Sans', sans-serif";ctx.fillText(courseName,140,52);
+const holes=roundData.holes;const totalSc=holes.reduce((s,x)=>s+(x.sc||0),0);
+const totalPar=holes.reduce((s,x)=>s+(x.par||0),0);const diff=totalSc-totalPar;
+ctx.font="bold 32px 'Space Mono', monospace";ctx.textAlign="right";
+ctx.fillText(totalSc+" ("+(diff>0?"+":"")+diff+")",696,56);ctx.textAlign="left";
+// Date
+ctx.fillStyle=isDk?"#4a4a55":"#9b9ba8";ctx.font="12px 'DM Sans', sans-serif";
+ctx.fillText(new Date(roundData.date).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),24,110);
+// Scorecard grid
+const startY=130;const cellW=Math.floor(640/9);const cellH=36;const leftPad=40;
+const drawRow=(label,values,y,isScore)=>{
+ctx.fillStyle=isDk?"#8b8b96":"#6b6b78";ctx.font="bold 10px 'DM Sans', sans-serif";
+ctx.fillText(label,4,y+22);
+values.forEach((v,i)=>{
+const x=leftPad+i*cellW;
+if(isScore&&holes[i+(label.includes("10")?9:0)]){
+const h=holes[i+(label.includes("10")?9:0)];const d=(h.sc||0)-(h.par||0);
+ctx.fillStyle=d<0?(isDk?"rgba(16,185,129,0.15)":"rgba(5,150,105,0.1)"):d===0?(isDk?"rgba(96,165,250,0.1)":"rgba(37,99,235,0.08)"):d===1?(isDk?"rgba(251,146,60,0.12)":"rgba(234,88,12,0.08)"):(isDk?"rgba(248,113,113,0.12)":"rgba(220,38,38,0.08)");
+ctx.fillRect(x,y+2,cellW-2,cellH-4);
+ctx.fillStyle=d<0?(isDk?"#10b981":"#059669"):d===0?(isDk?"#60a5fa":"#2563eb"):d===1?(isDk?"#fb923c":"#ea580c"):(isDk?"#f87171":"#dc2626");
+} else ctx.fillStyle=isDk?"#e4e4e7":"#111114";
+ctx.font=(isScore?"bold ":"")+"14px 'Space Mono', monospace";ctx.textAlign="center";
+ctx.fillText(""+v,x+cellW/2,y+24);ctx.textAlign="left";
+// Cell border
+ctx.strokeStyle=isDk?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.06)";ctx.strokeRect(x,y+2,cellW-2,cellH-4);
+});
+};
+// Front 9
+const f9=holes.slice(0,9);
+drawRow("",Array.from({length:9},(_,i)=>i+1),startY,false);
+drawRow("Par",f9.map(h=>h.par),startY+cellH,false);
+drawRow("Score",f9.map(h=>h.sc||"-"),startY+cellH*2,true);
+drawRow("Putts",f9.map(h=>h.pt!==undefined?h.pt:"-"),startY+cellH*3,false);
+// Back 9
+if(holes.length>9){
+const b9=holes.slice(9,18);const y2=startY+cellH*4+16;
+drawRow("",Array.from({length:Math.min(9,b9.length)},(_,i)=>i+10),y2,false);
+drawRow("Par",b9.map(h=>h.par),y2+cellH,false);
+drawRow("10-18",b9.map(h=>h.sc||"-"),y2+cellH*2,true);
+drawRow("Putts",b9.map(h=>h.pt!==undefined?h.pt:"-"),y2+cellH*3,false);
+}
+// Footer
+ctx.fillStyle=isDk?"#4a4a55":"#9b9ba8";ctx.font="10px 'DM Sans', sans-serif";
+ctx.fillText("Generated by STICKS Golf \u00b7 sticks-xi.vercel.app",24,460);
+return c.toDataURL("image/png");
+};
 const useGPS=()=>{
-const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const ref=useRef(null);const hist=useRef([]);
-const smooth=(p)=>{hist.current.push(p);if(hist.current.length>5)hist.current.shift();
-if(hist.current.length<2)return p;
-const w=hist.current.map((h,i)=>{const age=(Date.now()-(h.ts||Date.now()))/1000;const accW=1/Math.max(1,h.acc);const recW=1/(1+age*0.5);return{...h,w:accW*recW};});
-const tw=w.reduce((s,h)=>s+h.w,0);
-return{lat:w.reduce((s,h)=>s+h.lat*h.w,0)/tw,lng:w.reduce((s,h)=>s+h.lng*h.w,0)/tw,acc:Math.min(...hist.current.map(h=>h.acc)),ts:Date.now(),speed:p.speed,heading:p.heading};};
-const start=useCallback(()=>{if(!navigator.geolocation){setErr("GPS unavailable");return;}setOn(true);hist.current=[];
-ref.current=navigator.geolocation.watchPosition(p=>{const raw={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,heading:p.coords.heading,ts:Date.now()};
-setPos(smooth(raw));},e=>setErr(e.message),{enableHighAccuracy:true,maximumAge:1000,timeout:8000});},[]);
-const stop=useCallback(()=>{if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}setOn(false);hist.current=[];},[]);
-const once=useCallback(()=>new Promise((res,rej)=>{if(!navigator.geolocation){rej("GPS unavailable");return;}navigator.geolocation.getCurrentPosition(p=>{const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};setPos(o);res(o);},e=>{setErr(e.message);rej(e.message);},{enableHighAccuracy:true,timeout:8000});}),[]);
-return{pos,err,on,start,stop,once};
+const[pos,setPos]=useState(null);const[err,setErr]=useState(null);const[on,setOn]=useState(false);const[signal,setSignal]=useState("acquiring");
+const ref=useRef(null);const hist=useRef([]);const lastAccepted=useRef(null);const kalman=useRef({lat:null,lng:null,varLat:1e-8,varLng:1e-8});const retryTimer=useRef(null);const readingCount=useRef(0);
+const MAX_ACC=25;const JUMP_THRESH=80;const HIST_SIZE=6;
+const haverM=(a,b)=>{const R=6371000,tr=x=>x*Math.PI/180,dl=tr(b.lat-a.lat),dn=tr(b.lng-a.lng),s=Math.sin(dl/2)**2+Math.cos(tr(a.lat))*Math.cos(tr(b.lat))*Math.sin(dn/2)**2;return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));};
+const kalmanUpdate=(raw)=>{
+const k=kalman.current;const measVar=(raw.acc*raw.acc)*1e-10;
+if(k.lat===null){k.lat=raw.lat;k.lng=raw.lng;k.varLat=measVar;k.varLng=measVar;return{lat:raw.lat,lng:raw.lng};}
+// Predict step — add process noise proportional to elapsed time (walking ~1.5 m/s)
+const dt=Math.min((Date.now()-(lastAccepted.current?lastAccepted.current.ts:Date.now()))/1000,10);
+const processNoise=dt*2.25e-10;// ~1.5m/s squared in degrees
+k.varLat+=processNoise;k.varLng+=processNoise;
+// Update step
+const gainLat=k.varLat/(k.varLat+measVar);const gainLng=k.varLng/(k.varLng+measVar);
+k.lat=k.lat+gainLat*(raw.lat-k.lat);k.lng=k.lng+gainLng*(raw.lng-k.lng);
+k.varLat=(1-gainLat)*k.varLat;k.varLng=(1-gainLng)*k.varLng;
+return{lat:k.lat,lng:k.lng};
+};
+const process=(raw)=>{
+readingCount.current++;
+// Gate 1: reject readings with poor accuracy (allow first 3 readings to be lenient during cold start)
+const accLimit=readingCount.current<=3?50:MAX_ACC;
+if(raw.acc>accLimit){setSignal(raw.acc>50?"weak":"fair");return;}
+// Gate 2: reject impossible jumps (>80m from last accepted pos unless first reading)
+if(lastAccepted.current){
+const jumpM=haverM(lastAccepted.current,raw);
+const elapsed=(raw.ts-lastAccepted.current.ts)/1000;
+const maxPossible=Math.max(JUMP_THRESH,elapsed*6);// 6 m/s ~= sprinting in a cart
+if(jumpM>maxPossible){return;}// silently drop
+}
+// Kalman filter for smooth, accurate position
+const filtered=kalmanUpdate(raw);
+// Calculate speed from position deltas (more reliable than browser speed)
+let speed=raw.speed;
+if(lastAccepted.current){
+const dt=(raw.ts-lastAccepted.current.ts)/1000;
+if(dt>0.5)speed=haverM(lastAccepted.current,filtered)/dt;
+}
+// Add to history for distance smoothing
+hist.current.push({...filtered,acc:raw.acc,ts:raw.ts});
+if(hist.current.length>HIST_SIZE)hist.current.shift();
+const smoothed={lat:filtered.lat,lng:filtered.lng,acc:raw.acc,ts:raw.ts,speed:speed||0,heading:raw.heading,raw:{lat:raw.lat,lng:raw.lng}};
+lastAccepted.current=smoothed;
+setSignal(raw.acc<10?"strong":raw.acc<20?"good":"fair");
+setPos(smoothed);
+};
+const start=useCallback(()=>{
+if(!navigator.geolocation){setErr("GPS unavailable");return;}
+setOn(true);setSignal("acquiring");hist.current=[];lastAccepted.current=null;readingCount.current=0;
+kalman.current={lat:null,lng:null,varLat:1e-8,varLng:1e-8};
+ref.current=navigator.geolocation.watchPosition(p=>{
+const raw={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,heading:p.coords.heading,ts:Date.now()};
+process(raw);
+if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null;}
+// Watchdog: if no reading in 12s, poke with getCurrentPosition
+retryTimer.current=setTimeout(()=>{
+navigator.geolocation.getCurrentPosition(p2=>{
+const raw2={lat:p2.coords.latitude,lng:p2.coords.longitude,acc:p2.coords.accuracy,speed:p2.coords.speed,heading:p2.coords.heading,ts:Date.now()};
+process(raw2);
+},()=>{},{enableHighAccuracy:true,timeout:5000});
+},12000);
+},e=>{
+setErr(e.code===1?"Location permission denied":e.code===2?"GPS unavailable":"Location timeout");
+setSignal("off");
+},{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
+},[]);
+const stop=useCallback(()=>{
+if(ref.current!==null){navigator.geolocation.clearWatch(ref.current);ref.current=null;}
+if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null;}
+setOn(false);setSignal("off");hist.current=[];lastAccepted.current=null;readingCount.current=0;
+kalman.current={lat:null,lng:null,varLat:1e-8,varLng:1e-8};
+},[]);
+const once=useCallback(()=>new Promise((res,rej)=>{
+if(!navigator.geolocation){rej("GPS unavailable");return;}
+navigator.geolocation.getCurrentPosition(p=>{
+const o={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};
+setPos(o);res(o);
+},e=>{setErr(e.code===1?"Location permission denied":e.message);rej(e.message);},{enableHighAccuracy:true,timeout:10000});
+}),[]);
+// Smoothed distance helper — averages last N distance readings to avoid jumpy yardage display
+const distTo=useCallback((target)=>{
+if(!target||hist.current.length===0)return null;
+const dists=hist.current.map(h=>Math.round(haverM(h,target)*1.09361));
+if(dists.length<=2)return dists[dists.length-1];
+// Weighted average: recent readings count more
+const weights=dists.map((_,i)=>i+1);const tw=weights.reduce((s,w)=>s+w,0);
+return Math.round(dists.reduce((s,d,i)=>s+d*weights[i],0)/tw);
+},[]);
+return{pos,err,on,signal,start,stop,once,distTo};
 };
 const F="'DM Sans',sans-serif",M="'Space Mono',monospace";
 const dark={bg:"#09090b",card:"#141418",bdr:"rgba(255,255,255,0.07)",g:"#10b981",gd:"rgba(16,185,129,0.08)",gb:"rgba(16,185,129,0.15)",tx:"#f0f0f2",tm:"#8b8b96",td:"#4a4a55",r:"#f87171",o:"#fb923c",b:"#60a5fa",y:"#fbbf24",rd:"rgba(248,113,113,0.08)",od:"rgba(251,146,60,0.08)",bd:"rgba(96,165,250,0.08)",mapBg:"#0d1117",mapGreen:"#22c55e",mapShot:"#f59e0b",mapLine:"rgba(245,158,11,0.4)"};
@@ -796,7 +984,7 @@ return(<div style={{marginBottom:10}}>
 {/* Map Container */}
 {mapView==="sat"&&gmReady?
 <div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>
-<div ref={mapRef} style={{width:"100%",height:480}}/>
+<div ref={mapRef} style={{width:"100%",height:"calc(100vh - 160px)",minHeight:320,maxHeight:700,filter:isDk?"contrast(1.12) saturate(1.1)":"contrast(1.05) brightness(1.02)"}}/>
 {/* Floating distance overlay */}
 {liveDistToGreen&&liveDistToGreen<1000&&<div style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",borderRadius:10,padding:"8px 14px",border:"1px solid rgba(16,185,129,0.2)"}}>
 <div style={{fontSize:8,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,fontFamily:F,textAlign:"center"}}>To Pin</div>
@@ -1039,6 +1227,58 @@ const Pill=({children,active:a,color:cl,bg,onClick:o,T})=><button onClick={o} st
 const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:"center"}}><div style={{fontSize:sm?18:26,fontWeight:700,color:cl||T.g,fontFamily:M,lineHeight:1}}>{v}{u&&<span style={{fontSize:sm?10:12,fontWeight:400,color:T.td,marginLeft:2}}>{u}</span>}</div><div style={{fontSize:9,color:T.td,marginTop:4,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>{l}</div></div>;
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
+// ==================== LIVE DISTANCE HUD ====================
+function LiveDistanceHUD({gpsPos,green,tee,signal,T,weather}){
+const[dists,setDists]=useState({front:null,mid:null,back:null});const prevMid=useRef(null);const[pop,setPop]=useState(false);
+useEffect(()=>{
+if(!gpsPos||!green)return;
+const midD=gpsDist(gpsPos.lat,gpsPos.lng,green.lat,green.lng);
+// Compute front/back: offset ±15yd along bearing from player to green
+let frontD=Math.max(0,midD-15),backD=midD+15;
+if(tee&&typeof google!=="undefined"&&google.maps&&google.maps.geometry){
+const bearing=google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(tee.lat,tee.lng),new google.maps.LatLng(green.lat,green.lng));
+const frontPt=google.maps.geometry.spherical.computeOffset(new google.maps.LatLng(green.lat,green.lng),15*0.9144,bearing+180);
+const backPt=google.maps.geometry.spherical.computeOffset(new google.maps.LatLng(green.lat,green.lng),15*0.9144,bearing);
+frontD=Math.round(google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(gpsPos.lat,gpsPos.lng),frontPt)*1.09361);
+backD=Math.round(google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(gpsPos.lat,gpsPos.lng),backPt)*1.09361);
+}
+if(prevMid.current!==null&&Math.abs(midD-prevMid.current)>=2){setPop(true);setTimeout(()=>setPop(false),300);}
+prevMid.current=midD;
+setDists({front:frontD,mid:midD,back:backD});
+},[gpsPos?gpsPos.lat:0,gpsPos?gpsPos.lng:0]);
+if(!dists.mid||dists.mid>800)return null;
+const isDk=T.bg==="#09090b";
+return <div style={{background:isDk?"linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75))":"linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.88))",backdropFilter:"blur(12px)",borderRadius:14,padding:"12px 16px",marginBottom:10,border:"1px solid "+(isDk?"rgba(16,185,129,0.15)":"rgba(5,150,105,0.15)"),boxShadow:isDk?"0 4px 20px rgba(0,0,0,0.4)":"0 2px 8px rgba(0,0,0,0.06)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+<div style={{textAlign:"center",flex:1}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Front</div>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:22,fontWeight:800,color:isDk?"#a7f3d0":T.g,fontFamily:M,lineHeight:1}}>{dists.front}</div>
+</div>
+<div style={{textAlign:"center",flex:1.4}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Center</div>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:36,fontWeight:800,color:isDk?"#fff":"#111",fontFamily:M,lineHeight:1,textShadow:isDk?"0 0 20px rgba(16,185,129,0.3)":"none"}}>{dists.mid}</div>
+<div style={{fontSize:8,color:T.td,fontFamily:F,marginTop:2}}>{(()=>{
+// Wind-adjusted "plays as" calculation
+if(!weather||!weather.windSpeed||!tee||!gpsPos||!green||!dists.mid)return "YARDS";
+const gmOk=typeof google!=="undefined"&&google.maps&&google.maps.geometry;
+if(!gmOk)return "YARDS";
+const shotBearing=google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(gpsPos.lat,gpsPos.lng),new google.maps.LatLng(green.lat,green.lng));
+const windRad=(weather.windDeg-shotBearing)*Math.PI/180;
+const headwind=weather.windSpeed*Math.cos(windRad);// positive = headwind
+const adj=Math.round(headwind*0.7);// ~0.7 yd per mph headwind
+const playsAs=dists.mid+adj;
+if(Math.abs(adj)<2)return "YARDS";
+return <span style={{color:adj>0?T.o:T.g}}>{"Plays "+playsAs+" ("+(adj>0?"+":"")+adj+" wind)"}</span>;
+})()}</div>
+</div>
+<div style={{textAlign:"center",flex:1}}>
+<div style={{fontSize:9,color:T.o||"#fb923c",textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Back</div>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:22,fontWeight:800,color:isDk?"#fed7aa":T.o,fontFamily:M,lineHeight:1}}>{dists.back}</div>
+</div>
+</div>
+{signal&&<div style={{textAlign:"center",marginTop:6}}><div style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}><div style={{width:5,height:5,borderRadius:3,background:signal==="strong"?"#10b981":signal==="good"?"#10b981":signal==="fair"?"#fbbf24":"#f87171"}}/>{signal==="strong"?"GPS Locked":signal==="good"?"GPS Good":"GPS "+signal}</div></div>}
+</div>;
+}
 // ==================== PROFILE SCREEN ====================
 function GreenReader({T,onClose}){
 const[photo,setPhoto]=useState(null);const[photoUrl,setPhotoUrl]=useState(null);
@@ -1449,6 +1689,25 @@ return <div><Hdr title="STICKS" sub={done.length+" round"+(done.length!==1?"s":"
 {!isPro&&<ProBanner T={T} onUpgrade={onUpgrade} rounds={done.length}/>}
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="Avg" value={avg!=null?avg:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Putts" value={avgP!=null?avgP:"\u2014"} small T={T}/></Crd><Crd T={T}><St label="Best" value={best!=null?best:"\u2014"} color={T.y} small T={T}/></Crd></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}><Crd T={T}><St label="GIR" value={girP!=null?girP:"\u2014"} unit="%" small T={T}/></Crd><Crd T={T}><St label="Fairways" value={fwP!=null?fwP:"\u2014"} unit="%" small T={T}/></Crd></div>
+{ah.length>0&&(()=>{
+const p3=ah.filter(x=>x.par===3),p4=ah.filter(x=>x.par===4),p5=ah.filter(x=>x.par>=5);
+const avg3=p3.length?Math.round(p3.reduce((s,x)=>s+x.sc,0)/p3.length*10)/10:null;
+const avg4=p4.length?Math.round(p4.reduce((s,x)=>s+x.sc,0)/p4.length*10)/10:null;
+const avg5=p5.length?Math.round(p5.reduce((s,x)=>s+x.sc,0)/p5.length*10)/10:null;
+const missedGreen=ah.filter(x=>!x.gir);const upDown=missedGreen.filter(x=>x.sc<=x.par).length;
+const udPct=missedGreen.length?Math.round(upDown/missedGreen.length*100):null;
+const scramble=missedGreen.filter(x=>x.sc<=x.par+1).length;
+const scrPct=missedGreen.length?Math.round(scramble/missedGreen.length*100):null;
+return <><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+<Crd T={T} style={{padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:avg3&&avg3<=3?T.g:avg3&&avg3<=3.3?T.b:T.o,fontFamily:M}}>{avg3||"\u2014"}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>Par 3 Avg</div></Crd>
+<Crd T={T} style={{padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:avg4&&avg4<=4?T.g:avg4&&avg4<=4.5?T.b:T.o,fontFamily:M}}>{avg4||"\u2014"}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>Par 4 Avg</div></Crd>
+<Crd T={T} style={{padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:avg5&&avg5<=5?T.g:avg5&&avg5<=5.5?T.b:T.o,fontFamily:M}}>{avg5||"\u2014"}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>Par 5 Avg</div></Crd>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+<Crd T={T} style={{padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:udPct&&udPct>40?T.g:T.o,fontFamily:M}}>{udPct!=null?udPct+"%":"\u2014"}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>Up & Down</div></Crd>
+<Crd T={T} style={{padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:scrPct&&scrPct>50?T.g:T.o,fontFamily:M}}>{scrPct!=null?scrPct+"%":"\u2014"}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>Scramble</div></Crd>
+</div></>;
+})()}
 {totH>0&&<Crd T={T} style={{marginBottom:8}}><Lbl T={T}>Distribution</Lbl><div style={{display:"flex",gap:2,marginTop:6}}>{[{k:"ace",l:"Ace",c:T.y},{k:"eagle",l:"Egl",c:T.g},{k:"birdie",l:"Bir",c:T.g},{k:"par",l:"Par",c:T.b},{k:"bogey",l:"+1",c:T.o},{k:"double",l:"+2",c:T.r},{k:"worse",l:"3+",c:"#7f1d1d"}].map(s=>{const p=dist[s.k]/totH*100;return <div key={s.k} style={{flex:1,textAlign:"center"}}><div style={{height:64,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:5}}><div style={{width:"100%",maxWidth:24,height:Math.max(3,p)+"%",background:s.c,borderRadius:3,opacity:0.7,transition:"height 0.4s"}}/></div><div style={{fontSize:9,color:T.td,fontFamily:F}}>{s.l}</div><div style={{fontSize:12,color:T.tx,fontWeight:700,fontFamily:M}}>{dist[s.k]}</div></div>;})}</div></Crd>}
 
 {/* Strokes Gained Analysis */}
@@ -1530,16 +1789,21 @@ return <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding
 function Play({onStart,active,onUpdate,onFinish,T,onToggle,profile,isPro,onUpgrade,roundCount,rounds=[]}){
 const[courseId,setCourseId]=useState("goat_hill");const[tee,setTee]=useState(null);const[cur,setCur]=useState(0);
 const[h,setH]=useState({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});const[shots,setShots]=useState([]);const[marking,setMarking]=useState(false);const[history,setHistory]=useState([]);
-const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);const greenDwellTime=useRef(0);const awayFromGreen=useRef(false);
+const[autoPrompt,setAutoPrompt]=useState(null);const lastGreenDist=useRef(999);
 const[autoTrack,setAutoTrack]=useState(false);const[autoStatus,setAutoStatus]=useState("");const[showGreenReader,setShowGreenReader]=useState(false);
 const gpsLog=useRef([]);const moveState=useRef("idle");const stationaryPos=useRef(null);const stationaryStart=useRef(0);const lastShotTime=useRef(0);const autoShotCount=useRef(0);
-const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);
+const{weather,fetchWeather}=useWeather();
+const[searchQ,setSearchQ]=useState("");const[searchResults,setSearchResults]=useState([]);const[searching,setSearching]=useState(false);const[apiCourse,setApiCourse]=useState(null);const[showSearch,setShowSearch]=useState(false);const[loadingCourse,setLoadingCourse]=useState(false);
 const[gameMode,setGameMode]=useState("stroke");const[showGroup,setShowGroup]=useState(false);const[groupCode,setGroupCode]=useState("");const[joinCode,setJoinCode]=useState("");const[groupPlayers,setGroupPlayers]=useState([]);const[liveScores,setLiveScores]=useState({});
 const searchTimer=useRef(null);
 const gps=useGPS();const course=active?(apiCourse&&active.course_id===apiCourse.id?apiCourse:getCourse(active.course_id||active.courseId)):(apiCourse||getCourse(courseId));
 const defaultTee=Object.keys(course.tees)[Math.min(1,Object.keys(course.tees).length-1)];const selTee=tee||defaultTee;
 useEffect(()=>{setTee(null);},[courseId]);
 useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[active?active.id:null]);
+// Fetch weather when round starts or GPS position available
+useEffect(()=>{if(active&&gps.pos)fetchWeather(gps.pos.lat,gps.pos.lng);
+else if(active&&course.greens&&course.greens[0])fetchWeather(course.greens[0].lat,course.greens[0].lng);
+},[active?active.id:null,gps.pos?1:0]);
 useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?active.id:null]);
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
@@ -1616,6 +1880,7 @@ setAutoStatus("Addressing ball... ("+dwellSec+"s)");
 useEffect(()=>{
 gpsLog.current=[];moveState.current="idle";stationaryPos.current=null;
 stationaryStart.current=0;autoShotCount.current=0;setAutoStatus("");
+holeState.current="tee";greenArrival.current=0;leftGreenAt.current=0;setHoleDetectStatus("");closestHole.current=cur;
 },[cur]);
 // Subscribe to live group scores
 useEffect(()=>{
@@ -1627,47 +1892,150 @@ const interval=setInterval(fetchScores,8000);
 return()=>clearInterval(interval);
 },[active?active.groupCode:null,active?active.holes.length:0]);
 const pushUndo=()=>setHistory(p=>[...p,{...h}]);const undo=()=>{if(!history.length)return;setH(history[history.length-1]);setHistory(p=>p.slice(0,-1));};
-// === AUTO HOLE DETECTION ===
+// === AUTO HOLE DETECTION — GEOFENCE STATE MACHINE ===
+// States: TEE → FAIRWAY → APPROACH → GREEN → WALKING_OFF → NEXT_TEE
+// Each GPS tick evaluates which zone the player is in and transitions the state.
+const holeState=useRef("tee"); // current state in the machine
+const greenArrival=useRef(0);const leftGreenAt=useRef(0);
+const closestHole=useRef(cur); // which hole's green we're closest to (for fallback detection)
+const[holeDetectStatus,setHoleDetectStatus]=useState("");
+// Geofence radii (yards)
+const GEO={tee:35,green:30,greenOuter:50,approach:150,nextTeeSnap:45,autoSaveTimeout:25};
 useEffect(()=>{
 if(!active||!gps.pos||!gps.on)return;
-const curGreen=course.greens[cur];const nextTee=course.teeBoxes?course.teeBoxes[Math.min(cur+1,17)]:null;
-const nextGreen=course.greens[Math.min(cur+1,17)];
+const n=course.greens.length;const curGreen=course.greens[cur];
+const nextTee=course.teeBoxes&&cur+1<n?course.teeBoxes[cur+1]:null;
+const nextGreen=cur+1<n?course.greens[cur+1]:null;
+const curTee=course.teeBoxes?course.teeBoxes[cur]:null;
 if(!curGreen)return;
-const distToGreen=gpsDist(gps.pos.lat,gps.pos.lng,curGreen.lat,curGreen.lng);
-const distToNextTee=nextTee?gpsDist(gps.pos.lat,gps.pos.lng,nextTee.lat,nextTee.lng):999;
-const isOnGreen=distToGreen<30;
-const isNearNextTee=distToNextTee<50;
-const hasPlayedShots=shots.length>0;
-const isEditingPrevHole=cur<active.holes.length;
-const isLastHole=cur>=17;
-// Reset prompt when hole changes
-if(autoPrompt&&autoPrompt.hole!==cur){setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;}
-// Track if player reached the green
-if(isOnGreen&&hasPlayedShots&&!isEditingPrevHole){
-greenDwellTime.current++;
-if(greenDwellTime.current>=3&&!autoPrompt){
-setAutoPrompt({type:"on_green",hole:cur,msg:"Looks like you're on the green"});
+const p=gps.pos;const now=Date.now();
+const dGreen=gpsDist(p.lat,p.lng,curGreen.lat,curGreen.lng);
+const dNextTee=nextTee?gpsDist(p.lat,p.lng,nextTee.lat,nextTee.lng):999;
+const dNextGreen=nextGreen?gpsDist(p.lat,p.lng,nextGreen.lat,nextGreen.lng):999;
+const dCurTee=curTee?gpsDist(p.lat,p.lng,curTee.lat,curTee.lng):999;
+const isEditing=cur<active.holes.length;
+const isLastHole=cur>=n-1;
+const hasPlayed=shots.length>0||h.sc>0;
+const st=holeState.current;
+// Reset prompt if hole changed externally (manual tap)
+if(autoPrompt&&autoPrompt.hole!==cur){setAutoPrompt(null);greenArrival.current=0;leftGreenAt.current=0;}
+// === CLOSEST-HOLE DETECTOR (fallback for courses without tee data) ===
+// Find which hole's green we're closest to — if it's not the current hole and we've been
+// near that green for a while, we're probably on the wrong hole
+if(!isEditing&&!isLastHole){
+let minD=dGreen,minI=cur;
+for(let i=Math.max(0,cur-1);i<=Math.min(n-1,cur+2);i++){
+const dd=gpsDist(p.lat,p.lng,course.greens[i].lat,course.greens[i].lng);
+if(dd<minD){minD=dd;minI=i;}
+}
+closestHole.current=minI;
+}
+// === STATE MACHINE TRANSITIONS ===
+if(st==="tee"){
+// On the tee — waiting for player to start walking
+if(dCurTee>GEO.tee&&dGreen<dCurTee){
+holeState.current="fairway";
+setHoleDetectStatus("In play");
 }
 }
-// Track if player walked away from green toward next tee
-if(!isOnGreen&&greenDwellTime.current>=2&&hasPlayedShots&&!isEditingPrevHole&&!isLastHole){
-awayFromGreen.current=true;
+else if(st==="fairway"){
+// Walking down the fairway
+if(dGreen<GEO.approach){
+holeState.current="approach";
+setHoleDetectStatus(dGreen+" yd to green");
+} else {
+setHoleDetectStatus(dGreen+" yd out");
 }
-// If near next tee box and we haven't saved this hole yet
-if(isNearNextTee&&awayFromGreen.current&&!isEditingPrevHole&&!isLastHole&&cur<active.holes.length===false){
-if(!autoPrompt||autoPrompt.type!=="next_tee"){
+}
+else if(st==="approach"){
+// Getting close to the green
+if(dGreen<=GEO.green){
+holeState.current="green";
+greenArrival.current=now;
+setHoleDetectStatus("On the green");
+if(hasPlayed&&!isEditing){
+// Brief delay then prompt
+setTimeout(()=>{
+if(holeState.current==="green"){
+setAutoPrompt({type:"on_green",hole:cur,msg:"On the green — Hole "+(cur+1)});
+}
+},5000);
+}
+} else if(dGreen>GEO.approach+30){
+// Walked back — probably went to wrong spot, reset to fairway
+holeState.current="fairway";
+}
+}
+else if(st==="green"){
+// On the green — waiting for player to finish putting
+const dwellSec=greenArrival.current?(now-greenArrival.current)/1000:0;
+if(dGreen>GEO.greenOuter){
+// Left the green
+holeState.current="walking_off";
+leftGreenAt.current=now;
+setHoleDetectStatus("Walking to next tee");
+// Show prompt immediately when leaving green
+if(hasPlayed&&!isEditing&&!isLastHole){
+setAutoPrompt({type:"leaving_green",hole:cur,msg:"Done with Hole "+(cur+1)+"?"});
+}
+} else if(dwellSec>=8&&hasPlayed&&!isEditing&&!autoPrompt){
+setAutoPrompt({type:"on_green",hole:cur,msg:"On the green — Hole "+(cur+1)});
+}
+}
+else if(st==="walking_off"){
+// Left the green, heading to next tee
+if(dGreen<=GEO.green){
+// Went back to the green (forgot to putt?)
+holeState.current="green";
+greenArrival.current=now;
+leftGreenAt.current=0;
+setHoleDetectStatus("Back on the green");
+setAutoPrompt(null);
+}
+else if(!isLastHole&&!isEditing){
+const secSinceLeft=leftGreenAt.current?(now-leftGreenAt.current)/1000:0;
+// PRIMARY: Entered next tee geofence — auto-save and advance
+if(dNextTee<=GEO.nextTeeSnap){
+setHoleDetectStatus("At Hole "+(cur+2)+" tee");
+svHole();// auto-save current hole and advance
+return;
+}
+// SECONDARY: Closer to next hole's green than current — we've moved on
+if(dNextGreen<dGreen&&dNextGreen<300&&secSinceLeft>10){
+setHoleDetectStatus("Moving to Hole "+(cur+2));
+svHole();
+return;
+}
+// TERTIARY: Timeout — been walking for 25s+ and far from current green
+if(secSinceLeft>=GEO.autoSaveTimeout&&dGreen>80){
+svHole();
+return;
+}
+// Show next-tee prompt when getting close
+if(dNextTee<80&&(!autoPrompt||autoPrompt.type==="leaving_green")){
 setAutoPrompt({type:"next_tee",hole:cur,msg:"Moving to Hole "+(cur+2)+"?"});
 }
 }
-lastGreenDist.current=distToGreen;
+}
+lastGreenDist.current=dGreen;
 },[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,cur,shots.length,active?active.holes.length:0]);
 const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
 if(!active){const td=course.tees[selTee];const ty=td.y.reduce((s,y)=>s+y,0);
 const doSearch=(q)=>{setSearchQ(q);if(searchTimer.current)clearTimeout(searchTimer.current);if(q.length<3){setSearchResults([]);return;}const delay=q.length<5?800:300;searchTimer.current=setTimeout(async()=>{setSearching(true);const r=await searchCourses(q,gps.pos);setSearchResults(r);setSearching(false);},delay);};
 const selectApiCourse=async(c)=>{
-// Generate layout if needed (Google Places courses arrive without layout)
-if(c._needsData&&c._lat){
+setLoadingCourse(true);
+const cLat=c._lat||(c.greens&&c.greens[0]?c.greens[0].lat:null);
+const cLng=c._lng||(c.greens&&c.greens[0]?c.greens[0].lng:null);
 const yds=c.tees[Object.keys(c.tees)[0]].y;
+// Try Overpass API for real GPS tee+green positions
+if(cLat&&cLng){
+const osm=await fetchOverpassLayout(cLat,cLng,yds);
+if(osm){c={...c,greens:osm.greens,teeBoxes:osm.teeBoxes,_osm:true};}
+else if(c._needsData||c.apiCourse){
+const layout=estimateLayout(cLat,cLng,yds,c.pars);
+c={...c,greens:layout.greens,teeBoxes:layout.teeBoxes};
+}
+}else if(c._needsData&&c._lat){
 const layout=estimateLayout(c._lat,c._lng,yds,c.pars);
 c={...c,greens:layout.greens,teeBoxes:layout.teeBoxes};
 }
@@ -1678,7 +2046,15 @@ const updatedGreens=[...c.greens];
 data.forEach(g=>{const idx=g.hole_num-1;if(idx>=0&&idx<updatedGreens.length)updatedGreens[idx]={lat:g.lat,lng:g.lng};});
 c={...c,greens:updatedGreens,_crowdsourced:data.length};
 }}catch(e){}
-setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
+// Cache course data for offline use
+try{const cache={...c,_cached:Date.now()};delete cache._raw;delete cache._placeId;
+localStorage.setItem("sticks_course_"+c.id,JSON.stringify(cache));
+// Keep recent courses list
+const recent=JSON.parse(localStorage.getItem("sticks_recent_courses")||"[]");
+const updated=[{id:c.id,name:c.name,loc:c.loc},...recent.filter(r=>r.id!==c.id)].slice(0,8);
+localStorage.setItem("sticks_recent_courses",JSON.stringify(updated));
+}catch(e){}
+setLoadingCourse(false);setApiCourse(c);setCourseId(c.id);setSearchQ("");setSearchResults([]);setShowSearch(false);setTee(null);};
 const selectBuiltIn=(id)=>{setApiCourse(null);setCourseId(id);setTee(null);setShowSearch(false);};
 // Course images removed - using clean list design
 return <div><div style={{position:"relative",margin:"0 0 0",overflow:"hidden"}}>
@@ -1715,7 +2091,8 @@ Find Nearby Courses</button>
 {searching&&<div style={{textAlign:"center",padding:"16px 0"}}><Spinner T={T} size={18}/><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:6}}>Searching courses...</div></div>}
 {!searching&&searchQ.length>=1&&searchQ.length<3&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>Keep typing to search...</div>}
 {!searching&&searchQ.length>=3&&searchResults.length===0&&<div style={{textAlign:"center",padding:"16px 0",color:T.td,fontSize:12,fontFamily:F}}>No courses found. Try the full name (e.g. "pebble beach")</div>}
-{searchResults.map(c=><button key={c.id} onClick={()=>selectApiCourse(c)} style={{width:"100%",padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px solid "+T.bdr,color:T.td,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><div><div style={{fontSize:13,fontWeight:700,color:T.tx}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2}}>{c.loc}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
+{loadingCourse&&<div style={{textAlign:"center",padding:"20px 0"}}><Spinner T={T} size={18}/><div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:6}}>Loading course map data...</div></div>}
+{!loadingCourse&&searchResults.map(c=><button key={c.id} onClick={()=>selectApiCourse(c)} style={{width:"100%",padding:"12px 14px",borderRadius:10,cursor:"pointer",background:"rgba(128,128,128,0.02)",border:"1px solid "+T.bdr,color:T.td,fontFamily:F,textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><div><div style={{fontSize:13,fontWeight:700,color:T.tx}}>{c.name}</div><div style={{fontSize:11,fontWeight:400,marginTop:2}}>{c.loc}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,fontFamily:M,opacity:0.5}}>Par {c.par}</div>
 {c._rating&&<div style={{fontSize:10,color:T.y,fontFamily:F}}>{"\u2605 "+c._rating}</div>}
 <div style={{fontSize:9,color:T.td,fontFamily:F}}>{c._needsData?"GPS Only":Object.keys(c.tees).length+" tees"}</div></div></button>)}
 </div>}
@@ -1790,7 +2167,7 @@ group_code:active.groupCode,user_id:user.id,player_name:profile.name,
 hole_num:hn,score:d.sc,par:d.par,total_score:nh.reduce((s,x)=>s+(x.sc||0),0),
 total_par:nh.reduce((s,x)=>s+(x.par||0),0),holes_played:nh.length,
 updated_at:new Date().toISOString()
-},{onConflict:"group_code,user_id"}).then(()=>{}).catch(()=>{});}setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
+},{onConflict:"group_code,user_id"}).then(()=>{}).catch(()=>{});}setAutoPrompt(null);holeState.current="tee";greenArrival.current=0;leftGreenAt.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
 const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
 return <div>
 <Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
@@ -1819,8 +2196,23 @@ return <span style={{fontSize:10,color:T.b,fontFamily:M,marginLeft:"auto"}}>{act
 <Diff d={p.total_score-p.total_par} style={{fontSize:11}} T={T}/>
 </div></div>)}
 </div>}
-<div style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}>
-<div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0}}>{i+1}</button>;})}</div>
+<div className="swipe-container" style={{padding:"0 16px 100px",overflowY:"auto",height:"calc(100vh - 120px)"}}
+onTouchStart={(e)=>{e.currentTarget._sx=e.touches[0].clientX;e.currentTarget._sy=e.touches[0].clientY;e.currentTarget._swiped=false;}}
+onTouchMove={(e)=>{if(e.currentTarget._swiped)return;const dx=e.touches[0].clientX-e.currentTarget._sx;const dy=e.touches[0].clientY-e.currentTarget._sy;if(Math.abs(dx)>Math.abs(dy)*2&&Math.abs(dx)>50){e.currentTarget._swiped=true;if(dx<0&&cur<course.holes-1)setCur(c=>c+1);if(dx>0&&cur>0)setCur(c=>c-1);}}}
+>
+<div style={{display:"flex",gap:2,marginBottom:12,overflowX:"auto",scrollbarWidth:"none"}}>{Array.from({length:course.holes||18},(_,i)=>{const x=active.holes[i],a=i===cur;let bg="rgba(128,128,128,0.05)",cl=T.td;if(a){bg=T.g;cl=T.bg;}else if(x){const d=x.sc-x.par;if(d<0){bg=T.gd;cl=T.g;}else if(d===0){bg=T.bd;cl=T.b;}else{bg=T.od;cl=T.o;}}return <button key={i} onClick={()=>setCur(i)} style={{minWidth:28,height:28,borderRadius:6,background:bg,color:cl,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:M,flexShrink:0,transition:"all 0.15s"}}>{i+1}</button>;})}</div>
+{/* Weather bar */}
+{weather&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",marginBottom:8,borderRadius:10,background:"rgba(128,128,128,0.03)",border:"1px solid "+T.bdr}}>
+<div style={{display:"flex",alignItems:"center",gap:8}}>
+<div style={{fontSize:18,fontWeight:800,color:T.tx,fontFamily:M}}>{weather.temp+"°"}</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,lineHeight:1.3}}><div>{weather.condition}</div><div>{"Humidity "+weather.humidity+"%"}</div></div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:6}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={weather.windSpeed>15?T.o:T.b} strokeWidth="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+<div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:weather.windSpeed>15?T.o:T.tx,fontFamily:M}}>{weather.windSpeed}<span style={{fontSize:9,color:T.td,fontFamily:F}}> mph</span></div>
+<div style={{fontSize:9,color:T.td,fontFamily:F}}>{weather.windDir}{weather.windGust>weather.windSpeed+5?" · G"+weather.windGust:""}</div></div>
+</div>
+</div>}
 {/* Auto-advance prompt */}
 {autoPrompt&&!ed&&<div style={{marginBottom:10,padding:"12px 14px",background:"linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))",borderRadius:12,border:"1px solid rgba(16,185,129,0.2)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1829,20 +2221,27 @@ return <span style={{fontSize:10,color:T.b,fontFamily:M,marginLeft:"auto"}}>{act
 </div>
 <div>
 <div style={{fontSize:12,fontWeight:700,color:T.tx,fontFamily:F}}>{autoPrompt.msg}</div>
-<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:1}}>{autoPrompt.type==="on_green"?"Save your score and move on":"Save Hole "+(cur+1)+" and advance"}</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:1}}>{autoPrompt.type==="on_green"?"Save your score and move on":autoPrompt.type==="leaving_green"?"Tap to save and move to next hole":"Save Hole "+(cur+1)+" and advance"}</div>
 </div>
 </div>
 <div style={{display:"flex",gap:6}}>
-<button onClick={()=>{svHole();setAutoPrompt(null);awayFromGreen.current=false;greenDwellTime.current=0;}} style={{padding:"7px 14px",borderRadius:8,background:T.g,border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F,whiteSpace:"nowrap"}}>{autoPrompt.type==="next_tee"?"Save & Next":"Save Hole"}</button>
-<button onClick={()=>{setAutoPrompt(null);greenDwellTime.current=0;}} style={{padding:"7px 8px",borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>{"✕"}</button>
+<button onClick={()=>{svHole();setAutoPrompt(null);holeState.current="tee";greenArrival.current=0;leftGreenAt.current=0;}} style={{padding:"7px 14px",borderRadius:8,background:T.g,border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F,whiteSpace:"nowrap"}}>{autoPrompt.type==="on_green"?"Save Hole":"Save & Next"}</button>
+<button onClick={()=>{setAutoPrompt(null);greenArrival.current=0;leftGreenAt.current=0;}} style={{padding:"7px 8px",borderRadius:8,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.td,fontSize:11,cursor:"pointer",fontFamily:F}}>{"✕"}</button>
 </div>
 </div>}
 
+{/* Live Distance HUD — always visible when GPS is active */}
+<LiveDistanceHUD gpsPos={gps.pos} green={course.greens[cur]} tee={course.teeBoxes?course.teeBoxes[cur]:null} signal={gps.signal} T={T} weather={weather}/>
+
 <ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>
 <Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div>{gps.pos&&<div style={{fontSize:10,color:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"}</div>}</div>
-{!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>Acquiring signal...</div>}
-{gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>Enable location services</div>}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div><div style={{width:6,height:6,borderRadius:3,background:gps.signal==="strong"?"#10b981":gps.signal==="good"?"#10b981":gps.signal==="fair"?"#fbbf24":gps.signal==="weak"?"#f87171":gps.signal==="acquiring"?"#fbbf24":"#4a4a55",animation:gps.signal==="acquiring"?"pulse 1.5s infinite":"none"}}/></div>{gps.pos&&<div style={{fontSize:10,color:gps.signal==="strong"?T.g:gps.signal==="good"?T.g:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"+(gps.signal==="strong"?" ✓":"")}</div>}</div>
+{!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>{gps.signal==="acquiring"?"Acquiring GPS signal...":"Waiting for signal..."}</div>}
+{gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>{gps.err}</div>}
+{holeDetectStatus&&gps.pos&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,padding:"4px 8px",borderRadius:6,background:"rgba(16,185,129,0.04)"}}>
+<div style={{width:4,height:4,borderRadius:2,background:holeState.current==="green"?"#10b981":holeState.current==="walking_off"?"#fbbf24":"#60a5fa"}}/>
+<div style={{fontSize:10,color:T.tm,fontFamily:F}}>{holeDetectStatus}</div>
+</div>}
 <button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}if(course.greens&&course.greens[cur])s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);lastShotTime.current=Date.now();}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:autoTrack?"rgba(128,128,128,0.04)":T.gd,border:"1px solid "+(autoTrack?T.bdr:T.gb),color:autoTrack?T.td:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":(autoTrack?"Manual Override · Shot "+(shots.length+1):"Mark Shot "+(shots.length+1))}</button>
 {shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.auto&&<span style={{color:T.b,fontFamily:F,marginLeft:4,fontSize:8,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",background:T.bd,padding:"1px 4px",borderRadius:3}}>auto</span>}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen?s.toGreen+" yd to green":"\u00b1"+Math.round(s.acc)+"m acc"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
 </Crd>
@@ -1872,7 +2271,7 @@ return <Crd T={T} style={{marginBottom:10,background:T.bg==="#09090b"?"linear-gr
 </div>
 </div></Crd>;
 })()}
-<Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2212"}</button><div style={{fontSize:42,fontWeight:700,color:T.tx,fontFamily:M,minWidth:52,textAlign:"center"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:44,height:44,borderRadius:10,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
+<Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(10);setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:48,height:48,borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.1s",active:{transform:"scale(0.92)"}}}>{"\u2212"}</button><div style={{fontSize:48,fontWeight:800,color:T.tx,fontFamily:M,minWidth:60,textAlign:"center",transition:"all 0.2s"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(10);setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:48,height:48,borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.1s"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
 <Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Putts</Lbl><div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(p=><Pill key={p} active={h.pt===p} T={T} onClick={()=>{pushUndo();setH(s=>({...s,pt:p}));}}>{p}</Pill>)}</div></Crd>
 <Crd T={T} style={{marginBottom:10}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><Lbl T={T}>Club</Lbl><select value={h.cl} onChange={e=>{pushUndo();setH(s=>({...s,cl:e.target.value}));}} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none"}}><option value="">Select</option>{CLUBS.map(c=><option key={c} value={c}>{c}</option>)}</select></div><div><Lbl T={T}>Yardage</Lbl><input type="number" inputMode="numeric" value={h.yd} onChange={e=>{pushUndo();setH(s=>({...s,yd:e.target.value}));}} placeholder={""+hy} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/></div></div></Crd>
 {(h.par||hp)>3&&<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Fairway</Lbl><div style={{display:"flex",gap:6}}>{[{v:"hit",l:"Hit"},{v:"left",l:"Left"},{v:"right",l:"Right"}].map(f=><Pill key={f.v} active={h.fw===f.v} color={f.v==="hit"?T.g:T.o} bg={f.v==="hit"?T.gd:T.od} T={T} onClick={()=>{pushUndo();setH(s=>({...s,fw:s.fw===f.v?"":f.v}));}}>{f.l}</Pill>)}</div></Crd>}
@@ -2230,8 +2629,11 @@ if(!isPro&&rounds.length>=FREE_ROUND_LIMIT){setShowUpgrade(true);return;}
 setActive(r);setTab("play");
 },[isPro,rounds.length]);
 const updateRound=useCallback(r=>setActive(r),[]);
+const[postRound,setPostRound]=useState(null);
 const finishRound=useCallback(async()=>{
-if(active&&active.holes.length>0&&user){
+if(active&&active.holes.length>0){
+const roundData={...active};
+if(user){
 const ts=active.holes.reduce((s,h)=>s+(h.sc||0),0);
 const tp=active.holes.reduce((s,h)=>s+(h.pt||0),0);
 const{data,error}=await sb.from("rounds").insert({
@@ -2241,7 +2643,8 @@ holes:active.holes,total_score:ts,total_putts:tp
 }).select().single();
 if(data)setRounds(p=>[data,...p]);
 }
-setActive(null);setTab("dashboard");
+setActive(null);setPostRound(roundData);
+} else {setActive(null);setTab("dashboard");}
 },[active,user]);
 
 const deleteRound=useCallback(async(id)=>{
@@ -2252,12 +2655,7 @@ setRounds(p=>p.filter(r=>r.id!==id));
 console.log("RENDER STATE:",{loading,user:!!user,profile:!!profile});
 if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user){
-// Guest mode - skip auth
-const guestUser={id:"guest_"+Math.random().toString(36).substr(2,9),email:"guest@sticks.app",user_metadata:{name:"Golfer"}};
-setUser(guestUser);
-const guestProfile={id:guestUser.id,name:"Golfer",color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()};
-setProfile(guestProfile);
-return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
+return <AuthScreen onAuth={handleAuth} T={T}/>;
 }
 if(!profile&&user){
 const name=user.user_metadata?.name||"Golfer";
@@ -2266,6 +2664,77 @@ setProfile(def);
 return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
 }
 if(!profile)return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner T={T} size={32}/></div>;
+
+// ==================== POST-ROUND SUMMARY ====================
+if(postRound){
+const ph=postRound.holes;const totalSc=ph.reduce((s,x)=>s+(x.sc||0),0);const totalPar=ph.reduce((s,x)=>s+(x.par||0),0);
+const diff=totalSc-totalPar;const diffStr=diff>0?"+"+diff:diff===0?"E":""+diff;
+const totalPutts=ph.reduce((s,x)=>s+(x.pt||0),0);
+const girCount=ph.filter(x=>x.gir).length;const girPct=Math.round(girCount/ph.length*100);
+const fwHoles=ph.filter(x=>x.par>=4);const fwHit=fwHoles.filter(x=>x.fw==="hit").length;const fwPct=fwHoles.length?Math.round(fwHit/fwHoles.length*100):0;
+const best=ph.reduce((b,x,i)=>(!b||(x.sc-x.par)<(b.sc-b.par))?{...x,idx:i}:b,null);
+const worst=ph.reduce((w,x,i)=>(!w||(x.sc-x.par)>(w.sc-w.par))?{...x,idx:i}:w,null);
+const front9=ph.slice(0,9);const back9=ph.slice(9);
+const f9sc=front9.reduce((s,x)=>s+(x.sc||0),0);const f9par=front9.reduce((s,x)=>s+(x.par||0),0);
+const b9sc=back9.reduce((s,x)=>s+(x.sc||0),0);const b9par=back9.reduce((s,x)=>s+(x.par||0),0);
+const birdies=ph.filter(x=>x.sc-x.par<0).length;const pars=ph.filter(x=>x.sc===x.par).length;const bogeys=ph.filter(x=>x.sc-x.par===1).length;const dblPlus=ph.filter(x=>x.sc-x.par>=2).length;
+const isDk=T.bg==="#09090b";
+return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"auto",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",padding:"env(safe-area-inset-top, 20px) 16px 40px"}}>
+<div style={{textAlign:"center",marginBottom:24,animation:"slideInUp 0.4s ease-out"}}>
+<div style={{fontSize:11,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,marginBottom:8}}>Round Complete</div>
+<div style={{fontSize:14,color:T.tm,fontFamily:F,marginBottom:4}}>{postRound.course_name}</div>
+<div style={{fontSize:64,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1}}>{totalSc}</div>
+<div style={{fontSize:24,fontWeight:700,color:diff<0?T.g:diff===0?T.b:T.o,fontFamily:M,marginTop:4}}>{diffStr}</div>
+<div style={{fontSize:11,color:T.td,marginTop:4}}>{ph.length+" holes · "+new Date(postRound.date).toLocaleDateString()}</div>
+</div>
+{/* Score distribution */}
+<div style={{display:"flex",justifyContent:"center",gap:16,marginBottom:20,animation:"slideInUp 0.5s ease-out"}}>
+{[[birdies,"Birdies",T.g],[pars,"Pars",T.b],[bogeys,"Bogeys",T.o],[dblPlus,"Dbl+",T.r]].map(([n,l,c])=>
+<div key={l} style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:c,fontFamily:M}}>{n}</div><div style={{fontSize:9,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>{l}</div></div>)}
+</div>
+{/* Key stats grid */}
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16,animation:"slideInUp 0.55s ease-out"}}>
+{[["Putts",""+totalPutts,T.tx],["GIR",girPct+"%",T.g],["FIR",fwPct+"%",T.b]].map(([l,v,c])=>
+<Crd key={l} T={T} style={{padding:12,textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:c,fontFamily:M}}>{v}</div><div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F}}>{l}</div></Crd>)}
+</div>
+{/* Front/Back split */}
+{back9.length>0&&<Crd T={T} style={{marginBottom:16,animation:"slideInUp 0.6s ease-out"}}>
+<div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:12,alignItems:"center"}}>
+<div style={{textAlign:"center"}}><div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F,marginBottom:4}}>Front 9</div><div style={{fontSize:22,fontWeight:800,color:T.tx,fontFamily:M}}>{f9sc}</div><div style={{fontSize:11,color:f9sc-f9par<0?T.g:f9sc===f9par?T.b:T.o,fontFamily:M}}>{f9sc-f9par>0?"+"+(f9sc-f9par):f9sc===f9par?"E":f9sc-f9par}</div></div>
+<div style={{width:1,height:40,background:T.bdr}}/>
+<div style={{textAlign:"center"}}><div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F,marginBottom:4}}>Back 9</div><div style={{fontSize:22,fontWeight:800,color:T.tx,fontFamily:M}}>{b9sc}</div><div style={{fontSize:11,color:b9sc-b9par<0?T.g:b9sc===b9par?T.b:T.o,fontFamily:M}}>{b9sc-b9par>0?"+"+(b9sc-b9par):b9sc===b9par?"E":b9sc-b9par}</div></div>
+</div></Crd>}
+{/* Best / Worst holes */}
+<Crd T={T} style={{marginBottom:16,animation:"slideInUp 0.65s ease-out"}}>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+<div><div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F,marginBottom:4}}>Best Hole</div><div style={{fontSize:16,fontWeight:700,color:T.tx,fontFamily:F}}>{"Hole "+(best.idx+1)}</div><div style={{fontSize:12,color:T.g,fontFamily:M}}>{best.sc+" ("+((best.sc-best.par)>0?"+"+(best.sc-best.par):(best.sc-best.par)===0?"E":best.sc-best.par)+")"}</div></div>
+<div><div style={{fontSize:9,color:T.o,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F,marginBottom:4}}>Worst Hole</div><div style={{fontSize:16,fontWeight:700,color:T.tx,fontFamily:F}}>{"Hole "+(worst.idx+1)}</div><div style={{fontSize:12,color:T.o,fontFamily:M}}>{worst.sc+" ("+(worst.sc-worst.par>0?"+":"")+(worst.sc-worst.par)+")"}</div></div>
+</div></Crd>
+{/* Scorecard mini */}
+<Crd T={T} style={{marginBottom:20,padding:12,animation:"slideInUp 0.7s ease-out"}}>
+<div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:F,marginBottom:8}}>Scorecard</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:3}}>
+{ph.slice(0,9).map((x,i)=>{const d=x.sc-x.par;return <div key={i} style={{textAlign:"center",padding:"4px 0",borderRadius:4,background:d<0?T.gd:d===0?T.bd:d===1?T.od:T.rd,fontSize:11,fontWeight:700,color:d<0?T.g:d===0?T.b:d===1?T.o:T.r,fontFamily:M}}>{x.sc}</div>;})}
+</div>
+{ph.length>9&&<div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:3,marginTop:3}}>
+{ph.slice(9,18).map((x,i)=>{const d=x.sc-x.par;return <div key={i} style={{textAlign:"center",padding:"4px 0",borderRadius:4,background:d<0?T.gd:d===0?T.bd:d===1?T.od:T.rd,fontSize:11,fontWeight:700,color:d<0?T.g:d===0?T.b:d===1?T.o:T.r,fontFamily:M}}>{x.sc}</div>;})}
+</div>}
+</Crd>
+<div style={{display:"flex",gap:8,marginBottom:12}}>
+<button onClick={async()=>{
+const img=await generateScorecardImage(postRound,postRound.course_name,T);
+if(navigator.share&&navigator.canShare){
+const blob=await(await fetch(img)).blob();const file=new File([blob],"sticks-scorecard.png",{type:"image/png"});
+try{await navigator.share({title:"STICKS Scorecard",text:totalSc+" ("+(diff>0?"+":"")+diff+") at "+postRound.course_name,files:[file]});}catch(e){}
+} else {const a=document.createElement("a");a.href=img;a.download="sticks-scorecard.png";a.click();}
+}} style={{flex:1,padding:"14px",borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+Share
+</button>
+<button onClick={()=>{setPostRound(null);setTab("dashboard");}} style={{flex:1,padding:"14px",borderRadius:12,background:T.g,border:"none",color:"#fff",fontSize:14,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Done</button>
+</div>
+</div>;
+}
 
 return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",background:T.bg,fontFamily:F,maxWidth:480,margin:"0 auto",position:"relative",transition:"background 0.3s"}}>
 {showUpgrade&&<UpgradeScreen user={user} T={T} onClose={()=>setShowUpgrade(false)}/>}
