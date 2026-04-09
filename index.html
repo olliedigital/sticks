@@ -351,7 +351,7 @@ const LOGO=()=><svg viewBox="0 0 200 52" fill="none" xmlns="http://www.w3.org/20
 <text x="36" y="32" fontFamily="'DM Sans',sans-serif" fontWeight="800" fontSize="30" letterSpacing="-1.5" fill="white">STICKS</text>
 </svg>;
 
-function AuthScreen({onAuth,T}){
+function AuthScreen({onAuth,onGuest,T}){
 const[mode,setMode]=useState("landing"); // landing, login, signup, reset
 const[email,setEmail]=useState("");
 const[password,setPassword]=useState("");
@@ -403,8 +403,9 @@ return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDi
 {["\u{1F4CD} GPS Tracking","\u{1F3CC}\uFE0F 30K+ Courses","\u{1F4CA} Live Handicap","\u{1F3AF} Club Analytics"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.15)",fontSize:11,color:"rgba(255,255,255,0.6)",fontFamily:F,fontWeight:500}}>{f}</div>)}
 </div>
 <button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg, #10b981 0%, #059669 100%)",color:"#09090b",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em",boxShadow:"0 4px 24px rgba(16,185,129,0.3)"}}>Get Started Free</button>
-<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer"}}>Sign In</button>
-<div style={{display:"flex",justifyContent:"center",gap:32,marginTop:24}}>
+<button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer",marginBottom:10}}>Sign In</button>
+{onGuest&&<button onClick={onGuest} style={{width:"100%",padding:"13px",borderRadius:14,background:"transparent",border:"none",color:"rgba(255,255,255,0.3)",fontSize:13,fontWeight:500,fontFamily:F,cursor:"pointer"}}>Continue as Guest</button>}
+<div style={{display:"flex",justifyContent:"center",gap:32,marginTop:16}}>
 {[{n:"30K+",l:"Courses"},{n:"FREE",l:"Forever"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
 </div>
@@ -2655,7 +2656,11 @@ setRounds(p=>p.filter(r=>r.id!==id));
 console.log("RENDER STATE:",{loading,user:!!user,profile:!!profile});
 if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user){
-return <AuthScreen onAuth={handleAuth} T={T}/>;
+const guestLogin=()=>{
+const g={id:"guest_"+Math.random().toString(36).substr(2,9),email:"guest@sticks.app",user_metadata:{name:"Golfer"}};
+setUser(g);setProfile({id:g.id,name:"Golfer",color:"#10b981",home_course:"goat_hill",goal:null,created_at:new Date().toISOString()});
+};
+return <AuthScreen onAuth={handleAuth} onGuest={guestLogin} T={T}/>;
 }
 if(!profile&&user){
 const name=user.user_metadata?.name||"Golfer";
