@@ -15,11 +15,31 @@
 <!-- Maps replaced with custom SVG hole illustrations -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{
+--font-sans:'DM Sans',system-ui,-apple-system,sans-serif;
+--font-mono:'Space Mono','JetBrains Mono',ui-monospace,monospace;
+--green:#10b981;--green-light:#34d399;--green-dark:#059669;--green-deep:#047857;
+--green-soft:rgba(16,185,129,0.08);--green-soft-2:rgba(16,185,129,0.15);
+--bg:#09090b;--bg-elev:#0d1117;--card:#141418;--card-alt:#111114;
+--bdr:rgba(255,255,255,0.07);--bdr-strong:rgba(255,255,255,0.12);
+--fg:#f0f0f2;--fg-2:#e4e4e7;--fg-muted:#8b8b96;--fg-dim:#4a4a55;--fg-placeholder:#3f3f46;
+--red:#f87171;--orange:#fb923c;--blue:#60a5fa;--yellow:#fbbf24;
+--map-bg:#0d1117;--map-green:#22c55e;--map-shot:#f59e0b;--map-line:rgba(245,158,11,0.4);
+--score-birdie-bg:rgba(52,211,153,0.15);--score-birdie-fg:#34d399;
+--score-eagle-bg:rgba(52,211,153,0.25);--score-eagle-fg:#34d399;
+--score-par-fg:rgba(255,255,255,0.5);
+--score-bogey-bg:rgba(251,191,36,0.12);--score-bogey-fg:#fbbf24;
+--score-double-bg:rgba(239,68,68,0.12);--score-double-fg:#ef4444;
+--r-xs:6px;--r-sm:8px;--r-md:10px;--r-lg:12px;--r-xl:14px;--r-2xl:18px;--r-pill:999px;
+--gap-1:4px;--gap-2:8px;--gap-3:12px;--gap-4:16px;--gap-5:20px;--gap-6:24px;--gap-8:32px;--gap-10:40px;
+--shadow-cta:0 4px 24px rgba(16,185,129,0.3);
+--shadow-glow:0 0 60px rgba(16,185,129,0.06);
+}
 .gm-err-container,.gm-err-title,.gm-err-message,.dismissButton,.gm-err-autocomplete{display:none!important;}
 div[style*="background-color: rgb(229, 227, 223)"] .gm-err-container{display:none!important;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body,#root{height:100%;width:100%;overflow:hidden;}
-body{font-family:'DM Sans',sans-serif;background:#09090b;overscroll-behavior:none;}
+body{font-family:var(--font-sans);background:var(--bg);overscroll-behavior:none;color:var(--fg);}
 ::-webkit-scrollbar{display:none;}
 input,select,button{font-family:'DM Sans',sans-serif;-webkit-appearance:none;}
 input::placeholder{color:#3f3f46;}
