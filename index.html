@@ -2899,8 +2899,11 @@ await loadProfile(u.id);
 await loadRounds(u.id);
 };
 const handleLogout=async()=>{
-await sb.auth.signOut();
-setUser(null);setProfile(null);setRounds([]);setActive(null);setTab("dashboard");
+setUser(null);setProfile(null);setRounds([]);setActive(null);setIsPro(false);setTab("dashboard");
+try{await sb.auth.signOut({scope:"local"});}catch(e){}
+try{
+Object.keys(localStorage).filter(k=>k.startsWith("sb-")||k==="supabase.auth.token").forEach(k=>localStorage.removeItem(k));
+}catch(e){}
 };
 const updateProfile=(p)=>setProfile(p);
 
