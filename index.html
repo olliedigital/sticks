@@ -62,6 +62,24 @@ const FREE_ROUND_LIMIT=3;
 const API_BASE=window.location.origin;
 const startCheckout=async(priceId,userId,email)=>{try{const r=await fetch(API_BASE+"/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId,userId,email,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;else throw new Error(d.error||"Checkout failed");}catch(e){alert("Error: "+e.message);}};
 const openPortal=async(customerId)=>{try{const r=await fetch(API_BASE+"/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;}catch(e){alert("Error: "+e.message);}};
+const googleSignIn=async()=>{
+try{
+const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
+if(error){
+if(/provider is not enabled/i.test(error.message||"")||/Unsupported provider/i.test(error.message||""))
+alert("Google sign-in isn't ready yet. Please use email sign-up for now — it takes 10 seconds.");
+else alert("Google sign-in error: "+error.message);
+}
+}catch(e){alert("Google sign-in unavailable right now. Please use email sign-up.");}
+};
+// Base64 encode/decode helpers that survive non-ASCII round names.
+const b64encode=(s)=>{try{return btoa(unescape(encodeURIComponent(s)));}catch(e){return "";}};
+const b64decode=(s)=>{try{return decodeURIComponent(escape(atob(s)));}catch(e){return null;}};
+const buildShareLink=(r)=>{
+const payload={cn:r.course_name,dt:r.date,tee:r.tee||null,cr:r.cr||null,sr:r.sr||null,
+h:(r.holes||[]).map(x=>({p:x.par,s:x.sc,pt:x.pt}))};
+return window.location.origin+"/?r="+b64encode(JSON.stringify(payload));
+};
 
 const COURSES=[
 {id:"goat_hill",name:"Goat Hill Park",loc:"Oceanside, CA",par:65,holes:18,greens:[{lat:33.19737066,lng:-117.36244999},{lat:33.19761374,lng:-117.36455757},{lat:33.19640256,lng:-117.36182580},{lat:33.19378224,lng:-117.36246714},{lat:33.19403036,lng:-117.36130145},{lat:33.19263338,lng:-117.36187625},{lat:33.19406325,lng:-117.36339892},{lat:33.19611922,lng:-117.36168064},{lat:33.19673956,lng:-117.36011785},{lat:33.19486458,lng:-117.35861565},{lat:33.19393309,lng:-117.36014631},{lat:33.19627107,lng:-117.36052567},{lat:33.19427192,lng:-117.36070127},{lat:33.19304375,lng:-117.36255314},{lat:33.19610127,lng:-117.36124169},{lat:33.19720605,lng:-117.36462405},{lat:33.19775836,lng:-117.36299449},{lat:33.19765966,lng:-117.35977530}],teeBoxes:[{lat:33.1956255,lng:-117.3607338},{lat:33.1965532,lng:-117.3634957},{lat:33.1978952,lng:-117.3641677},{lat:33.1958310,lng:-117.3609129},{lat:33.1934940,lng:-117.3624261},{lat:33.1928741,lng:-117.3633773},{lat:33.1928645,lng:-117.3629681},{lat:33.1941831,lng:-117.3637544},{lat:33.1967310,lng:-117.3612916},{lat:33.1956256,lng:-117.3612054},{lat:33.1938884,lng:-117.3617416},{lat:33.1965532,lng:-117.3634957},{lat:33.1956255,lng:-117.3607338},{lat:33.1952729,lng:-117.3620720},{lat:33.1928741,lng:-117.3633773},{lat:33.1967146,lng:-117.3615495},{lat:33.1965532,lng:-117.3634957},{lat:33.1956256,lng:-117.3612054}],tees:{black:{r:64.2,s:107,y:[290,182,289,328,145,179,162,328,135,305,175,329,175,285,451,346,178,300]},white:{r:62.5,s:103,y:[275,169,289,300,135,165,150,310,119,279,160,308,167,271,443,319,153,288]},green:{r:60.0,s:97,y:[261,146,200,279,118,138,113,284,97,256,126,249,157,213,410,306,116,266]}},pars:[4,3,4,4,3,3,3,4,3,4,3,4,3,4,5,4,3,4],tips:["Slight dogleg right. Aim straight off the tee, 200yd leaves ~100 to the hole.","Plays uphill into wind. Take an extra club.","Aim at the big dead tree with slight draw. Hole on left side of double green.","Long drive can get you in trouble. 200-210 off the tee is plenty.","Generous fairway, left center is best angle to green.","Favor left side. Check pin placements on 6 and 14, enjoy the ocean view.","Aim over the aiming post. Make sure group ahead is on the green.","Shared green \u2014 aim at the pin on the right.","Shortest hole, plays slightly downhill. Finish the front strong.","Downhill. Avoid bunkers on left, aim left center as ball kicks right.","Plays uphill, usually into wind. Bring your 220yd club for hole 12 tee.","Dogleg left. 225 to the aiming post. Second shot uphill to small two-tiered green.","Not long but keep it straight. Plays uphill.","Dogleg right, keep drive left of Eucalyptus trees. Bunker in front of green.","Slightly blind downhill tee shot. Dead straight \u2014 keep it between the tree lines.","Downhill, usually helping wind. Favor left side of green.","Ball below the hole for an uphill putt is an advantage.","Straight away. 200-220 off the tee leaves ~100. Finish strong."]},
@@ -375,6 +393,18 @@ const[name,setName]=useState("");
 const[loading,setLoading]=useState(false);
 const[error,setError]=useState("");
 const[msg,setMsg]=useState("");
+const[canInstall,setCanInstall]=useState(()=>!!window.__installPromptEvent);
+useEffect(()=>{
+const ready=()=>setCanInstall(true);const done=()=>setCanInstall(false);
+window.addEventListener("sticks-install-ready",ready);
+window.addEventListener("sticks-installed",done);
+return()=>{window.removeEventListener("sticks-install-ready",ready);window.removeEventListener("sticks-installed",done);};
+},[]);
+const handleInstall=async()=>{
+const ev=window.__installPromptEvent;if(!ev)return;
+try{await ev.prompt();await ev.userChoice;}catch(e){}
+window.__installPromptEvent=null;setCanInstall(false);
+};
 const handleLogin=async()=>{
 setLoading(true);setError("");
 const{data,error:e}=await sb.auth.signInWithPassword({email,password});
@@ -418,13 +448,17 @@ return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDi
 <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
 {["\u{1F4CD} GPS Tracking","\u{1F3CC}\uFE0F 30K+ Courses","\u{1F4CA} Live Handicap","\u{1F3AF} Club Analytics"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.15)",fontSize:11,color:"rgba(255,255,255,0.6)",fontFamily:F,fontWeight:500}}>{f}</div>)}
 </div>
-<button onClick={()=>sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}})} style={{width:"100%",padding:"14px",borderRadius:14,background:"#fff",border:"none",color:"#333",fontSize:15,fontWeight:600,fontFamily:F,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
+<button onClick={googleSignIn} style={{width:"100%",padding:"14px",borderRadius:14,background:"#fff",border:"none",color:"#333",fontSize:15,fontWeight:600,fontFamily:F,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
 <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
 Continue with Google
 </button>
 <button onClick={()=>setMode("signup")} style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg, #10b981 0%, #059669 100%)",color:"#09090b",fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:10,letterSpacing:"0.01em",boxShadow:"0 4px 24px rgba(16,185,129,0.3)"}}>Get Started with Email</button>
 <button onClick={()=>setMode("login")} style={{width:"100%",padding:"15px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer",marginBottom:10}}>Sign In</button>
 {onGuest&&<button onClick={onGuest} style={{width:"100%",padding:"13px",borderRadius:14,background:"transparent",border:"none",color:"rgba(255,255,255,0.3)",fontSize:13,fontWeight:500,fontFamily:F,cursor:"pointer"}}>Continue as Guest</button>}
+{canInstall&&<button onClick={handleInstall} style={{width:"100%",padding:"11px",borderRadius:12,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",color:"#10b981",fontSize:12,fontWeight:600,fontFamily:F,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:4}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 21h14"/></svg>
+Install STICKS on this device
+</button>}
 <div style={{display:"flex",justifyContent:"center",gap:32,marginTop:16}}>
 {[{n:"30K+",l:"Courses"},{n:"FREE",l:"Forever"},{n:"\u221E",l:"Rounds"}].map(x=><div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:800,color:"#10b981",fontFamily:M}}>{x.n}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.12em",marginTop:2}}>{x.l}</div></div>)}
 </div>
@@ -461,7 +495,7 @@ return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDi
 {loading?<Spinner T={{...T,g:"#09090b",bdr:"#09090b"+"44"}} size={18}/>:mode==="login"?"Sign In":mode==="signup"?"Create Account":"Send Reset Link"}
 </button>
 {mode!=="reset"&&<><div style={{display:"flex",alignItems:"center",gap:12,margin:"16px 0"}}><div style={{flex:1,height:1,background:"rgba(255,255,255,0.08)"}}/><div style={{fontSize:11,color:"rgba(255,255,255,0.2)",fontFamily:F}}>OR</div><div style={{flex:1,height:1,background:"rgba(255,255,255,0.08)"}}/></div>
-<button onClick={()=>sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}})} style={{width:"100%",padding:"13px",borderRadius:14,background:"#fff",border:"none",color:"#333",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+<button onClick={googleSignIn} style={{width:"100%",padding:"13px",borderRadius:14,background:"#fff",border:"none",color:"#333",fontSize:14,fontWeight:600,fontFamily:F,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
 <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
 Continue with Google
 </button></>}
@@ -1254,7 +1288,7 @@ const St=({label:l,value:v,unit:u,color:cl,small:sm,T})=><div style={{textAlign:
 const Diff=({d,style:s,T})=><span style={{color:d<0?T.g:d===0?T.b:T.o,fontWeight:700,fontFamily:M,...s}}>{d>0?"+"+d:d===0?"E":""+d}</span>;
 const ScLbl=({sc,par,T})=>{if(!sc||!par)return null;const ace=sc===1,d=sc-par;const l=ace?"ACE":d<=-3?"ALBATROSS":d===-2?"EAGLE":d===-1?"BIRDIE":d===0?"PAR":d===1?"BOGEY":d===2?"DOUBLE":"+"+d;const cl=ace?T.y:d<0?T.g:d===0?T.b:T.o;return <span style={{fontSize:11,fontWeight:700,color:cl,fontFamily:F,letterSpacing:"0.08em"}}>{l}</span>;};
 // ==================== LIVE DISTANCE HUD ====================
-function LiveDistanceHUD({gpsPos,green,tee,signal,T,weather}){
+function LiveDistanceHUD({gpsPos,green,tee,signal,T,weather,elevDiff}){
 const[dists,setDists]=useState({front:null,mid:null,back:null});const prevMid=useRef(null);const[pop,setPop]=useState(false);
 useEffect(()=>{
 if(!gpsPos||!green)return;
@@ -1283,17 +1317,27 @@ return <div style={{background:isDk?"linear-gradient(180deg, rgba(0,0,0,0.92) 0%
 <div style={{textAlign:"center",flex:1.6,position:"relative"}}>
 <div className={"dist-num"+(pop?" pop":"")} style={{fontSize:64,fontWeight:800,color:isDk?"#fff":"#111",fontFamily:M,lineHeight:1,textShadow:isDk?"0 0 40px rgba(16,185,129,0.2)":"none",letterSpacing:"-0.03em"}}>{dists.mid}</div>
 <div style={{fontSize:8,color:T.td,fontFamily:F,marginTop:2}}>{(()=>{
-// Wind-adjusted "plays as" calculation
-if(!weather||!weather.windSpeed||!tee||!gpsPos||!green||!dists.mid)return "YARDS";
+// Plays-as = wind adjustment + elevation adjustment (feet * 0.33 yd/ft).
+if(!dists.mid)return "YARDS";
+let windAdj=0,elevAdj=0;
 const gmOk=typeof google!=="undefined"&&google.maps&&google.maps.geometry;
-if(!gmOk)return "YARDS";
+if(weather&&weather.windSpeed&&tee&&gpsPos&&green&&gmOk){
 const shotBearing=google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(gpsPos.lat,gpsPos.lng),new google.maps.LatLng(green.lat,green.lng));
 const windRad=(weather.windDeg-shotBearing)*Math.PI/180;
-const headwind=weather.windSpeed*Math.cos(windRad);// positive = headwind
-const adj=Math.round(headwind*0.7);// ~0.7 yd per mph headwind
-const playsAs=dists.mid+adj;
-if(Math.abs(adj)<2)return "YARDS";
-return <span style={{color:adj>0?T.o:T.g}}>{"Plays "+playsAs+" ("+(adj>0?"+":"")+adj+" wind)"}</span>;
+const headwind=weather.windSpeed*Math.cos(windRad);
+windAdj=Math.round(headwind*0.7);
+}
+if(typeof elevDiff==="number"&&isFinite(elevDiff)){
+const elevFt=elevDiff*3.28084;
+elevAdj=Math.round(elevFt*0.33);
+}
+const totalAdj=windAdj+elevAdj;
+if(Math.abs(totalAdj)<2)return "YARDS";
+const playsAs=dists.mid+totalAdj;
+const parts=[];
+if(Math.abs(windAdj)>=1)parts.push((windAdj>0?"+":"")+windAdj+" wind");
+if(Math.abs(elevAdj)>=1)parts.push((elevAdj>0?"+":"")+elevAdj+" elev");
+return <span style={{color:totalAdj>0?T.o:T.g}}>{"Plays "+playsAs+(parts.length?" ("+parts.join(" · ")+")":"")}</span>;
 })()}</div>
 </div>
 <div style={{textAlign:"center",flex:1}}>
@@ -1834,6 +1878,31 @@ useEffect(()=>{if(active&&!gps.on)gps.start();if(!active&&gps.on)gps.stop();},[a
 useEffect(()=>{if(active&&gps.pos)fetchWeather(gps.pos.lat,gps.pos.lng);
 else if(active&&course.greens&&course.greens[0])fetchWeather(course.greens[0].lat,course.greens[0].lng);
 },[active?active.id:null,gps.pos?1:0]);
+// Elevation diff (meters) from tee to green for the current hole — drives plays-as chip.
+const[elevByHole,setElevByHole]=useState({});
+useEffect(()=>{
+if(!active)return;
+const teeP=course.teeBoxes&&course.teeBoxes[cur];
+const greenP=course.greens&&course.greens[cur];
+if(!teeP||!greenP)return;
+const key=(active.course_id||active.courseId||"c")+":"+cur;
+if(elevByHole[key]!==undefined)return;
+if(typeof google==="undefined"||!google.maps||!google.maps.ElevationService)return;
+try{
+const svc=new google.maps.ElevationService();
+svc.getElevationForLocations({locations:[
+new google.maps.LatLng(teeP.lat,teeP.lng),
+new google.maps.LatLng(greenP.lat,greenP.lng)
+]},(results,status)=>{
+if(status==="OK"&&results&&results.length===2){
+const diff=results[1].elevation-results[0].elevation;
+setElevByHole(p=>({...p,[key]:diff}));
+}else{
+setElevByHole(p=>({...p,[key]:null}));
+}
+});
+}catch(e){}
+},[active?active.id:null,cur,course.greens?course.greens.length:0]);
 useEffect(()=>{if(active&&cur<active.holes.length)setShots(active.holes[cur].shots||[]);else setShots([]);},[cur,active?active.id:null]);
 useEffect(()=>{if(active&&active.holes.length>0)setCur(active.holes.length);else if(active)setCur(0);},[active?active.id:null]);
 useEffect(()=>{if(active&&cur<active.holes.length){const x=active.holes[cur];setH({par:x.par,sc:x.sc,pt:x.pt,cl:x.cl||"",yd:x.yd||"",fw:x.fw||"",gir:x.gir||false});}else if(active){setH({par:course.pars[cur]||4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setHistory([]);}},[cur,active?active.id:null]);
@@ -2049,7 +2118,7 @@ setAutoPrompt({type:"next_tee",hole:cur,msg:"Moving to Hole "+(cur+2)+"?"});
 }
 lastGreenDist.current=dGreen;
 },[gps.pos?gps.pos.lat:0,gps.pos?gps.pos.lng:0,cur,shots.length,active?active.holes.length:0]);
-const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333"};
+const teeColors={black:"#e4e4e7",blue:"#60a5fa",white:"#a1a1aa",green:"#10b981",gold:"#fbbf24",silver:"#a8a29e",copper:"#b87333",red:"#f87171",yellow:"#facc15",purple:"#a78bfa",men_blue:"#60a5fa",mens_blue:"#60a5fa",men:"#60a5fa",mens:"#60a5fa",womens:"#f472b6",ladies:"#f472b6",regular:"#a1a1aa",tournament:"#e4e4e7",championship:"#e4e4e7",pro:"#e4e4e7",back:"#e4e4e7",middle:"#a1a1aa",forward:"#fbbf24",junior:"#fbbf24",senior:"#fbbf24"};
 // ==================== PRACTICE MODE ====================
 if(practiceMode&&!active){
 const savePractice=()=>{const sessions=JSON.parse(localStorage.getItem("sticks_practice")||"[]");
@@ -2324,7 +2393,7 @@ onTouchMove={(e)=>{if(e.currentTarget._swiped)return;const dx=e.touches[0].clien
 </div>}
 
 {/* Live Distance HUD — always visible when GPS is active */}
-<LiveDistanceHUD gpsPos={gps.pos} green={course.greens[cur]} tee={course.teeBoxes?course.teeBoxes[cur]:null} signal={gps.signal} T={T} weather={weather}/>
+<LiveDistanceHUD gpsPos={gps.pos} green={course.greens[cur]} tee={course.teeBoxes?course.teeBoxes[cur]:null} signal={gps.signal} T={T} weather={weather} elevDiff={elevByHole[(active.course_id||active.courseId||"c")+":"+cur]}/>
 
 <ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>
 {/* Compact GPS shot tracker */}
@@ -2638,12 +2707,13 @@ return <div><Hdr title="Rounds" sub={rounds.length+" recorded"} T={T} onToggleTh
 <span style={{fontSize:10,color:T.td,fontFamily:M,background:"rgba(128,128,128,0.06)",padding:"2px 6px",borderRadius:4}}>{"B9: "+r.holes.slice(9).reduce((s,h)=>s+(h.sc||0),0)}</span>
 <span style={{fontSize:10,color:T.td,fontFamily:F}}>{pt+" putts"}</span>{r.cr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"CR "+r.cr}</span>}{r.sr&&<span style={{fontSize:11,color:T.td,fontFamily:F}}>{"SR "+r.sr}</span>}<button onClick={()=>setReplayRound(r)} style={{background:"none",border:"none",color:T.b,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600}}>Replay</button>
 <button onClick={()=>{
+const url=buildShareLink(r);
 const txt=r.course_name+" | "+new Date(r.date).toLocaleDateString()+"\n"+
 "Score: "+t+" ("+(t-p>=0?"+":"")+(t-p)+") | Putts: "+pt+"\n"+
 (r.cr?"Rating: "+r.cr+" | Slope: "+r.sr+"\n":"")+
-"\ud83c\udfcc\ufe0f Tracked with STICKS";
-if(navigator.share)navigator.share({title:"STICKS Round",text:txt}).catch(()=>{});
-else{navigator.clipboard.writeText(txt);alert("Round copied to clipboard!");}
+"\ud83c\udfcc\ufe0f Tracked with STICKS\n"+url;
+if(navigator.share)navigator.share({title:"STICKS Round",text:txt,url}).catch(()=>{});
+else{navigator.clipboard.writeText(url);alert("Share link copied!");}
 }} style={{background:"none",border:"none",color:T.g,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600}}>Share</button>
 {r.holes.some(h=>h.shots&&h.shots.length>0)&&<button onClick={()=>setReplayRound(r)} style={{background:"none",border:"none",color:T.b,fontSize:11,cursor:"pointer",fontFamily:F,fontWeight:600,display:"flex",alignItems:"center",gap:3}}>
 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>Replay</button>}
@@ -2667,6 +2737,75 @@ return <div><Hdr title="My Bag" sub="Club distances" T={T} onToggleTheme={onTogg
 <div style={{display:"flex",justifyContent:"space-between",marginTop:3}}><span style={{fontSize:8,color:T.td,fontFamily:M}}>{s.min}</span><span style={{fontSize:8,color:T.td,fontFamily:M}}>{s.max}</span></div></Crd>)}</div></div>;
 }
 
+// ==================== SHARED ROUND VIEWER ====================
+// Renders a read-only scorecard from a ?r=<base64-json> share link. Works without auth or DB.
+function SharedRoundView({data,onContinue}){
+const T=dark;
+const holes=data.h||[];
+const totalSc=holes.reduce((s,x)=>s+(x.s||0),0);
+const totalPar=holes.reduce((s,x)=>s+(x.p||0),0);
+const totalPutts=holes.reduce((s,x)=>s+(x.pt||0),0);
+const diff=totalSc-totalPar;
+const diffStr=diff>0?"+"+diff:diff===0?"E":""+diff;
+const diffColor=diff<0?T.g:diff===0?T.b:T.o;
+const birdies=holes.filter(x=>x.s&&x.p&&x.s-x.p<0).length;
+const pars=holes.filter(x=>x.s===x.p).length;
+const bogeys=holes.filter(x=>x.s-x.p===1).length;
+const dblPlus=holes.filter(x=>x.s-x.p>=2).length;
+const front9=holes.slice(0,9);const back9=holes.slice(9);
+const f9sc=front9.reduce((s,x)=>s+(x.s||0),0);const f9par=front9.reduce((s,x)=>s+(x.p||0),0);
+const b9sc=back9.reduce((s,x)=>s+(x.s||0),0);const b9par=back9.reduce((s,x)=>s+(x.p||0),0);
+const row=(label,values,isScore)=>{
+return <div style={{display:"grid",gridTemplateColumns:"48px repeat(9, 1fr)",gap:2,marginBottom:2}}>
+<div style={{fontSize:9,color:T.td,fontFamily:F,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",display:"flex",alignItems:"center",paddingLeft:4}}>{label}</div>
+{values.map((v,i)=>{
+const h=values===front9||values===back9?holes[i+(label==="In"?9:0)]:null;
+let color=T.tx,bg="rgba(255,255,255,0.02)";
+if(isScore&&h&&h.p){const d=(h.s||0)-h.p;
+if(d<0){color=T.g;bg="rgba(16,185,129,0.12)";}
+else if(d===0){color=T.b;bg="rgba(96,165,250,0.08)";}
+else if(d===1){color=T.o;bg="rgba(251,146,60,0.1)";}
+else if(d>1){color=T.r;bg="rgba(248,113,113,0.1)";}}
+return <div key={i} style={{fontSize:12,fontWeight:isScore?700:400,color,background:bg,fontFamily:M,textAlign:"center",padding:"6px 0",borderRadius:4}}>{v==null?"-":(typeof v==="number"?v:v)}</div>;
+})}
+</div>;
+};
+return <div style={{minHeight:"100vh",background:T.bg,fontFamily:F,color:T.tx,padding:"24px 16px 40px",maxWidth:480,margin:"0 auto",overflowY:"auto"}}>
+<div style={{marginBottom:8}}><LOGO/></div>
+<div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,marginTop:12}}>Shared Round</div>
+<div style={{fontSize:22,fontWeight:800,color:T.tx,marginTop:4,letterSpacing:"-0.02em"}}>{data.cn||"Round"}</div>
+<div style={{fontSize:12,color:T.tm,marginTop:2}}>{data.dt?new Date(data.dt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}):""}</div>
+<div style={{display:"flex",alignItems:"baseline",gap:12,marginTop:16,marginBottom:20}}>
+<div style={{fontSize:56,fontWeight:800,color:T.tx,fontFamily:M,lineHeight:1}}>{totalSc||"-"}</div>
+<div style={{fontSize:20,fontWeight:700,color:diffColor,fontFamily:M}}>{totalSc?diffStr:""}</div>
+<div style={{fontSize:11,color:T.td,marginLeft:"auto"}}>{holes.length+" holes"+(totalPutts?" · "+totalPutts+" putts":"")}</div>
+</div>
+<div style={{display:"flex",gap:16,justifyContent:"center",marginBottom:20,padding:"12px 0",borderTop:"1px solid "+T.bdr,borderBottom:"1px solid "+T.bdr}}>
+{[[birdies,"BIRD",T.g],[pars,"PAR",T.b],[bogeys,"BOG",T.o],[dblPlus,"DBL+",T.r]].map(([n,l,c])=>
+<div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:c,fontFamily:M}}>{n}</div><div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",marginTop:2}}>{l}</div></div>)}
+</div>
+{front9.length>0&&<div style={{marginBottom:14}}>
+<div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:6}}>Front 9 · {f9sc} ({f9sc-f9par>=0?"+":""}{f9sc-f9par})</div>
+{row("Hole",Array.from({length:9},(_,i)=>i+1),false)}
+{row("Par",front9.map(x=>x.p),false)}
+{row("Out",front9.map(x=>x.s||null),true)}
+</div>}
+{back9.length>0&&<div style={{marginBottom:14}}>
+<div style={{fontSize:9,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:6}}>Back 9 · {b9sc} ({b9sc-b9par>=0?"+":""}{b9sc-b9par})</div>
+{row("Hole",Array.from({length:back9.length},(_,i)=>i+10),false)}
+{row("Par",back9.map(x=>x.p),false)}
+{row("In",back9.map(x=>x.s||null),true)}
+</div>}
+{(data.cr||data.sr||data.tee)&&<div style={{display:"flex",gap:16,fontSize:11,color:T.td,marginBottom:20,paddingTop:12,borderTop:"1px solid "+T.bdr}}>
+{data.tee&&<span>Tees: <span style={{color:T.tx,fontWeight:600,textTransform:"capitalize"}}>{data.tee}</span></span>}
+{data.cr&&<span>CR <span style={{color:T.tx,fontWeight:600,fontFamily:M}}>{data.cr}</span></span>}
+{data.sr&&<span>SR <span style={{color:T.tx,fontWeight:600,fontFamily:M}}>{data.sr}</span></span>}
+</div>}
+<button onClick={onContinue} style={{width:"100%",padding:"16px",borderRadius:14,background:T.g,color:T.bg,fontSize:15,fontWeight:700,fontFamily:F,border:"none",cursor:"pointer",marginBottom:8}}>Open STICKS</button>
+<div style={{textAlign:"center",fontSize:11,color:T.td,fontFamily:F}}>Track your own rounds — GPS, handicap, and club stats.</div>
+</div>;
+}
+
 // ==================== MAIN APP ====================
 function App(){
 const[user,setUser]=useState(null);
@@ -2678,7 +2817,22 @@ const[loading,setLoading]=useState(true);
 const[isDark,setIsDark]=useState(true);
 const[isPro,setIsPro]=useState(false);
 const[showUpgrade,setShowUpgrade]=useState(false);
+const[sharedView,setSharedView]=useState(()=>{
+try{const p=new URLSearchParams(window.location.search).get("r");if(!p)return null;
+const j=b64decode(p);if(!j)return null;return JSON.parse(j);}catch(e){return null;}
+});
 const T=isDark?dark:light;const toggle=()=>setIsDark(p=>!p);
+
+// Surface Supabase OAuth errors that land in the URL hash.
+useEffect(()=>{
+const h=window.location.hash||"";
+if(h.includes("error=")||h.includes("error_description=")){
+const params=new URLSearchParams(h.replace(/^#/,""));
+const msg=params.get("error_description")||params.get("error")||"Sign-in failed";
+window.history.replaceState({},"",window.location.pathname);
+setTimeout(()=>alert("Sign-in failed: "+decodeURIComponent(msg.replace(/\+/g," "))),250);
+}
+},[]);
 
 // Check auth on mount
 useEffect(()=>{
@@ -2778,7 +2932,10 @@ await sb.from("rounds").delete().eq("id",id);
 setRounds(p=>p.filter(r=>r.id!==id));
 },[]);
 
-console.log("RENDER STATE:",{loading,user:!!user,profile:!!profile});
+if(sharedView)return <SharedRoundView data={sharedView} onContinue={()=>{
+setSharedView(null);
+window.history.replaceState({},"",window.location.pathname);
+}}/>;
 if(loading)return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}><LOGO/><Spinner T={dark} size={24}/></div>;
 if(!user){
 const guestLogin=()=>{
@@ -2894,10 +3051,33 @@ return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",backgr
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 <script>
+// Service worker registration — enables offline round play + instant PWA loads.
 if('serviceWorker' in navigator){
-  caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
-  navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').then(reg=>{
+      setInterval(()=>{try{reg.update();}catch(e){}},1800000);
+      reg.addEventListener('updatefound',()=>{
+        const n=reg.installing;if(!n)return;
+        n.addEventListener('statechange',()=>{
+          if(n.state==='installed'&&navigator.serviceWorker.controller){
+            window.dispatchEvent(new CustomEvent('sticks-update-ready'));
+          }
+        });
+      });
+    }).catch(()=>{});
+  });
 }
+// PWA install prompt — captured for a later in-app CTA.
+window.__installPromptEvent=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  window.__installPromptEvent=e;
+  window.dispatchEvent(new CustomEvent('sticks-install-ready'));
+});
+window.addEventListener('appinstalled',()=>{
+  window.__installPromptEvent=null;
+  window.dispatchEvent(new CustomEvent('sticks-installed'));
+});
 </script>
 </body>
 </html>

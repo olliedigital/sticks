@@ -1,5 +1,5 @@
-const CACHE = 'sticks-v12';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'sticks-v13-launch';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
