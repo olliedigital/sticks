@@ -1258,15 +1258,14 @@ setDists({front:frontD,mid:midD,back:backD});
 },[gpsPos?gpsPos.lat:0,gpsPos?gpsPos.lng:0]);
 if(!dists.mid||dists.mid>800)return null;
 const isDk=T.bg==="#09090b";
-return <div style={{background:isDk?"linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75))":"linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.88))",backdropFilter:"blur(12px)",borderRadius:14,padding:"12px 16px",marginBottom:10,border:"1px solid "+(isDk?"rgba(16,185,129,0.15)":"rgba(5,150,105,0.15)"),boxShadow:isDk?"0 4px 20px rgba(0,0,0,0.4)":"0 2px 8px rgba(0,0,0,0.06)"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+return <div style={{background:isDk?"linear-gradient(180deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.8) 100%)":"linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.9) 100%)",backdropFilter:"blur(16px)",borderRadius:20,padding:"20px 20px 16px",marginBottom:12,border:"1px solid "+(isDk?"rgba(16,185,129,0.1)":"rgba(5,150,105,0.12)"),boxShadow:isDk?"0 8px 32px rgba(0,0,0,0.5)":"0 4px 16px rgba(0,0,0,0.08)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <div style={{textAlign:"center",flex:1}}>
-<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Front</div>
-<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:22,fontWeight:800,color:isDk?"#a7f3d0":T.g,fontFamily:M,lineHeight:1}}>{dists.front}</div>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:28,fontWeight:800,color:isDk?"#86efac":T.g,fontFamily:M,lineHeight:1}}>{dists.front}</div>
+<div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.2em",fontWeight:600,fontFamily:F,marginTop:4}}>Front</div>
 </div>
-<div style={{textAlign:"center",flex:1.4}}>
-<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Center</div>
-<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:36,fontWeight:800,color:isDk?"#fff":"#111",fontFamily:M,lineHeight:1,textShadow:isDk?"0 0 20px rgba(16,185,129,0.3)":"none"}}>{dists.mid}</div>
+<div style={{textAlign:"center",flex:1.6,position:"relative"}}>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:64,fontWeight:800,color:isDk?"#fff":"#111",fontFamily:M,lineHeight:1,textShadow:isDk?"0 0 40px rgba(16,185,129,0.2)":"none",letterSpacing:"-0.03em"}}>{dists.mid}</div>
 <div style={{fontSize:8,color:T.td,fontFamily:F,marginTop:2}}>{(()=>{
 // Wind-adjusted "plays as" calculation
 if(!weather||!weather.windSpeed||!tee||!gpsPos||!green||!dists.mid)return "YARDS";
@@ -1282,11 +1281,15 @@ return <span style={{color:adj>0?T.o:T.g}}>{"Plays "+playsAs+" ("+(adj>0?"+":"")
 })()}</div>
 </div>
 <div style={{textAlign:"center",flex:1}}>
-<div style={{fontSize:9,color:T.o||"#fb923c",textTransform:"uppercase",letterSpacing:"0.15em",fontWeight:700,fontFamily:F,marginBottom:2}}>Back</div>
-<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:22,fontWeight:800,color:isDk?"#fed7aa":T.o,fontFamily:M,lineHeight:1}}>{dists.back}</div>
+<div className={"dist-num"+(pop?" pop":"")} style={{fontSize:28,fontWeight:800,color:isDk?"#fde68a":T.o,fontFamily:M,lineHeight:1}}>{dists.back}</div>
+<div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.2em",fontWeight:600,fontFamily:F,marginTop:4}}>Back</div>
 </div>
 </div>
-{signal&&<div style={{textAlign:"center",marginTop:6}}><div style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:8,color:T.td,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}><div style={{width:5,height:5,borderRadius:3,background:signal==="strong"?"#10b981":signal==="good"?"#10b981":signal==="fair"?"#fbbf24":"#f87171"}}/>{signal==="strong"?"GPS Locked":signal==="good"?"GPS Good":"GPS "+signal}</div></div>}
+{signal&&<div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:6,marginTop:8,paddingTop:8,borderTop:"1px solid "+(isDk?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)")}}>
+<div style={{display:"flex",gap:2}}>{[1,2,3,4].map(i=><div key={i} style={{width:3,height:i*3+4,borderRadius:1,background:signal==="strong"||(signal==="good"&&i<=3)||(signal==="fair"&&i<=2)||(signal==="weak"&&i<=1)?"#10b981":"rgba(128,128,128,0.2)"}}/>)}</div>
+<div style={{fontSize:9,color:T.td,fontFamily:F,fontWeight:500}}>{signal==="strong"?"GPS Locked":signal==="good"?"GPS":"Acquiring"}</div>
+{weather&&<><div style={{width:1,height:10,background:isDk?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.06)",margin:"0 4px"}}/><div style={{fontSize:9,color:T.td,fontFamily:F}}>{weather.temp+"\u00b0 \u00b7 "+weather.windSpeed+"mph "+weather.windDir}</div></>}
+</div>}
 </div>;
 }
 // ==================== PROFILE SCREEN ====================
@@ -2234,7 +2237,17 @@ updated_at:new Date().toISOString()
 },{onConflict:"group_code,user_id"}).then(()=>{}).catch(()=>{});}setAutoPrompt(null);holeState.current="tee";greenArrival.current=0;leftGreenAt.current=0;if(!ed&&hn<18){setCur(cur+1);setH({par:4,sc:0,pt:0,cl:"",yd:"",fw:"",gir:false});setShots([]);setHistory([]);}else if(ed)setCur(active.holes.length);};
 const diffStr=ts-tp>0?"+":"";const diffVal=ts-tp===0?"E":ts-tp;
 return <div>
-<Hdr title={"Hole "+hn} sub={course.name+" \u00b7 Thru "+active.holes.length+" \u00b7 "+diffStr+diffVal+" ("+ts+")"} T={T} onToggleTheme={onToggle} profile={profile} right={<Btn v="danger" T={T} onClick={onFinish} style={{width:"auto",padding:"7px 14px",fontSize:11}}>End</Btn>}/>
+{/* Compact round header */}
+<div style={{padding:"14px 20px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div>
+<div style={{display:"flex",alignItems:"baseline",gap:8}}>
+<span style={{fontSize:22,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.02em"}}>{"Hole "+hn}</span>
+<span style={{fontSize:12,color:T.td,fontFamily:F}}>{"Par "+hp+" \u00b7 "+hy+"yd"}</span>
+</div>
+<div style={{fontSize:11,color:T.tm,fontFamily:F,marginTop:2}}>{course.name+" \u00b7 "}<span style={{color:ts-tp<0?T.g:ts-tp===0?T.b:T.o,fontWeight:700,fontFamily:M}}>{diffStr+diffVal}</span>{" ("+ts+")"}</div>
+</div>
+<button onClick={onFinish} style={{padding:"6px 12px",borderRadius:8,background:"rgba(248,113,113,0.06)",border:"1px solid rgba(248,113,113,0.12)",color:T.r,fontSize:11,fontWeight:600,fontFamily:F,cursor:"pointer"}}>End</button>
+</div>
 {/* Game mode banner */}
 {active.gameMode&&active.gameMode!=="stroke"&&<div style={{margin:"0 16px 8px",padding:"6px 12px",borderRadius:8,background:T.bd,border:"1px solid rgba(96,165,250,0.15)",display:"flex",alignItems:"center",gap:6}}>
 <span style={{fontSize:10,fontWeight:700,color:T.b,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.08em"}}>
@@ -2298,17 +2311,21 @@ onTouchMove={(e)=>{if(e.currentTarget._swiped)return;const dx=e.touches[0].clien
 <LiveDistanceHUD gpsPos={gps.pos} green={course.greens[cur]} tee={course.teeBoxes?course.teeBoxes[cur]:null} signal={gps.signal} T={T} weather={weather}/>
 
 <ShotMap shots={shots} holeIdx={cur} courseId={cid} theme={T} livePos={gps.pos} teeCoords={course.teeBoxes?course.teeBoxes[cur]:null}/>
-<Crd T={T} style={{marginBottom:10,border:"1px solid "+T.gb}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontSize:10,color:T.g,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:F,fontWeight:700}}>GPS</div><div style={{width:6,height:6,borderRadius:3,background:gps.signal==="strong"?"#10b981":gps.signal==="good"?"#10b981":gps.signal==="fair"?"#fbbf24":gps.signal==="weak"?"#f87171":gps.signal==="acquiring"?"#fbbf24":"#4a4a55",animation:gps.signal==="acquiring"?"pulse 1.5s infinite":"none"}}/></div>{gps.pos&&<div style={{fontSize:10,color:gps.signal==="strong"?T.g:gps.signal==="good"?T.g:T.td,fontFamily:M}}>{"±"+Math.round(gps.pos.acc)+"m"+(gps.signal==="strong"?" ✓":"")}</div>}</div>
-{!gps.pos&&!gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.td,fontSize:12,fontFamily:F}}>{gps.signal==="acquiring"?"Acquiring GPS signal...":"Waiting for signal..."}</div>}
-{gps.err&&<div style={{textAlign:"center",padding:"8px 0",color:T.o,fontSize:12,fontFamily:F}}>{gps.err}</div>}
+{/* Compact GPS shot tracker */}
+<div style={{marginBottom:10}}>
+{gps.err&&<div style={{textAlign:"center",padding:"6px 0",color:T.o,fontSize:11,fontFamily:F,marginBottom:6}}>{gps.err}</div>}
 {holeDetectStatus&&gps.pos&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,padding:"4px 8px",borderRadius:6,background:"rgba(16,185,129,0.04)"}}>
 <div style={{width:4,height:4,borderRadius:2,background:holeState.current==="green"?"#10b981":holeState.current==="walking_off"?"#fbbf24":"#60a5fa"}}/>
 <div style={{fontSize:10,color:T.tm,fontFamily:F}}>{holeDetectStatus}</div>
 </div>}
 <button disabled={marking||!gps.pos} onClick={async()=>{setMarking(true);try{const p=await gps.once();const s={lat:p.lat,lng:p.lng,acc:p.acc,ts:Date.now()};if(shots.length>0){const pr=shots[shots.length-1];s.dist=gpsDist(pr.lat,pr.lng,p.lat,p.lng);}if(course.greens&&course.greens[cur])s.toGreen=gpsDist(p.lat,p.lng,course.greens[cur].lat,course.greens[cur].lng);setShots(prev=>[...prev,s]);lastShotTime.current=Date.now();}catch(e){console.error(e);}setMarking(false);}} style={{width:"100%",padding:"11px",borderRadius:8,background:autoTrack?"rgba(128,128,128,0.04)":T.gd,border:"1px solid "+(autoTrack?T.bdr:T.gb),color:autoTrack?T.td:T.g,fontSize:12,fontWeight:700,cursor:!gps.pos?"not-allowed":"pointer",fontFamily:F,opacity:!gps.pos?0.4:1}}>{marking?"Marking...":(autoTrack?"Manual Override · Shot "+(shots.length+1):"Mark Shot "+(shots.length+1))}</button>
-{shots.length>0&&<div style={{marginTop:8}}>{shots.map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderTop:i>0?"1px solid "+T.bdr:"none"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:20,height:20,borderRadius:5,background:T.gd,color:T.g,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:M}}>{i+1}</div><div><div style={{fontSize:12,color:T.tx,fontWeight:600,fontFamily:F}}>{"Shot "+(i+1)}{s.auto&&<span style={{color:T.b,fontFamily:F,marginLeft:4,fontSize:8,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",background:T.bd,padding:"1px 4px",borderRadius:3}}>auto</span>}{s.dist&&<span style={{color:T.g,fontFamily:M,marginLeft:6,fontSize:11}}>{s.dist+" yd"}</span>}</div><div style={{fontSize:10,color:T.td,fontFamily:F}}>{s.toGreen?s.toGreen+" yd to green":"\u00b1"+Math.round(s.acc)+"m acc"}</div></div></div><button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:13,cursor:"pointer",padding:4}}>{"\u00d7"}</button></div>)}</div>}
-</Crd>
+{shots.length>0&&<div style={{marginTop:6,padding:"0 4px"}}>{shots.map((s,i)=><div key={i} style={{display:"inline-flex",alignItems:"center",gap:4,marginRight:8,marginBottom:4,padding:"4px 8px",borderRadius:6,background:T.gd,border:"1px solid "+T.gb}}>
+<span style={{fontSize:10,fontWeight:700,color:T.g,fontFamily:M}}>{i+1}</span>
+{s.dist&&<span style={{fontSize:10,color:T.g,fontFamily:M}}>{s.dist+"yd"}</span>}
+{s.auto&&<span style={{fontSize:7,color:T.b,fontWeight:700,textTransform:"uppercase"}}>A</span>}
+<button onClick={()=>setShots(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.td,fontSize:10,cursor:"pointer",padding:0,marginLeft:2}}>{"\u00d7"}</button>
+</div>)}</div>}
+</div>
 {ht&&<div style={{background:"rgba(128,128,128,0.03)",borderRadius:8,padding:"10px 12px",marginBottom:10,borderLeft:"2px solid "+T.gb}}><div style={{fontSize:11,color:T.tm,fontFamily:F,lineHeight:1.6}}>{ht}</div></div>}
 
 {/* AI Club Recommendation */}
@@ -2335,9 +2352,38 @@ return <Crd T={T} style={{marginBottom:10,background:T.bg==="#09090b"?"linear-gr
 </div>
 </div></Crd>;
 })()}
-<Crd T={T} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><Lbl T={T}>Score</Lbl>{history.length>0&&<button onClick={undo} style={{background:T.gd,border:"1px solid "+T.gb,borderRadius:6,padding:"3px 10px",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer"}}>Undo</button>}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:22,marginBottom:4}}><button onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(10);setH(s=>({...s,sc:Math.max(1,(s.sc||s.par)-1)}));}} style={{width:48,height:48,borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.1s",active:{transform:"scale(0.92)"}}}>{"\u2212"}</button><div style={{fontSize:48,fontWeight:800,color:T.tx,fontFamily:M,minWidth:60,textAlign:"center",transition:"all 0.2s"}}>{h.sc||h.par}</div><button onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(10);setH(s=>({...s,sc:(s.sc||s.par)+1}));}} style={{width:48,height:48,borderRadius:12,background:"rgba(128,128,128,0.06)",border:"1px solid "+T.bdr,color:T.tx,fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.1s"}}>+</button></div><div style={{textAlign:"center"}}><ScLbl sc={h.sc||h.par} par={h.par} T={T}/></div></Crd>
-<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Putts</Lbl><div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(p=><Pill key={p} active={h.pt===p} T={T} onClick={()=>{pushUndo();setH(s=>({...s,pt:p}));}}>{p}</Pill>)}</div></Crd>
-<Crd T={T} style={{marginBottom:10}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><Lbl T={T}>Club</Lbl><select value={h.cl} onChange={e=>{pushUndo();setH(s=>({...s,cl:e.target.value}));}} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none"}}><option value="">Select</option>{CLUBS.map(c=><option key={c} value={c}>{c}</option>)}</select></div><div><Lbl T={T}>Yardage</Lbl><input type="number" inputMode="numeric" value={h.yd} onChange={e=>{pushUndo();setH(s=>({...s,yd:e.target.value}));}} placeholder={""+hy} style={{width:"100%",background:"rgba(128,128,128,0.04)",border:"1px solid "+T.bdr,borderRadius:8,padding:"9px 12px",color:T.tx,fontSize:14,fontFamily:F,outline:"none",boxSizing:"border-box"}}/></div></div></Crd>
+{/* Score — tap number grid like 18Birdies */}
+<div style={{marginBottom:12,borderRadius:16,overflow:"hidden",background:T.bg==="#09090b"?"linear-gradient(145deg, #16161a, #111114)":T.card,border:"1px solid "+T.bdr,boxShadow:T.bg==="#09090b"?"0 2px 12px rgba(0,0,0,0.3)":"0 1px 3px rgba(0,0,0,0.04)"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px 8px"}}>
+<div style={{fontSize:10,color:T.td,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:600,fontFamily:F}}>Score · Par {hp}</div>
+{history.length>0&&<button onClick={undo} style={{background:"none",border:"none",color:T.g,fontSize:10,fontWeight:700,fontFamily:F,cursor:"pointer",padding:0}}>Undo</button>}
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:0,padding:"0 4px 4px"}}>
+{[1,2,3,4,5,6,7,8,9,10].map(n=>{const sel=(h.sc||h.par)===n;const d=n-hp;
+const bg=sel?(d<0?"rgba(16,185,129,0.2)":d===0?"rgba(96,165,250,0.15)":"rgba(251,146,60,0.15)"):"transparent";
+const cl=sel?(d<0?T.g:d===0?T.b:d>=2?T.r:T.o):T.tm;
+const lbl=d===-2?"Eagle":d===-1?"Birdie":d===0?"Par":d===1?"Bogey":d===2?"Dbl+":null;
+return <button key={n} onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(8);setH(s=>({...s,sc:n}));}} style={{padding:"10px 0",borderRadius:10,margin:2,background:bg,border:sel?"1px solid "+(d<0?T.g+"33":d===0?T.b+"33":T.o+"33"):"1px solid transparent",color:cl,fontSize:sel?20:16,fontWeight:sel?800:500,fontFamily:M,cursor:"pointer",transition:"all 0.12s",position:"relative"}}>
+{n}
+{sel&&lbl&&<div style={{position:"absolute",bottom:-1,left:"50%",transform:"translateX(-50%)",fontSize:7,fontWeight:700,color:cl,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>{lbl}</div>}
+</button>;})}
+</div>
+</div>
+{/* Putts + Club + Yardage — compact row */}
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+<div style={{borderRadius:12,background:T.bg==="#09090b"?"#16161a":T.card,border:"1px solid "+T.bdr,padding:"10px 8px"}}>
+<div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,fontFamily:F,textAlign:"center",marginBottom:6}}>Putts</div>
+<div style={{display:"flex",gap:2,justifyContent:"center"}}>{[0,1,2,3,4].map(p=><button key={p} onClick={()=>{pushUndo();if(navigator.vibrate)navigator.vibrate(6);setH(s=>({...s,pt:p}));}} style={{width:26,height:26,borderRadius:6,background:h.pt===p?T.gd:"transparent",border:h.pt===p?"1px solid "+T.gb:"1px solid transparent",color:h.pt===p?T.g:T.td,fontSize:12,fontWeight:h.pt===p?700:400,fontFamily:M,cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{p}</button>)}</div>
+</div>
+<div style={{borderRadius:12,background:T.bg==="#09090b"?"#16161a":T.card,border:"1px solid "+T.bdr,padding:"10px 8px"}}>
+<div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,fontFamily:F,textAlign:"center",marginBottom:6}}>Club</div>
+<select value={h.cl} onChange={e=>{pushUndo();setH(s=>({...s,cl:e.target.value}));}} style={{width:"100%",background:"transparent",border:"none",color:T.tx,fontSize:12,fontFamily:F,outline:"none",textAlign:"center",textAlignLast:"center"}}><option value="">—</option>{CLUBS.map(c=><option key={c} value={c}>{c}</option>)}</select>
+</div>
+<div style={{borderRadius:12,background:T.bg==="#09090b"?"#16161a":T.card,border:"1px solid "+T.bdr,padding:"10px 8px"}}>
+<div style={{fontSize:8,color:T.td,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,fontFamily:F,textAlign:"center",marginBottom:6}}>Yards</div>
+<input type="number" inputMode="numeric" value={h.yd} onChange={e=>{pushUndo();setH(s=>({...s,yd:e.target.value}));}} placeholder={""+hy} style={{width:"100%",background:"transparent",border:"none",color:T.tx,fontSize:12,fontFamily:M,outline:"none",textAlign:"center",boxSizing:"border-box"}}/>
+</div>
+</div>
 {(h.par||hp)>3&&<Crd T={T} style={{marginBottom:10}}><Lbl T={T}>Fairway</Lbl><div style={{display:"flex",gap:6}}>{[{v:"hit",l:"Hit"},{v:"left",l:"Left"},{v:"right",l:"Right"}].map(f=><Pill key={f.v} active={h.fw===f.v} color={f.v==="hit"?T.g:T.o} bg={f.v==="hit"?T.gd:T.od} T={T} onClick={()=>{pushUndo();setH(s=>({...s,fw:s.fw===f.v?"":f.v}));}}>{f.l}</Pill>)}</div></Crd>}
 <Crd T={T} style={{marginBottom:10}}><button onClick={()=>{pushUndo();setH(s=>({...s,gir:!s.gir}));}} style={{width:"100%",padding:"10px",borderRadius:8,background:h.gir?T.gd:"transparent",border:"1px solid "+(h.gir?T.gb:T.bdr),color:h.gir?T.g:T.td,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>{h.gir?"GIR \u2014 Yes":"Green in Regulation"}</button></Crd>
 <Btn T={T} onClick={svHole}>{ed?"Update Hole":hn===18?"Save Final Hole":"Save Hole "+hn}</Btn>
