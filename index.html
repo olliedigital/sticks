@@ -453,9 +453,28 @@ const inputS={width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid
 
 if(mode==="landing"){
 return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDirection:"column",justifyContent:"space-between",overflow:"hidden",position:"relative"}}>
-{/* Real golf course photo background */}
-<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundImage:"url(https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80)",backgroundSize:"cover",backgroundPosition:"center 40%"}}>
-<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(180deg, rgba(10,10,12,0.2) 0%, rgba(10,10,12,0.5) 30%, rgba(10,10,12,0.85) 60%, rgba(10,10,12,0.97) 80%, #09090b 100%)"}}/>
+{/* Topographic GPS hero */}
+<div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 70% 20%, #0e2a1f 0%, #0a1712 40%, #09090b 75%)"}}>
+<div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(52,211,153,0.08) 1px, transparent 1px)",backgroundSize:"18px 18px",opacity:0.6}}/>
+<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
+{[40,75,115,160,210,265,325,390].map((r,i)=>(<ellipse key={r} cx="280" cy="110" rx={r} ry={r*0.72} fill="none" stroke="#10b981" strokeWidth={i===3?1.2:0.5} strokeOpacity={0.08+(i%3)*0.04} strokeDasharray={i===1||i===4?"3,4":"0"}/>))}
+<path d="M 180 440 Q 200 330 240 260 Q 270 200 300 140" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.35" fill="none" strokeDasharray="2,3"/>
+<circle cx="280" cy="110" r="5" fill="#10b981"/>
+<circle cx="280" cy="110" r="14" fill="none" stroke="#10b981" strokeOpacity="0.4"/>
+<circle cx="280" cy="110" r="26" fill="none" stroke="#10b981" strokeOpacity="0.2"/>
+<line x1="280" y1="110" x2="280" y2="82" stroke="#fff" strokeOpacity="0.8" strokeWidth="1"/>
+<path d="M 280 82 L 292 87 L 280 92 Z" fill="#10b981"/>
+<circle cx="180" cy="440" r="3" fill="#fff"/>
+<circle cx="180" cy="440" r="8" fill="none" stroke="#fff" strokeOpacity="0.4"/>
+</svg>
+<div style={{position:"absolute",top:52,right:24,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,fontFamily:M,fontSize:9,color:"rgba(52,211,153,0.55)",letterSpacing:"0.08em"}}>
+<span>{"33.1943\u00B0 N"}</span><span>{"117.3795\u00B0 W"}</span>
+</div>
+<div style={{position:"absolute",top:92,right:70,background:"rgba(9,9,11,0.8)",border:"1px solid rgba(16,185,129,0.4)",backdropFilter:"blur(8px)",padding:"4px 8px",borderRadius:6}}>
+<div style={{fontFamily:M,fontSize:14,fontWeight:700,color:"#34d399",lineHeight:1}}>148</div>
+<div style={{fontSize:7,color:"rgba(255,255,255,0.4)",fontFamily:F,letterSpacing:"0.15em",textTransform:"uppercase",marginTop:1}}>yds to pin</div>
+</div>
+<div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, rgba(9,9,11,0) 0%, rgba(9,9,11,0) 35%, rgba(9,9,11,0.75) 60%, rgba(9,9,11,0.97) 82%, #09090b 100%)"}}/>
 </div>
 {/* Content */}
 <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 28px",position:"relative",zIndex:1,paddingBottom:16}}>
@@ -465,8 +484,8 @@ return <div style={{minHeight:"100vh",background:"#09090b",display:"flex",flexDi
 </div>
 <div style={{padding:"0 28px 40px",position:"relative",zIndex:1}}>
 {/* Feature pills */}
-<div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-{["\u{1F4CD} GPS Tracking","\u{1F3CC}\uFE0F 30K+ Courses","\u{1F4CA} Live Handicap","\u{1F3AF} Club Analytics"].map(f=><div key={f} style={{padding:"6px 12px",borderRadius:20,background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.15)",fontSize:11,color:"rgba(255,255,255,0.6)",fontFamily:F,fontWeight:500}}>{f}</div>)}
+<div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+{[["GPS","Shot Tracking"],["30K+","Courses"],["HCP","Live Handicap"],["CLUB","Analytics"]].map(([tag,label])=>(<div key={label} style={{padding:"5px 10px",borderRadius:20,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",fontSize:10,color:"rgba(255,255,255,0.7)",fontFamily:F,fontWeight:500,display:"inline-flex",alignItems:"center",gap:6}}><span style={{fontFamily:M,fontSize:9,fontWeight:700,color:"#10b981",letterSpacing:"0.04em"}}>{tag}</span>{label}</div>))}
 </div>
 <button onClick={googleSignIn} style={{width:"100%",padding:"14px",borderRadius:14,background:"#fff",border:"none",color:"#333",fontSize:15,fontWeight:600,fontFamily:F,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
 <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
