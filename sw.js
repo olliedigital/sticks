@@ -1,5 +1,11 @@
-const CACHE = 'sticks-v14-topo';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'sticks-v15-fonts';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png',
+  '/fonts/DMSans-VariableFont_opsz_wght.ttf',
+  '/fonts/DMSans-Italic-VariableFont_opsz_wght.ttf',
+  '/fonts/SpaceMono-Regular.ttf',
+  '/fonts/SpaceMono-Italic.ttf',
+  '/fonts/SpaceMono-Bold.ttf',
+  '/fonts/SpaceMono-BoldItalic.ttf'];
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
