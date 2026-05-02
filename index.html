@@ -865,7 +865,7 @@ return(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:200,ba
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
 const mapRef=useRef(null);const mapInst=useRef(null);const overlayRef=useRef({markers:[],polys:[],circles:[],iws:[]});
 const liveRef=useRef({dot:null,pulse:null});
-const[mapView,setMapView]=useState("svg");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
+const[mapView,setMapView]=useState("sat");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
 const course=getCourse(courseId);const green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
 const tee=teeCoords||(course.teeBoxes?course.teeBoxes[holeIdx]:null);
 const hp=course.pars[holeIdx]||4;const teeKey=Object.keys(course.tees)[0];const hy=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
@@ -1091,19 +1091,20 @@ return(<div style={{marginBottom:10}}>
 {mapView==="sat"&&gmReady?
 <div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>
 <div ref={mapRef} style={{width:"100%",height:"calc(100vh - 160px)",minHeight:320,maxHeight:700,filter:isDk?"contrast(1.12) saturate(1.1)":"contrast(1.05) brightness(1.02)"}}/>
-{/* Floating distance overlay */}
-{liveDistToGreen&&liveDistToGreen<1000&&<div style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",borderRadius:10,padding:"8px 14px",border:"1px solid rgba(16,185,129,0.2)"}}>
-<div style={{fontSize:8,color:T.g,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,fontFamily:F,textAlign:"center"}}>To Pin</div>
-<div style={{fontSize:22,fontWeight:800,color:"#fff",fontFamily:M,textAlign:"center",lineHeight:1}}>{liveDistToGreen}</div>
-<div style={{fontSize:9,color:"rgba(255,255,255,0.4)",fontFamily:F,textAlign:"center"}}>yards</div>
-</div>}
-{/* Hole info overlay */}
-<div style={{position:"absolute",bottom:12,left:12,right:12,display:"flex",gap:6}}>
-<div style={{flex:1,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",borderRadius:10,padding:"8px 0",display:"flex",justifyContent:"space-around",border:"1px solid rgba(255,255,255,0.06)"}}>
-<div style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,fontFamily:M,color:T.g}}>{distInfo?distInfo.front:Math.max(0,hy-15)}</div><div style={{fontSize:7,color:"rgba(255,255,255,0.35)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}>Front</div></div>
-<div style={{textAlign:"center",borderLeft:"1px solid rgba(255,255,255,0.08)",borderRight:"1px solid rgba(255,255,255,0.08)",padding:"0 16px"}}><div style={{fontSize:16,fontWeight:800,fontFamily:M,color:"#fff"}}>{distInfo?distInfo.total:hy}</div><div style={{fontSize:7,color:"rgba(255,255,255,0.35)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}>Mid</div></div>
-<div style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,fontFamily:M,color:"#f87171"}}>{distInfo?distInfo.back:hy+15}</div><div style={{fontSize:7,color:"rgba(255,255,255,0.35)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em"}}>Back</div></div>
+{/* Hero distance — big mono number, 18Birdies style */}
+<div style={{position:"absolute",top:14,left:14,background:"rgba(0,0,0,0.78)",backdropFilter:"blur(10px)",borderRadius:14,padding:"10px 16px",border:"1px solid rgba(16,185,129,0.25)",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>
+<div style={{fontSize:9,color:T.g,textTransform:"uppercase",letterSpacing:"0.14em",fontWeight:700,fontFamily:F,marginBottom:2}}>To Pin</div>
+<div style={{fontSize:42,fontWeight:700,color:"#fff",fontFamily:M,lineHeight:0.95,letterSpacing:"-0.02em"}}>{liveDistToGreen||(distInfo?distInfo.total:hy)}</div>
+<div style={{fontSize:8,color:"rgba(255,255,255,0.4)",fontFamily:F,letterSpacing:"0.18em",textTransform:"uppercase",marginTop:2}}>Yards</div>
 </div>
+{/* Cascading Back / Mid / Front chips on left edge */}
+<div style={{position:"absolute",top:120,left:14,display:"flex",flexDirection:"column",gap:6}}>
+{[{l:"Back",v:distInfo?distInfo.back:hy+15,c:"#f87171"},{l:"Mid",v:distInfo?distInfo.total:hy,c:"#fff"},{l:"Front",v:distInfo?distInfo.front:Math.max(0,hy-15),c:T.g}].map(r=>(
+<div key={r.l} style={{background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",borderRadius:999,padding:"5px 12px",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"baseline",gap:6,minWidth:78}}>
+<span style={{fontSize:18,fontWeight:700,color:r.c,fontFamily:M,lineHeight:1}}>{r.v}</span>
+<span style={{fontSize:8,color:"rgba(255,255,255,0.4)",fontFamily:F,textTransform:"uppercase",letterSpacing:"0.14em",fontWeight:700}}>{r.l}</span>
+</div>
+))}
 </div>
 </div>
 :<div style={{position:"relative",width:"100%",background:isDk?"#0f1a0f":"#1a3a1a",borderRadius:14,border:"1px solid "+T.bdr,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{renderSVG()}
