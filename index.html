@@ -2046,7 +2046,7 @@ const greenArrival=useRef(0);const leftGreenAt=useRef(0);
 const closestHole=useRef(cur); // which hole's green we're closest to (for fallback detection)
 const[holeDetectStatus,setHoleDetectStatus]=useState("");
 // Geofence radii (yards)
-const GEO={tee:35,green:30,greenOuter:50,approach:150,nextTeeSnap:45,autoSaveTimeout:25};
+const GEO={tee:35,green:30,greenOuter:50,approach:150,nextTeeSnap:20,autoSaveTimeout:25};
 useEffect(()=>{
 if(!active||!gps.pos||!gps.on)return;
 const n=course.greens.length;const curGreen=course.greens[cur];
