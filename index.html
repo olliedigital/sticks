@@ -1012,7 +1012,11 @@ const uid="h"+holeIdx;
 // Par 3 (~150yd) → 0.42, Par 4 (~380yd) → 0.92, Par 5 (~560yd) → 1.05
 const playScaleY=Math.min(1.05,Math.max(0.42,hy/410));
 const playTf="translate(0 395) scale(1 "+playScaleY.toFixed(3)+") translate(0 -395)";
-return <svg viewBox="0 0 100 440" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
+// Dynamic viewBox: crop to actually used area (avoid huge empty sky on short holes)
+const usedPlayH=353*playScaleY;// 353 = 395-42 (tee to deepest green design)
+const vbTop=Math.max(0,395-usedPlayH-30);// 30px padding above green
+const vbHeight=440-vbTop;// keep bottom at 440 (info panel)
+return <svg viewBox={"0 "+vbTop.toFixed(1)+" 100 "+vbHeight.toFixed(1)} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
 <defs>
 <radialGradient id={uid+"bg"} cx="50%" cy="35%" r="65%"><stop offset="0%" stopColor={R}/><stop offset="100%" stopColor={G}/></radialGradient>
 <linearGradient id={uid+"fw"} x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={FW} stopOpacity="0.4"/><stop offset="15%" stopColor={isDk?"#28783a":"#58b868"}/><stop offset="50%" stopColor={isDk?"#2e8844":"#62ca6e"}/><stop offset="85%" stopColor={isDk?"#28783a":"#58b868"}/><stop offset="100%" stopColor={FW} stopOpacity="0.4"/></linearGradient>
