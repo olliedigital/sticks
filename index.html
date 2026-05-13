@@ -865,7 +865,7 @@ return(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:200,ba
 function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
 const mapRef=useRef(null);const mapInst=useRef(null);const overlayRef=useRef({markers:[],polys:[],circles:[],iws:[]});
 const liveRef=useRef({dot:null,pulse:null});
-const[mapView,setMapView]=useState("sat");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
+const[mapView,setMapView]=useState("svg");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
 const[target,setTarget]=useState(null);// tap-to-measure target
 const targetRef=useRef({marker:null,line:null});
 const course=getCourse(courseId);const green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
@@ -1008,6 +1008,10 @@ const TC=isDk?"#0a2210":"#1a5020";const TL=isDk?"#184828":"#2a7038";const TD=isD
 const G=isDk?"#0a1a0a":"#152815";const W=isDk?"#1a5578":"#5aafdf";const WD=isDk?"#0a3548":"#3888bb";
 const ym=[];if(hy>=200)ym.push({yd:100,y:385-((100/hy)*345)});if(hy>=280)ym.push({yd:150,y:385-((150/hy)*345)});if(hy>=350)ym.push({yd:200,y:385-((200/hy)*345)});if(hy>=420)ym.push({yd:250,y:385-((250/hy)*345)});
 const uid="h"+holeIdx;
+// Scale play area vertically by actual yardage (anchored at tee y=395)
+// Par 3 (~150yd) → 0.42, Par 4 (~380yd) → 0.92, Par 5 (~560yd) → 1.05
+const playScaleY=Math.min(1.05,Math.max(0.42,hy/410));
+const playTf="translate(0 395) scale(1 "+playScaleY.toFixed(3)+") translate(0 -395)";
 return <svg viewBox="0 0 100 440" preserveAspectRatio="xMidYMid meet" style={{width:"100%",display:"block"}}>
 <defs>
 <radialGradient id={uid+"bg"} cx="50%" cy="35%" r="65%"><stop offset="0%" stopColor={R}/><stop offset="100%" stopColor={G}/></radialGradient>
@@ -1024,6 +1028,8 @@ return <svg viewBox="0 0 100 440" preserveAspectRatio="xMidYMid meet" style={{wi
 <rect width="100" height="440" fill={"url(#"+uid+"bg)"}/>
 {/* Subtle ground texture lines */}
 {[60,120,180,240,300,360].map(y=><line key={y} x1="0" y1={y} x2="100" y2={y+2} stroke="rgba(255,255,255,0.015)" strokeWidth="0.3"/>)}
+{/* === SCALED PLAY AREA — height proportional to actual yardage === */}
+<g transform={playTf}>
 {/* Trees - layered with shadow + canopy + highlight */}
 {hole.trees.map((t,i)=><g key={"t"+i}>
 <ellipse cx={t.x+1} cy={t.y+2} rx={t.s+3} ry={t.s*0.7+2} fill="rgba(0,0,0,0.25)" filter={"url(#"+uid+"blur)"}/>
@@ -1075,6 +1081,8 @@ return <svg viewBox="0 0 100 440" preserveAspectRatio="xMidYMid meet" style={{wi
 <rect x="0" y={m.y-6} width="18" height="12" rx="3" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.3"/>
 <text x="9" y={m.y+1.5} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="'Space Mono',monospace" fontWeight="700">{m.yd}</text>
 </g>)}
+{/* === END SCALED PLAY AREA === */}
+</g>
 {/* Tee box - premium styling */}
 <rect x="42" y="395" width="16" height="10" rx="3" fill={isDk?"#2a5aaa":"#4a8add"} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
 <rect x="42" y="395" width="16" height="5" rx="3" fill="rgba(255,255,255,0.08)"/>
@@ -1149,7 +1157,7 @@ return <div style={{position:"absolute",top:14,right:14,background:"rgba(0,0,0,0
 ))}
 </div>
 </div>
-:<div style={{position:"relative",width:"100%",background:isDk?"#0f1a0f":"#1a3a1a",borderRadius:14,border:"1px solid "+T.bdr,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{renderSVG()}
+:<div style={{position:"relative",width:"100%",background:isDk?"#0f1a0f":"#1a3a1a",borderRadius:14,border:"1px solid "+T.bdr,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxHeight:"calc(100vh - 220px)",minHeight:420}}>{renderSVG()}
 {/* SVG F/M/B overlay */}
 <div style={{position:"absolute",bottom:8,left:8,right:8,display:"flex",gap:4}}>
 <div style={{flex:1,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",borderRadius:8,padding:"6px 0",display:"flex",justifyContent:"space-around"}}>
