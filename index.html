@@ -866,6 +866,8 @@ function ShotMap({shots,holeIdx,courseId,theme:T,livePos,teeCoords}){
 const mapRef=useRef(null);const mapInst=useRef(null);const overlayRef=useRef({markers:[],polys:[],circles:[],iws:[]});
 const liveRef=useRef({dot:null,pulse:null});
 const[mapView,setMapView]=useState("sat");const[distInfo,setDistInfo]=useState(null);const[liveDistToGreen,setLiveDistToGreen]=useState(null);
+const[target,setTarget]=useState(null);// tap-to-measure target
+const targetRef=useRef({marker:null,line:null});
 const course=getCourse(courseId);const green=course.greens[holeIdx];const hasShots=shots&&shots.length>0;
 const tee=teeCoords||(course.teeBoxes?course.teeBoxes[holeIdx]:null);
 const hp=course.pars[holeIdx]||4;const teeKey=Object.keys(course.tees)[0];const hy=course.tees[teeKey]?course.tees[teeKey].y[holeIdx]:0;
@@ -922,6 +924,11 @@ o.markers.push(lbl);
 // Center line from tee to green (faint)
 const centerLine=new google.maps.Polyline({path:[tee,green],map,strokeColor:"#fff",strokeWeight:0.8,strokeOpacity:0.1,geodesic:true});
 o.polys.push(centerLine);
+// Tap-to-measure: click any point to drop a target
+map.addListener("click",(e)=>{
+const pt={lat:e.latLng.lat(),lng:e.latLng.lng()};
+setTarget(pt);
+});
 // Fit bounds — elongated view with tee at bottom, green at top
 const bounds=new google.maps.LatLngBounds();bounds.extend(tee);bounds.extend(green);
 if(livePos)bounds.extend(livePos);
@@ -932,6 +939,19 @@ map.fitBounds(bounds,{top:20,bottom:80,left:10,right:10});
 }
 return ()=>{clearOverlays();clearLive();};
 },[holeIdx,courseId,mapView,gmReady?1:0]);
+// === TARGET (tap-to-measure) ===
+useEffect(()=>{
+const map=mapInst.current;if(!map||!gmReady||mapView!=="sat")return;
+const tr=targetRef.current;
+if(tr.marker){tr.marker.setMap(null);tr.marker=null;}
+if(tr.line){tr.line.setMap(null);tr.line=null;}
+if(tr.lineToTee){tr.lineToTee.setMap(null);tr.lineToTee=null;}
+if(!target)return;
+tr.marker=new google.maps.Marker({position:target,map,zIndex:30,icon:{url:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="#10b981" stroke="#fff" stroke-width="2"/></svg>'),scaledSize:new google.maps.Size(24,24),anchor:new google.maps.Point(12,12)}});
+tr.line=new google.maps.Polyline({path:[target,green],map,strokeOpacity:0,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:0.85,strokeColor:"#10b981",scale:2.2},offset:"0",repeat:"7px"}]});
+const fromPt=livePos||tee;
+if(fromPt)tr.lineToTee=new google.maps.Polyline({path:[fromPt,target],map,strokeColor:"#f59e0b",strokeWeight:2.2,strokeOpacity:0.85,geodesic:true});
+},[target,mapView,gmReady?1:0,livePos?livePos.lat:0,livePos?livePos.lng:0]);
 // === SHOT OVERLAYS ===
 useEffect(()=>{const map=mapInst.current;if(!map||!gmReady||mapView!=="sat")return;
 // Clear only shot-related overlays
@@ -1097,6 +1117,28 @@ return(<div style={{marginBottom:10}}>
 <div style={{fontSize:42,fontWeight:700,color:"#fff",fontFamily:M,lineHeight:0.95,letterSpacing:"-0.02em"}}>{liveDistToGreen||(distInfo?distInfo.total:hy)}</div>
 <div style={{fontSize:8,color:"rgba(255,255,255,0.4)",fontFamily:F,letterSpacing:"0.18em",textTransform:"uppercase",marginTop:2}}>Yards</div>
 </div>
+{/* Tap-to-measure readout */}
+{target&&(()=>{
+const dToPin=gDist(target,green);
+const fromPt=livePos||tee;
+const dFromMe=fromPt?gDist(fromPt,target):0;
+return <div style={{position:"absolute",top:14,right:14,background:"rgba(0,0,0,0.82)",backdropFilter:"blur(10px)",borderRadius:12,padding:"10px 14px",border:"1px solid rgba(245,158,11,0.35)",boxShadow:"0 4px 18px rgba(0,0,0,0.45)",minWidth:118}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+<span style={{fontSize:8,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.14em",fontWeight:700,fontFamily:F}}>Target</span>
+<button onClick={()=>setTarget(null)} style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:14,lineHeight:1,padding:0}}>{"×"}</button>
+</div>
+<div style={{display:"flex",flexDirection:"column",gap:4}}>
+<div style={{display:"flex",alignItems:"baseline",gap:6}}>
+<span style={{fontSize:22,fontWeight:700,color:"#fff",fontFamily:M,lineHeight:1}}>{dToPin}</span>
+<span style={{fontSize:8,color:T.g,fontFamily:F,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700}}>To Pin</span>
+</div>
+{fromPt&&<div style={{display:"flex",alignItems:"baseline",gap:6}}>
+<span style={{fontSize:16,fontWeight:700,color:"#f59e0b",fontFamily:M,lineHeight:1}}>{dFromMe}</span>
+<span style={{fontSize:8,color:"rgba(255,255,255,0.45)",fontFamily:F,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700}}>{livePos?"From You":"From Tee"}</span>
+</div>}
+</div>
+</div>;
+})()}
 {/* Cascading Back / Mid / Front chips on left edge */}
 <div style={{position:"absolute",top:120,left:14,display:"flex",flexDirection:"column",gap:6}}>
 {[{l:"Back",v:distInfo?distInfo.back:hy+15,c:"#f87171"},{l:"Mid",v:distInfo?distInfo.total:hy,c:"#fff"},{l:"Front",v:distInfo?distInfo.front:Math.max(0,hy-15),c:T.g}].map(r=>(
