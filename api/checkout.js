@@ -17,8 +17,8 @@ module.exports = async (req, res) => {
       customer_email: email || undefined,
       metadata: { userId },
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: (returnUrl || 'https://sticks-golf.vercel.app') + '?upgraded=true',
-      cancel_url: (returnUrl || 'https://sticks-golf.vercel.app') + '?cancelled=true',
+      success_url: (returnUrl || 'https://sticks-xi.vercel.app') + '?upgraded=true',
+      cancel_url: (returnUrl || 'https://sticks-xi.vercel.app') + '?cancelled=true',
       subscription_data: { metadata: { userId } },
       allow_promotion_codes: true,
     });

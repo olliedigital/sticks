@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl || 'https://sticks-golf.vercel.app'
+      return_url: returnUrl || 'https://sticks-xi.vercel.app'
     });
 
     res.status(200).json({ url: session.url });

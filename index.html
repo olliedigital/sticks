@@ -82,9 +82,9 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW","GW","SW","LW","Putter"];
 const AVATARS=["#10b981","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 // Map rendering uses custom SVG illustrations
-const STRIPE_PK="pk_test_51T6grnKAn7D5IDFmuYZzTiCpoJhOr99tkTjwA9b1cdHFTL8MSGRRRzEigNO8xuPFLaFWyATWabrwmKE9SWNogSDc00T41oV7ve";
-const PRICE_MONTHLY="price_1T6gvTKAn7D5IDFmlWlrBl1d";
-const PRICE_ANNUAL="price_1T6gvTKAn7D5IDFmZAQvNx6m";
+const STRIPE_PK="pk_live_51T6grcGg73wymaEsqPMPCp77mdmlV0Dlf9B3hU27IzEjI0JeDrMoRNHTSzeN3ljI5oQF5JIue3XIlhjgQSbee8bF00VWOMlAVZ";
+const PRICE_MONTHLY="price_1TWqjeGg73wymaEsEjggQvAk";
+const PRICE_ANNUAL="price_1TWqkGGg73wymaEs0SWWcJeh";
 const FREE_ROUND_LIMIT=3;
 const API_BASE=window.location.origin;
 const startCheckout=async(priceId,userId,email)=>{try{const r=await fetch(API_BASE+"/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId,userId,email,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;else throw new Error(d.error||"Checkout failed");}catch(e){alert("Error: "+e.message);}};
