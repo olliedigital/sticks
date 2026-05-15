@@ -1,7 +1,7 @@
 {
   "appId": "com.sticks.golf",
   "appName": "STICKS",
-  "webDir": ".",
+  "webDir": "www",
   "ios": {
     "contentInset": "automatic",
     "limitsNavigationsToAppBoundDomains": false,

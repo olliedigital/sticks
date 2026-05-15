@@ -2,7 +2,8 @@
   "name": "sticks-golf",
   "private": true,
   "scripts": {
-    "cap:sync": "npx cap sync",
+    "cap:prepare": "rm -rf www && mkdir www && cp index.html manifest.json sw.js icon-192.png icon-512.png www/ && cp -r fonts www/",
+    "cap:sync": "npm run cap:prepare && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 npx cap sync",
     "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
