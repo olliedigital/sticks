@@ -1386,7 +1386,7 @@ return(<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,backgrou
 </button>;})}
 </div>);
 };
-const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 14px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={28}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:20,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.025em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:12,margin:"2px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{onToggleTheme&&<button onClick={onToggleTheme} style={{background:"none",border:"1px solid "+T.bdr,borderRadius:8,padding:"6px 8px",cursor:"pointer",color:T.tm,fontSize:14,lineHeight:1}}>{T===dark?"\u2600\uFE0F":"\uD83C\uDF19"}</button>}{right}</div></div>);
+const Hdr=({title,sub,right,T,onToggleTheme,profile})=>(<div style={{padding:"20px 20px 14px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",alignItems:"center",gap:10}}>{profile&&<Avatar name={profile.name} color={profile.color} size={28}/>}<div>{title==="STICKS"?<div style={{display:"flex",alignItems:"center"}}><LOGO/></div>:<h1 style={{fontSize:20,fontWeight:700,color:T.tx,margin:0,fontFamily:F,letterSpacing:"-0.025em"}}>{title}</h1>}{sub&&<p style={{color:T.tm,fontSize:12,margin:"2px 0 0",fontFamily:F,fontWeight:400}}>{sub}</p>}</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}>{right}</div></div>);
 const Crd=({children,style:s,onClick:o,T})=><div onClick={o} style={{background:T.bg==="#09090b"?"linear-gradient(145deg, #16161a 0%, #111114 100%)":T.card,border:"1px solid "+T.bdr,borderRadius:14,padding:16,cursor:o?"pointer":"default",boxShadow:T.bg==="#09090b"?"0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)":"0 1px 3px rgba(0,0,0,0.04)",...s}}>{children}</div>;
 const Lbl=({children,T})=><div style={{fontSize:10,color:T.td,marginBottom:7,fontFamily:F,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,paddingLeft:8,borderLeft:"2px solid "+T.g+"44"}}>{children}</div>;
 const Btn=({children,onClick:o,v="primary",style:s,disabled:d,T})=>{const st={primary:{background:T.g,color:"#fff",fontWeight:700,border:"none",boxShadow:"0 2px 8px "+T.g+"33"},secondary:{background:T.gd,color:T.g,border:"1px solid "+T.gb,boxShadow:"none"},ghost:{background:"transparent",color:T.tm,border:"none",boxShadow:"none"},danger:{background:T.rd,color:T.r,border:"1px solid "+T.r+"18",boxShadow:"none"}};return <button disabled={d} onClick={o} style={{...st[v],borderRadius:12,padding:"14px 18px",fontSize:14,fontFamily:F,cursor:d?"not-allowed":"pointer",opacity:d?0.4:1,width:"100%",transition:"all 0.2s",letterSpacing:"-0.01em",...s}}>{children}</button>;};
@@ -1824,6 +1824,13 @@ return <div><Hdr title={profile.name} sub="Profile" T={T} onToggleTheme={onToggl
 <div style={{fontSize:11,color:T.td,fontFamily:F,marginTop:2}}>{rounds.filter(r=>r.holes&&r.holes.length===18).length+"/"+FREE_ROUND_LIMIT+" rounds used"}</div></div>
 <button onClick={onUpgrade} style={{padding:"8px 14px",borderRadius:8,background:T.gd,border:"1px solid "+T.gb,color:T.g,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F}}>Upgrade</button>
 </div>}
+</Crd>
+<Crd T={T} style={{marginBottom:10}}>
+<Lbl T={T}>Theme</Lbl>
+<div style={{display:"flex",gap:8}}>
+<button onClick={()=>{if(T!==dark&&onToggle)onToggle();}} style={{flex:1,padding:"12px",borderRadius:10,cursor:"pointer",background:T===dark?T.gd:"transparent",border:"1px solid "+(T===dark?T.gb:T.bdr),color:T===dark?T.g:T.tm,fontSize:13,fontWeight:600,fontFamily:F}}>Dark</button>
+<button onClick={()=>{if(T===dark&&onToggle)onToggle();}} style={{flex:1,padding:"12px",borderRadius:10,cursor:"pointer",background:T!==dark?T.gd:"transparent",border:"1px solid "+(T!==dark?T.gb:T.bdr),color:T!==dark?T.g:T.tm,fontSize:13,fontWeight:600,fontFamily:F}}>Light</button>
+</div>
 </Crd>
 <Btn v="danger" T={T} onClick={onLogout}>Log Out</Btn>
 <div style={{textAlign:"center",padding:"20px 0"}}><div style={{fontSize:10,color:T.td,fontFamily:F}}>Member since {new Date(profile.created_at).toLocaleDateString()}</div></div>
