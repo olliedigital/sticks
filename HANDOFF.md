@@ -186,4 +186,33 @@ In-code constants (`repo/index.html`):
 4. Decide **iOS payment strategy** (Apple IAP vs. hide-paywall-defer-to-web).
 5. Real-course test (only Max can do this).
 
-Latest commit on `main`: `491eb83`.
+Latest commit on `main`: `2b049f7` (this handoff doc added to repo).
+
+---
+
+## Opening prompt for next Claude Code session
+
+Paste this into the new session on the Mac to pick up cleanly:
+
+```
+Read HANDOFF.md at the repo root top to bottom — that's the full state of STICKS as of last session. I'm Maximus (the user; the harness email might say oliver.austria@gmail.com but that's my dad's Claude account — memory files are correct).
+
+I'm now on my dad's Mac to start the App Store path.
+
+Latest commit on main is 2b049f7 — Capacitor is wired in but nothing has been run on a Mac yet. The repo is freshly cloned/pulled here.
+
+Two unresolved items I should gate on before going deep on App Store:
+  (a) Confirm the live Stripe checkout actually works end-to-end. Setup was completed last session but never confirmed with a real-card test after the final env-var fix + key rotation + redeploy.
+  (b) Roll the Stripe secret key one more time — three different sk_live_... values got pasted in the previous chat; need to invalidate all of them.
+
+After those, the App Store work: install Xcode, then in repo/ run
+  npm install
+  npx cap add ios
+  npx cap sync ios
+  npx cap open ios
+Set the signing team to my dad's Apple Developer account (Individual). Then we decide iOS payment strategy: Apple IAP (15% take but allowed) vs hide-paywall-defer-to-web (Apple may reject).
+
+Don't re-explain anything from the handoff doc — just read it once. Start by asking me which of (a), (b), or "skip straight to Xcode" I want to tackle first.
+```
+
+End of handoff.
