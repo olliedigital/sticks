@@ -1,0 +1,17 @@
+{
+  "appId": "com.sticks.golf",
+  "appName": "STICKS",
+  "webDir": ".",
+  "ios": {
+    "contentInset": "automatic",
+    "limitsNavigationsToAppBoundDomains": false,
+    "backgroundColor": "#09090b"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#09090b",
+      "showSpinner": false
+    }
+  }
+}

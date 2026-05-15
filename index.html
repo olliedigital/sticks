@@ -87,7 +87,8 @@ const PRICE_WEEKLY="price_1TXC5jGg73wymaEslSZv9HLD";
 const PRICE_MONTHLY="price_1TXC6IGg73wymaEsnhzZEqSG";
 const PRICE_ANNUAL="price_1TXC6IGg73wymaEshxn60AEq";
 const FREE_ROUND_LIMIT=3;
-const API_BASE=window.location.origin;
+const IS_NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+const API_BASE=IS_NATIVE?"https://sticks-xi.vercel.app":window.location.origin;
 const startCheckout=async(priceId,userId,email)=>{try{const r=await fetch(API_BASE+"/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId,userId,email,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;else throw new Error(d.error||"Checkout failed");}catch(e){alert("Error: "+e.message);}};
 const openPortal=async(customerId)=>{try{const r=await fetch(API_BASE+"/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;}catch(e){alert("Error: "+e.message);}};
 const googleSignIn=async()=>{
@@ -3168,8 +3169,8 @@ return <div style={{minHeight:"100vh",maxHeight:"100vh",overflow:"hidden",backgr
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 <script>
-// Service worker registration — enables offline round play + instant PWA loads.
-if('serviceWorker' in navigator){
+// Service worker registration — web only; skip on native Capacitor builds
+if('serviceWorker' in navigator && !(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js').then(reg=>{
       setInterval(()=>{try{reg.update();}catch(e){}},1800000);
