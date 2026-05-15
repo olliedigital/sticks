@@ -83,8 +83,9 @@ const CLUBS=["Driver","3W","5W","7W","2i","3i","4i","5i","6i","7i","8i","9i","PW
 const AVATARS=["#10b981","#60a5fa","#f59e0b","#f87171","#a78bfa","#fb923c","#ec4899","#14b8a6","#e879f9","#84cc16"];
 // Map rendering uses custom SVG illustrations
 const STRIPE_PK="pk_live_51T6grcGg73wymaEsqPMPCp77mdmlV0Dlf9B3hU27IzEjI0JeDrMoRNHTSzeN3ljI5oQF5JIue3XIlhjgQSbee8bF00VWOMlAVZ";
-const PRICE_MONTHLY="price_1TWqjeGg73wymaEsEjggQvAk";
-const PRICE_ANNUAL="price_1TWqkGGg73wymaEs0SWWcJeh";
+const PRICE_WEEKLY="price_1TXC5jGg73wymaEslSZv9HLD";
+const PRICE_MONTHLY="price_1TXC6IGg73wymaEsnhzZEqSG";
+const PRICE_ANNUAL="price_1TXC6IGg73wymaEshxn60AEq";
 const FREE_ROUND_LIMIT=3;
 const API_BASE=window.location.origin;
 const startCheckout=async(priceId,userId,email)=>{try{const r=await fetch(API_BASE+"/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId,userId,email,returnUrl:window.location.origin})});const d=await r.json();if(d.url)window.location.href=d.url;else throw new Error(d.error||"Checkout failed");}catch(e){alert("Error: "+e.message);}};
@@ -561,7 +562,8 @@ Continue with Google
 // ==================== UPGRADE / PAYWALL ====================
 function UpgradeScreen({user,T,onClose}){
 const[plan,setPlan]=useState("annual");const[loading,setLoading]=useState(false);
-const go=async()=>{setLoading(true);await startCheckout(plan==="annual"?PRICE_ANNUAL:PRICE_MONTHLY,user.id,user.email);};
+const priceMap={weekly:PRICE_WEEKLY,monthly:PRICE_MONTHLY,annual:PRICE_ANNUAL};
+const go=async()=>{setLoading(true);await startCheckout(priceMap[plan],user.id,user.email);};
 const features=[
 {f:"Unlimited round history",free:"3 rounds",pro:true},
 {f:"GPS shot tracking",free:false,pro:true},
@@ -582,15 +584,19 @@ return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,overflow
 <div style={{fontSize:28,fontWeight:800,color:T.tx,fontFamily:F,letterSpacing:"-0.03em"}}>STICKS Pro</div>
 <p style={{color:T.tm,fontSize:13,fontFamily:F,marginTop:8,lineHeight:1.5}}>Unlock everything. Track smarter. Play better.</p>
 </div>
-<div style={{display:"flex",gap:8,marginBottom:20}}>
-<button onClick={()=>setPlan("monthly")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="monthly"?T.card:"transparent",border:plan==="monthly"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center"}}>
-<div style={{fontSize:22,fontWeight:800,color:plan==="monthly"?T.tx:T.td,fontFamily:M}}>$4.99</div>
+<div style={{display:"flex",gap:6,marginBottom:20}}>
+<button onClick={()=>setPlan("weekly")} style={{flex:1,padding:"16px 8px",borderRadius:12,cursor:"pointer",background:plan==="weekly"?T.card:"transparent",border:plan==="weekly"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center"}}>
+<div style={{fontSize:20,fontWeight:800,color:plan==="weekly"?T.tx:T.td,fontFamily:M}}>$3.99</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/week</div>
+</button>
+<button onClick={()=>setPlan("monthly")} style={{flex:1,padding:"16px 8px",borderRadius:12,cursor:"pointer",background:plan==="monthly"?T.card:"transparent",border:plan==="monthly"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center"}}>
+<div style={{fontSize:20,fontWeight:800,color:plan==="monthly"?T.tx:T.td,fontFamily:M}}>$6.99</div>
 <div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/month</div>
 </button>
-<button onClick={()=>setPlan("annual")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="annual"?T.card:"transparent",border:plan==="annual"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center",position:"relative"}}>
-<div style={{position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:T.g,color:T.bg,fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:10,fontFamily:F,whiteSpace:"nowrap"}}>SAVE 33%</div>
-<div style={{fontSize:22,fontWeight:800,color:plan==="annual"?T.tx:T.td,fontFamily:M}}>$39.99</div>
-<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/year ($3.33/mo)</div>
+<button onClick={()=>setPlan("annual")} style={{flex:1,padding:"16px 8px",borderRadius:12,cursor:"pointer",background:plan==="annual"?T.card:"transparent",border:plan==="annual"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center",position:"relative"}}>
+<div style={{position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:T.g,color:T.bg,fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:10,fontFamily:F,whiteSpace:"nowrap"}}>SAVE 40%</div>
+<div style={{fontSize:20,fontWeight:800,color:plan==="annual"?T.tx:T.td,fontFamily:M}}>$49.99</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/yr ($4.17/mo)</div>
 </button>
 </div>
 <div style={{marginBottom:24}}>
@@ -606,7 +612,7 @@ return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,overflow
 </div>
 </div>
 <button disabled={loading} onClick={go} style={{width:"100%",padding:"16px",borderRadius:14,background:T.g,color:T.bg,fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"wait":"pointer",opacity:loading?0.6:1}}>
-{loading?"Redirecting to checkout...":"Get STICKS Pro"+(plan==="annual"?" \u2014 $39.99/yr":" \u2014 $4.99/mo")}
+{loading?"Redirecting to checkout...":"Get STICKS Pro"+(plan==="annual"?" \u2014 $49.99/yr":plan==="monthly"?" \u2014 $6.99/mo":" \u2014 $3.99/wk")}
 </button>
 <div style={{textAlign:"center",marginTop:12,fontSize:11,color:T.td,fontFamily:F}}>Cancel anytime. Secure payment via Stripe.</div>
 </div></div>;
