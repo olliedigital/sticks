@@ -584,13 +584,13 @@ return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,overflow
 </div>
 <div style={{display:"flex",gap:8,marginBottom:20}}>
 <button onClick={()=>setPlan("monthly")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="monthly"?T.card:"transparent",border:plan==="monthly"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center"}}>
-<div style={{fontSize:22,fontWeight:800,color:plan==="monthly"?T.tx:T.td,fontFamily:M}}>$9.99</div>
+<div style={{fontSize:22,fontWeight:800,color:plan==="monthly"?T.tx:T.td,fontFamily:M}}>$4.99</div>
 <div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/month</div>
 </button>
 <button onClick={()=>setPlan("annual")} style={{flex:1,padding:"16px 12px",borderRadius:12,cursor:"pointer",background:plan==="annual"?T.card:"transparent",border:plan==="annual"?"1px solid "+T.g:"1px solid "+T.bdr,textAlign:"center",position:"relative"}}>
 <div style={{position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:T.g,color:T.bg,fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:10,fontFamily:F,whiteSpace:"nowrap"}}>SAVE 33%</div>
-<div style={{fontSize:22,fontWeight:800,color:plan==="annual"?T.tx:T.td,fontFamily:M}}>$79.99</div>
-<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/year ($6.67/mo)</div>
+<div style={{fontSize:22,fontWeight:800,color:plan==="annual"?T.tx:T.td,fontFamily:M}}>$39.99</div>
+<div style={{fontSize:10,color:T.td,fontFamily:F,marginTop:2}}>/year ($3.33/mo)</div>
 </button>
 </div>
 <div style={{marginBottom:24}}>
@@ -606,7 +606,7 @@ return <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg,overflow
 </div>
 </div>
 <button disabled={loading} onClick={go} style={{width:"100%",padding:"16px",borderRadius:14,background:T.g,color:T.bg,fontSize:16,fontWeight:700,fontFamily:F,border:"none",cursor:loading?"wait":"pointer",opacity:loading?0.6:1}}>
-{loading?"Redirecting to checkout...":"Get STICKS Pro"+(plan==="annual"?" \u2014 $79.99/yr":" \u2014 $9.99/mo")}
+{loading?"Redirecting to checkout...":"Get STICKS Pro"+(plan==="annual"?" \u2014 $39.99/yr":" \u2014 $4.99/mo")}
 </button>
 <div style={{textAlign:"center",marginTop:12,fontSize:11,color:T.td,fontFamily:F}}>Cancel anytime. Secure payment via Stripe.</div>
 </div></div>;
